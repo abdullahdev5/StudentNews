@@ -1,0 +1,16 @@
+package com.android.studentnews.core.domain.constants
+
+class FirestoreNodes {
+    companion object {
+        const val USERS_COL = "Users"
+        const val NEWS_COL = "News"
+        const val CATEGORIES_COL = "Categories"
+        const val SAVED_NEWS_COL = "SavedNews"
+    }
+}
+
+class StorageNodes {
+    companion object {
+        const val USER_IMAGES = "UserImages"
+    }
+}
