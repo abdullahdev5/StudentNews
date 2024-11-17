@@ -61,12 +61,16 @@ fun ImagePickerDialog(
                         },
                         onClick = onCameraClick,
                         containerColor = Color.Transparent,
-                        elevation = FloatingActionButtonDefaults.elevation(0.dp),
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .border(
                                 width = 1.dp,
-                                color = Gray
+                                color = Gray,
+                                shape = FloatingActionButtonDefaults.extendedFabShape
                             )
                     )
 
@@ -85,12 +89,16 @@ fun ImagePickerDialog(
                         },
                         onClick = onGalleryClick,
                         containerColor = Color.Transparent,
-                        elevation = FloatingActionButtonDefaults.elevation(0.dp),
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .border(
                                 width = 1.dp,
-                                color = Gray
+                                color = Gray,
+                                shape = FloatingActionButtonDefaults.extendedFabShape
                             )
                     )
 

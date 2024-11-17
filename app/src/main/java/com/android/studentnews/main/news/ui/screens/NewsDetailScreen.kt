@@ -16,6 +16,8 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,10 +46,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -129,8 +134,6 @@ fun SharedTransitionScope.NewsDetailScreen(
     var isSaved by remember(savedNewsById.value) {
         mutableStateOf(savedNewsById.value != null)
     }
-    val colorsList = listOf<Color>(Green.copy(0.5f), Black.copy(0.1f))
-    val brush = remember { Brush.horizontalGradient(colorsList) }
 
     val pagerState = rememberPagerState(
         pageCount = {
@@ -141,39 +144,6 @@ fun SharedTransitionScope.NewsDetailScreen(
     LaunchedEffect(Unit) {
         newsDetailViewModel.getNewsById(newsId)
         newsDetailViewModel.getSavedNewsById(newsId)
-    }
-
-    LaunchedEffect(isSaved) {
-        newsById.value?.let {
-            if (isSaved) {
-                val news = NewsModel(
-                    newsId = it.newsId,
-                    title = it.title,
-                    description = it.description,
-                    category = it.category,
-                    timestamp = Timestamp.now(),
-                    link = it.link,
-                    linkTitle = it.linkTitle,
-                    urlList = it.urlList,
-                    shareCount = it.shareCount ?: 0
-                )
-
-                newsViewModel.viewModelScope.launch {
-                    newsViewModel
-                        .onNewsSave(news)
-                        .collect { result ->
-                            when (result) {
-                                else -> {}
-                            }
-                        }
-                }
-            } else {
-                newsViewModel.onNewsRemoveFromSave(
-                    it.newsId ?: "",
-                    wantToShowSnackBar = false
-                )
-            }
-        }
     }
 
 
@@ -194,29 +164,73 @@ fun SharedTransitionScope.NewsDetailScreen(
                         .padding(all = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    IconButton(
+                    ExtendedFloatingActionButton(
+                        text = {
+                            Text(text = "Back")
+                        },
+                        icon = {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBackIos,
+                                contentDescription = "Icon for Navigate Back",
+                            )
+                        },
                         onClick = {
                             navHostController.navigateUp()
                         },
+                        expanded = scrollState.value < 20,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 0.dp,
+                            pressedElevation = 0.dp,
+                        ),
+                        containerColor = Green.copy(0.5f),
+                        contentColor = White,
                         modifier = Modifier
-                            .background(
-                                brush = brush,
-                                shape = CircleShape
+                            .border(
+                                width = 1.dp,
+                                color = Gray,
+                                shape = FloatingActionButtonDefaults.extendedFabShape
                             )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIos,
-                            contentDescription = "Icon for Navigate Back",
-                            tint = White,
-                        )
-                    }
+                    )
 
                     Spacer(modifier = Modifier.weight(1f))
 
                     IconButton(
                         onClick = {
                             if (isInternetAvailable(context)) {
+
                                 isSaved = !isSaved
+
+                                newsById.value?.let {
+                                    if (isSaved) {
+                                        val news = NewsModel(
+                                            newsId = it.newsId,
+                                            title = it.title,
+                                            description = it.description,
+                                            category = it.category,
+                                            timestamp = Timestamp.now(),
+                                            link = it.link,
+                                            linkTitle = it.linkTitle,
+                                            urlList = it.urlList,
+                                            shareCount = it.shareCount ?: 0
+                                        )
+
+                                        newsViewModel.viewModelScope.launch {
+                                            newsViewModel
+                                                .onNewsSave(news)
+                                                .collect { result ->
+                                                    when (result) {
+                                                        else -> {}
+                                                    }
+                                                }
+                                        }
+                                    } else {
+                                        newsViewModel.onNewsRemoveFromSave(
+                                            it.newsId ?: "",
+                                            wantToShowSnackBar = false
+                                        )
+                                    }
+                                }
+
                             } else {
                                 scope.launch {
                                     SnackBarController
@@ -229,17 +243,15 @@ fun SharedTransitionScope.NewsDetailScreen(
                                 }
                             }
                         },
-                        modifier = Modifier
-                            .background(
-                                brush = brush,
-                                shape = CircleShape
-                            )
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = Green.copy(0.5f),
+                            contentColor = White
+                        ),
                     ) {
                         AnimatedVisibility(isSaved) {
                             Icon(
                                 imageVector = Icons.Filled.Bookmark,
                                 contentDescription = "Icon for Saved News",
-                                tint = White,
                             )
                         }
 
@@ -247,7 +259,6 @@ fun SharedTransitionScope.NewsDetailScreen(
                             Icon(
                                 imageVector = Icons.Outlined.BookmarkAdd,
                                 contentDescription = "Icon for unSaved News",
-                                tint = White,
                             )
                         }
                     }
@@ -290,16 +301,14 @@ fun SharedTransitionScope.NewsDetailScreen(
                                 )
 
                             },
-                            modifier = Modifier
-                                .background(
-                                    brush = brush,
-                                    shape = CircleShape
-                                )
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = Green.copy(0.5f),
+                                contentColor = White
+                            ),
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Icon for unSaved News",
-                                tint = White,
                             )
                         }
                         AnimatedVisibility((newsById.value?.shareCount ?: 0) > 0) {
