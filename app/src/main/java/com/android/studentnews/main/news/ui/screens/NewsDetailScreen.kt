@@ -110,6 +110,7 @@ fun SharedTransitionScope.NewsDetailScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
+
     val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
     val savedNewsById by newsDetailViewModel.savedNewsById.collectAsStateWithLifecycle()
     val currentUser by newsViewModel.currentUser.collectAsStateWithLifecycle()
