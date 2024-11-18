@@ -10,6 +10,7 @@ import android.content.IntentFilter
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -17,6 +18,8 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -29,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -39,9 +43,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -57,6 +66,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -70,9 +80,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -493,110 +505,143 @@ fun SharedTransitionScope.NewsDetailScreen(
 
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 100.dp)
-                    .background(
-                        color = Green.copy(0.1f)/*LightGray.copy(0.3f)*/,
-                        shape = RoundedCornerShape(
-                            topStart = 20.dp,
-                            topEnd = 20.dp,
-                            bottomStart = 0.dp,
-                            bottomEnd = 0.dp,
-                        )
+            var isLiked by remember { mutableStateOf(false) } // For Test
+
+            Box {
+                // Like Icon
+                IconButton(
+                    onClick = {
+                        isLiked = !isLiked
+                    },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = if (isLiked) Red else {
+                            if (isSystemInDarkTheme()) White else Black
+                        }
                     ),
-            ) {
-                // Category Container
-                Box(
                     modifier = Modifier
-                        .padding(
-                            start = 20.dp,
-                            end = 20.dp,
-                            top = 20.dp,
-                            bottom = 5.dp
-                        )
-                        .background(
-                            color = Black.copy(0.1f),
-                            shape = RoundedCornerShape(5.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.TopEnd)
+                        .padding(bottom = 20.dp)
                 ) {
-                    Text(
-                        text = newsById.value?.category ?: "",
-                        style = TextStyle(
-                            fontSize = FontSize.MEDIUM.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = White
-                        ),
-                        modifier = Modifier
-                            .padding(all = 5.dp)
-                    )
+                        this@Column.AnimatedVisibility (isLiked) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "Icon of Liked News",
+                            )
+                        }
+
+                        this@Column.AnimatedVisibility(!isLiked) {
+                            Icon(
+                                imageVector = Icons.Default.FavoriteBorder,
+                                contentDescription = "Icon of unliked News",
+                            )
+                        }
                 }
 
-                val customLineBreak = LineBreak(
-                    strategy = LineBreak.Strategy.HighQuality,
-                    strictness = LineBreak.Strictness.Strict,
-                    wordBreak = LineBreak.WordBreak.Phrase
-                )
-
-                Text(
-                    text = newsById.value?.title ?: "",
-                    style = TextStyle(
-                        fontSize = FontSize.LARGE.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineBreak = customLineBreak,
-                        hyphens = Hyphens.Auto,
-                    ),
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            start = 20.dp,
-                            end = 20.dp,
-                            top = 10.dp,
-                            bottom = 10.dp
+                        .fillMaxSize()
+                        .padding(bottom = 100.dp)
+                        .background(
+                            color = Green.copy(0.1f)/*LightGray.copy(0.3f)*/,
+                            shape = RoundedCornerShape(
+                                topStart = 20.dp,
+                                topEnd = 20.dp,
+                                bottomStart = 0.dp,
+                                bottomEnd = 0.dp,
+                            )
+                        ),
+                ) {
+                    // Category Container
+                    Box(
+                        modifier = Modifier
+                            .padding(
+                                start = 20.dp,
+                                end = 20.dp,
+                                top = 20.dp,
+                                bottom = 5.dp
+                            )
+                            .background(
+                                color = Black.copy(0.1f),
+                                shape = RoundedCornerShape(5.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = newsById.value?.category ?: "",
+                            style = TextStyle(
+                                fontSize = FontSize.MEDIUM.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = White
+                            ),
+                            modifier = Modifier
+                                .padding(all = 5.dp)
                         )
-                        .sharedElement(
-                            state = rememberSharedContentState(key = "title/$newsId"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                        )
-                )
+                    }
 
-                SelectionContainer {
+                    val customLineBreak = LineBreak(
+                        strategy = LineBreak.Strategy.HighQuality,
+                        strictness = LineBreak.Strictness.Strict,
+                        wordBreak = LineBreak.WordBreak.Phrase
+                    )
+
                     Text(
-                        text = newsById.value?.description ?: "",
+                        text = newsById.value?.title ?: "",
                         style = TextStyle(
-                            fontSize = FontSize.MEDIUM.sp,
+                            fontSize = FontSize.LARGE.sp,
+                            fontWeight = FontWeight.Bold,
                             lineBreak = customLineBreak,
                             hyphens = Hyphens.Auto,
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(all = 20.dp)
+                            .padding(
+                                start = 20.dp,
+                                end = 20.dp,
+                                top = 10.dp,
+                                bottom = 10.dp
+                            )
+                            .sharedElement(
+                                state = rememberSharedContentState(key = "title/$newsId"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
                     )
-                }
 
-                if (!newsById.value?.link.isNullOrEmpty()) {
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    if (newsById.value?.link.toString().toUri().isAbsolute) {
-                        FilledTonalButton(
-                            onClick = {
-                                navHostController.navigate(
-                                    NewsDestination.NEWS_LINK_SCREEN(
-                                        link = newsById.value?.link ?: ""
-                                    )
-                                )
-                            },
-                            colors = ButtonColors(
-                                containerColor = Green.copy(0.5f),
-                                contentColor = White
+                    SelectionContainer {
+                        Text(
+                            text = newsById.value?.description ?: "",
+                            style = TextStyle(
+                                fontSize = FontSize.MEDIUM.sp,
+                                lineBreak = customLineBreak,
+                                hyphens = Hyphens.Auto,
                             ),
                             modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(all = 20.dp)
-                        ) {
-                            Text(text = newsById.value?.linkTitle ?: "")
+                        )
+                    }
+
+                    if (!newsById.value?.link.isNullOrEmpty()) {
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        if (newsById.value?.link.toString().toUri().isAbsolute) {
+                            FilledTonalButton(
+                                onClick = {
+                                    navHostController.navigate(
+                                        NewsDestination.NEWS_LINK_SCREEN(
+                                            link = newsById.value?.link ?: ""
+                                        )
+                                    )
+                                },
+                                colors = ButtonColors(
+                                    containerColor = Green.copy(0.5f),
+                                    contentColor = White
+                                ),
+                                modifier = Modifier
+                                    .padding(all = 20.dp)
+                            ) {
+                                Text(text = newsById.value?.linkTitle ?: "")
+                            }
                         }
                     }
                 }
