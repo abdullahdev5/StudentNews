@@ -9,7 +9,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,8 +30,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.BookmarkAdd
@@ -95,7 +92,6 @@ import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
-import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
@@ -120,11 +116,6 @@ fun SharedTransitionScope.NewsDetailScreen(
 
     var isSaved by remember(savedNewsById) {
         mutableStateOf(savedNewsById != null)
-    }
-    var isLiked by remember(newsById, currentUser) {
-        mutableStateOf(
-            newsById?.likes?.contains(currentUser?.uid ?: "") ?: false
-        )
     }
 
     val pagerState = rememberPagerState(
@@ -185,41 +176,6 @@ fun SharedTransitionScope.NewsDetailScreen(
                     )
 
                     Spacer(modifier = Modifier.weight(1f))
-
-                    // Like
-                    AnimatedVisibility(!(scrollState.value < 100)) {
-                        IconButton(
-                            onClick = {
-                                isLiked = !isLiked
-
-                                if (isLiked) {
-                                    newsDetailViewModel.onNewsLike(newsId)
-                                } else {
-                                    newsDetailViewModel.onNewsUnLike(newsId)
-                                }
-                            },
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = Green.copy(0.5f),
-                                contentColor = if (isLiked) Red else {
-                                    if (isSystemInDarkTheme()) White else Black
-                                }
-                            ),
-                        ) {
-                            AnimatedVisibility(isLiked) {
-                                Icon(
-                                    imageVector = Icons.Default.Favorite,
-                                    contentDescription = "Icon of liked News",
-                                )
-                            }
-
-                            AnimatedVisibility(!isLiked) {
-                                Icon(
-                                    imageVector = Icons.Default.FavoriteBorder,
-                                    contentDescription = "Icon of unliked News",
-                                )
-                            }
-                        }
-                    }
 
                     IconButton(
                         onClick = {
@@ -290,8 +246,9 @@ fun SharedTransitionScope.NewsDetailScreen(
                         }
                     }
 
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
                         IconButton(
                             onClick = {
@@ -519,165 +476,118 @@ fun SharedTransitionScope.NewsDetailScreen(
 
             }
 
-            Box {
-                Row(
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 100.dp)
+                    .background(
+                        color = Green.copy(0.1f)/*LightGray.copy(0.3f)*/,
+                        shape = RoundedCornerShape(
+                            topStart = 20.dp,
+                            topEnd = 20.dp,
+                            bottomStart = 0.dp,
+                            bottomEnd = 0.dp,
+                        )
+                    ),
+            ) {
+                // Category Container
+                Box(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(bottom = 20.dp, end = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // Like Icon
-                    IconButton(
-                        onClick = {
-                            isLiked = !isLiked
-
-                            if (isLiked) {
-                                newsDetailViewModel.onNewsLike(newsId)
-                            } else {
-                                newsDetailViewModel.onNewsUnLike(newsId)
-                            }
-                        },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = if (isLiked) Red else {
-                                if (isSystemInDarkTheme()) White else Black
-                            }
+                        .padding(
+                            start = 20.dp,
+                            end = 20.dp,
+                            top = 20.dp,
+                            bottom = 5.dp
+                        )
+                        .background(
+                            color = Black.copy(0.1f),
+                            shape = RoundedCornerShape(5.dp)
                         ),
-                    ) {
-                        this@Column.AnimatedVisibility(isLiked) {
-                            Icon(
-                                imageVector = Icons.Default.Favorite,
-                                contentDescription = "Icon of Liked News",
-                            )
-                        }
-
-                        this@Column.AnimatedVisibility(!isLiked) {
-                            Icon(
-                                imageVector = Icons.Default.FavoriteBorder,
-                                contentDescription = "Icon of unliked News",
-                            )
-                        }
-                    }
-                    // Like Size
-                    AnimatedVisibility(isLiked && (newsById?.likes?.size ?: 0) > 0) {
-                        Text(text = (newsById?.likes?.size ?: 0).toString())
-                    }
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = newsById?.category ?: "",
+                        style = TextStyle(
+                            fontSize = FontSize.MEDIUM.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = White
+                        ),
+                        modifier = Modifier
+                            .padding(all = 5.dp)
+                    )
                 }
 
-                Column(
+                val customLineBreak = LineBreak(
+                    strategy = LineBreak.Strategy.HighQuality,
+                    strictness = LineBreak.Strictness.Strict,
+                    wordBreak = LineBreak.WordBreak.Phrase
+                )
+
+                Text(
+                    text = newsById?.title ?: "",
+                    style = TextStyle(
+                        fontSize = FontSize.LARGE.sp,
+                        fontWeight = FontWeight.Bold,
+                        lineBreak = customLineBreak,
+                        hyphens = Hyphens.Auto,
+                    ),
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 100.dp)
-                        .background(
-                            color = Green.copy(0.1f)/*LightGray.copy(0.3f)*/,
-                            shape = RoundedCornerShape(
-                                topStart = 20.dp,
-                                topEnd = 20.dp,
-                                bottomStart = 0.dp,
-                                bottomEnd = 0.dp,
-                            )
-                        ),
-                ) {
-                    // Category Container
-                    Box(
-                        modifier = Modifier
-                            .padding(
-                                start = 20.dp,
-                                end = 20.dp,
-                                top = 20.dp,
-                                bottom = 5.dp
-                            )
-                            .background(
-                                color = Black.copy(0.1f),
-                                shape = RoundedCornerShape(5.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = newsById?.category ?: "",
-                            style = TextStyle(
-                                fontSize = FontSize.MEDIUM.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = White
-                            ),
-                            modifier = Modifier
-                                .padding(all = 5.dp)
+                        .fillMaxWidth()
+                        .padding(
+                            start = 20.dp,
+                            end = 20.dp,
+                            top = 10.dp,
+                            bottom = 10.dp
                         )
-                    }
+                        .sharedElement(
+                            state = rememberSharedContentState(key = "title/$newsId"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                        )
+                )
 
-                    val customLineBreak = LineBreak(
-                        strategy = LineBreak.Strategy.HighQuality,
-                        strictness = LineBreak.Strictness.Strict,
-                        wordBreak = LineBreak.WordBreak.Phrase
-                    )
-
+                SelectionContainer {
                     Text(
-                        text = newsById?.title ?: "",
+                        text = newsById?.description ?: "",
                         style = TextStyle(
-                            fontSize = FontSize.LARGE.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = FontSize.MEDIUM.sp,
                             lineBreak = customLineBreak,
                             hyphens = Hyphens.Auto,
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(
-                                start = 20.dp,
-                                end = 20.dp,
-                                top = 20.dp,
-                                bottom = 10.dp
-                            )
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "title/$newsId"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            )
+                            .padding(all = 20.dp)
                     )
+                }
 
-                    SelectionContainer {
-                        Text(
-                            text = newsById?.description ?: "",
-                            style = TextStyle(
-                                fontSize = FontSize.MEDIUM.sp,
-                                lineBreak = customLineBreak,
-                                hyphens = Hyphens.Auto,
+                if (!newsById?.link.isNullOrEmpty()) {
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    if (newsById?.link.toString().toUri().isAbsolute) {
+                        FilledTonalButton(
+                            onClick = {
+                                navHostController.navigate(
+                                    NewsDestination.NEWS_LINK_SCREEN(
+                                        link = newsById?.link ?: ""
+                                    )
+                                )
+                            },
+                            colors = ButtonColors(
+                                containerColor = Green.copy(0.5f),
+                                contentColor = White
                             ),
                             modifier = Modifier
-                                .fillMaxWidth()
                                 .padding(all = 20.dp)
-                        )
-                    }
-
-                    if (!newsById?.link.isNullOrEmpty()) {
-                        if (!newsById?.link.isNullOrEmpty()) {
-
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            if (newsById?.link.toString().toUri().isAbsolute) {
-                                FilledTonalButton(
-                                    onClick = {
-                                        navHostController.navigate(
-                                            NewsDestination.NEWS_LINK_SCREEN(
-                                                link = newsById?.link ?: ""
-                                            )
-                                        )
-                                    },
-                                    colors = ButtonColors(
-                                        containerColor = Green.copy(0.5f),
-                                        contentColor = White
-                                    ),
-                                    modifier = Modifier
-                                        .padding(all = 20.dp)
-                                ) {
-                                    Text(text = newsById?.linkTitle ?: "")
-                                }
-                            }
+                        ) {
+                            Text(text = newsById?.linkTitle ?: "")
                         }
                     }
                 }
-
             }
-
         }
+
     }
+
 }
 
 fun getUrlOfImageNotVideo(urlList: List<UrlList?>): String {
