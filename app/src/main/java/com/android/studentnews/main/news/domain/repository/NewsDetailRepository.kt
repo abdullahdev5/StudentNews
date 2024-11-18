@@ -21,6 +21,8 @@ interface NewsDetailRepository {
         context: Context,
         onShare: (Uri?) -> Unit
     )
+    fun onNewsLike(newsId: String): Flow<NewsState<String>>
+    fun onNewsUnlike(newsId: String): Flow<NewsState<String>>
     fun storeShareCount(newsId: String)
 
 }

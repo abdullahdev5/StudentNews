@@ -186,6 +186,41 @@ fun SharedTransitionScope.NewsDetailScreen(
 
                     Spacer(modifier = Modifier.weight(1f))
 
+                    // Like
+                    AnimatedVisibility(!(scrollState.value < 100)) {
+                        IconButton(
+                            onClick = {
+                                isLiked = !isLiked
+
+                                if (isLiked) {
+                                    newsDetailViewModel.onNewsLike(newsId)
+                                } else {
+                                    newsDetailViewModel.onNewsUnLike(newsId)
+                                }
+                            },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = Green.copy(0.5f),
+                                contentColor = if (isLiked) Red else {
+                                    if (isSystemInDarkTheme()) White else Black
+                                }
+                            ),
+                        ) {
+                            AnimatedVisibility(isLiked) {
+                                Icon(
+                                    imageVector = Icons.Default.Favorite,
+                                    contentDescription = "Icon of liked News",
+                                )
+                            }
+
+                            AnimatedVisibility(!isLiked) {
+                                Icon(
+                                    imageVector = Icons.Default.FavoriteBorder,
+                                    contentDescription = "Icon of unliked News",
+                                )
+                            }
+                        }
+                    }
+
                     IconButton(
                         onClick = {
                             if (isInternetAvailable(context)) {
@@ -255,9 +290,8 @@ fun SharedTransitionScope.NewsDetailScreen(
                         }
                     }
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         IconButton(
                             onClick = {
@@ -486,32 +520,46 @@ fun SharedTransitionScope.NewsDetailScreen(
             }
 
             Box {
-                // Like Icon
-                IconButton(
-                    onClick = {
-                        isLiked = !isLiked
-                    },
-                    colors = IconButtonDefaults.iconButtonColors(
-                        contentColor = if (isLiked) Red else {
-                            if (isSystemInDarkTheme()) White else Black
-                        }
-                    ),
+                Row(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(bottom = 20.dp)
+                        .padding(bottom = 20.dp, end = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    this@Column.AnimatedVisibility(isLiked) {
-                        Icon(
-                            imageVector = Icons.Default.Favorite,
-                            contentDescription = "Icon of Liked News",
-                        )
-                    }
+                    // Like Icon
+                    IconButton(
+                        onClick = {
+                            isLiked = !isLiked
 
-                    this@Column.AnimatedVisibility(!isLiked) {
-                        Icon(
-                            imageVector = Icons.Default.FavoriteBorder,
-                            contentDescription = "Icon of unliked News",
-                        )
+                            if (isLiked) {
+                                newsDetailViewModel.onNewsLike(newsId)
+                            } else {
+                                newsDetailViewModel.onNewsUnLike(newsId)
+                            }
+                        },
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = if (isLiked) Red else {
+                                if (isSystemInDarkTheme()) White else Black
+                            }
+                        ),
+                    ) {
+                        this@Column.AnimatedVisibility(isLiked) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = "Icon of Liked News",
+                            )
+                        }
+
+                        this@Column.AnimatedVisibility(!isLiked) {
+                            Icon(
+                                imageVector = Icons.Default.FavoriteBorder,
+                                contentDescription = "Icon of unliked News",
+                            )
+                        }
+                    }
+                    // Like Size
+                    AnimatedVisibility(isLiked && (newsById?.likes?.size ?: 0) > 0) {
+                        Text(text = (newsById?.likes?.size ?: 0).toString())
                     }
                 }
 
@@ -575,28 +623,7 @@ fun SharedTransitionScope.NewsDetailScreen(
                             .padding(
                                 start = 20.dp,
                                 end = 20.dp,
-                                top = 10.dp,
-                                bottom = 10.dp
-                            )
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "title/$newsId"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            )
-                    )
-                    Text(
-                        text = newsById?.title ?: "",
-                        style = TextStyle(
-                            fontSize = FontSize.LARGE.sp,
-                            fontWeight = FontWeight.Bold,
-                            lineBreak = customLineBreak,
-                            hyphens = Hyphens.Auto,
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                start = 20.dp,
-                                end = 20.dp,
-                                top = 10.dp,
+                                top = 20.dp,
                                 bottom = 10.dp
                             )
                             .sharedElement(
@@ -605,19 +632,6 @@ fun SharedTransitionScope.NewsDetailScreen(
                             )
                     )
 
-                    SelectionContainer {
-                        Text(
-                            text = newsById?.description ?: "",
-                            style = TextStyle(
-                                fontSize = FontSize.MEDIUM.sp,
-                                lineBreak = customLineBreak,
-                                hyphens = Hyphens.Auto,
-                            ),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(all = 20.dp)
-                        )
-                    }
                     SelectionContainer {
                         Text(
                             text = newsById?.description ?: "",
@@ -654,25 +668,6 @@ fun SharedTransitionScope.NewsDetailScreen(
                                         .padding(all = 20.dp)
                                 ) {
                                     Text(text = newsById?.linkTitle ?: "")
-                                    if (newsById?.link.toString().toUri().isAbsolute) {
-                                        FilledTonalButton(
-                                            onClick = {
-                                                navHostController.navigate(
-                                                    NewsDestination.NEWS_LINK_SCREEN(
-                                                        link = newsById?.link ?: ""
-                                                    )
-                                                )
-                                            },
-                                            colors = ButtonColors(
-                                                containerColor = Green.copy(0.5f),
-                                                contentColor = White
-                                            ),
-                                            modifier = Modifier
-                                                .padding(all = 20.dp)
-                                        ) {
-                                            Text(text = newsById?.linkTitle ?: "")
-                                        }
-                                    }
                                 }
                             }
                         }

@@ -92,6 +92,48 @@ class NewsDetailViewModel(
         onShare: (Uri?) -> Unit
     ) = newsDetailRepository.onNewsShare(imageUrl, context, onShare)
 
+    fun onNewsLike(newsId: String) {
+        viewModelScope.launch {
+            newsDetailRepository
+                .onNewsLike(newsId)
+                .collectLatest { result ->
+                    when (result) {
+                        is NewsState.Failed -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage ?: "",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                )
+                        }
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun onNewsUnLike(newsId: String) {
+        viewModelScope.launch {
+            newsDetailRepository
+                .onNewsUnlike(newsId)
+                .collectLatest { result ->
+                    when (result) {
+                        is NewsState.Failed -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage ?: "",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                )
+                        }
+                        else -> {}
+                    }
+                }
+        }
+    }
+
     fun storeShareCount(newsId: String) = newsDetailRepository.storeShareCount(newsId)
 
 

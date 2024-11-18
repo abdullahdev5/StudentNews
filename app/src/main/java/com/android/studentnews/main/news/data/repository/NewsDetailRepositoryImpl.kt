@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcel
+import android.util.Log
 import androidx.core.content.FileProvider
 import androidx.credentials.Credential
 import androidx.credentials.provider.getGetCredentialResponse
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.math.log
 
 class NewsDetailRepositoryImpl(
     private val auth: FirebaseAuth,
@@ -132,6 +134,45 @@ class NewsDetailRepositoryImpl(
             )
             .build()
         context.imageLoader.enqueue(request)
+    }
+
+    override fun onNewsLike(newsId: String): Flow<NewsState<String>> {
+        return callbackFlow {
+
+            newsColRef
+                ?.document(newsId)
+                ?.update("likes", FieldValue.arrayUnion(auth.currentUser?.uid.toString()))
+                ?.addOnSuccessListener {
+                    Log.d("TAG", "onNewsLike: News Liked Successfully")
+                }
+                ?.addOnFailureListener { error ->
+                    trySend(NewsState.Failed(error))
+                    Log.e("TAG", "onNewsLike: Failed to Like the News. Error:- $error")
+                }
+
+            awaitClose {
+                close()
+            }
+        }
+    }
+
+    override fun onNewsUnlike(newsId: String): Flow<NewsState<String>> {
+        return callbackFlow {
+
+            newsColRef
+                ?.document(newsId)
+                ?.update("likes", FieldValue.arrayRemove(auth.currentUser?.uid.toString()))
+                ?.addOnSuccessListener {
+                    Log.d("TAG", "onNewsRemoveFromLike: News UnLike Successfully")
+                }
+                ?.addOnFailureListener { error ->
+                    Log.e("TAG", "onNewsUnlike: Failed to Unlike the News")
+                }
+
+            awaitClose {
+                close()
+            }
+        }
     }
 
     override fun storeShareCount(newsId: String) {
