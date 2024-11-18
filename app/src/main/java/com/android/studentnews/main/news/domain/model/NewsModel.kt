@@ -13,9 +13,10 @@ data class NewsModel(
     val link: String? = "",
     val linkTitle: String? = "",
     val urlList: List<UrlList>,
-    val shareCount: Int? = 0
+    val shareCount: Int? = 0,
+    val likes: List<String>? = emptyList()
 ) {
-    constructor() : this("", "", "", "", null, "", "", emptyList(), 0)
+    constructor() : this("", "", "", "", null, "", "", emptyList(), 0, emptyList())
 }
 
 data class UrlList(

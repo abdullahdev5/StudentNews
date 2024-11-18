@@ -121,6 +121,11 @@ fun SharedTransitionScope.NewsDetailScreen(
     var isSaved by remember(savedNewsById) {
         mutableStateOf(savedNewsById != null)
     }
+    var isLiked by remember(newsById, currentUser) {
+        mutableStateOf(
+            newsById?.likes?.contains(currentUser?.uid ?: "") ?: false
+        )
+    }
 
     val pagerState = rememberPagerState(
         pageCount = {
@@ -479,8 +484,6 @@ fun SharedTransitionScope.NewsDetailScreen(
                 }
 
             }
-
-            var isLiked by remember { mutableStateOf(false) } // For Test
 
             Box {
                 // Like Icon
