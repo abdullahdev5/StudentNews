@@ -9,6 +9,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +31,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.BookmarkAdd
@@ -92,6 +95,7 @@ import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
+import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
@@ -476,118 +480,206 @@ fun SharedTransitionScope.NewsDetailScreen(
 
             }
 
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 100.dp)
-                    .background(
-                        color = Green.copy(0.1f)/*LightGray.copy(0.3f)*/,
-                        shape = RoundedCornerShape(
-                            topStart = 20.dp,
-                            topEnd = 20.dp,
-                            bottomStart = 0.dp,
-                            bottomEnd = 0.dp,
-                        )
+            var isLiked by remember { mutableStateOf(false) } // For Test
+
+            Box {
+                // Like Icon
+                IconButton(
+                    onClick = {
+                        isLiked = !isLiked
+                    },
+                    colors = IconButtonDefaults.iconButtonColors(
+                        contentColor = if (isLiked) Red else {
+                            if (isSystemInDarkTheme()) White else Black
+                        }
                     ),
-            ) {
-                // Category Container
-                Box(
                     modifier = Modifier
-                        .padding(
-                            start = 20.dp,
-                            end = 20.dp,
-                            top = 20.dp,
-                            bottom = 5.dp
-                        )
-                        .background(
-                            color = Black.copy(0.1f),
-                            shape = RoundedCornerShape(5.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.TopEnd)
+                        .padding(bottom = 20.dp)
                 ) {
-                    Text(
-                        text = newsById?.category ?: "",
-                        style = TextStyle(
-                            fontSize = FontSize.MEDIUM.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = White
-                        ),
-                        modifier = Modifier
-                            .padding(all = 5.dp)
-                    )
+                    this@Column.AnimatedVisibility(isLiked) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = "Icon of Liked News",
+                        )
+                    }
+
+                    this@Column.AnimatedVisibility(!isLiked) {
+                        Icon(
+                            imageVector = Icons.Default.FavoriteBorder,
+                            contentDescription = "Icon of unliked News",
+                        )
+                    }
                 }
 
-                val customLineBreak = LineBreak(
-                    strategy = LineBreak.Strategy.HighQuality,
-                    strictness = LineBreak.Strictness.Strict,
-                    wordBreak = LineBreak.WordBreak.Phrase
-                )
-
-                Text(
-                    text = newsById?.title ?: "",
-                    style = TextStyle(
-                        fontSize = FontSize.LARGE.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineBreak = customLineBreak,
-                        hyphens = Hyphens.Auto,
-                    ),
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(
-                            start = 20.dp,
-                            end = 20.dp,
-                            top = 10.dp,
-                            bottom = 10.dp
+                        .fillMaxSize()
+                        .padding(bottom = 100.dp)
+                        .background(
+                            color = Green.copy(0.1f)/*LightGray.copy(0.3f)*/,
+                            shape = RoundedCornerShape(
+                                topStart = 20.dp,
+                                topEnd = 20.dp,
+                                bottomStart = 0.dp,
+                                bottomEnd = 0.dp,
+                            )
+                        ),
+                ) {
+                    // Category Container
+                    Box(
+                        modifier = Modifier
+                            .padding(
+                                start = 20.dp,
+                                end = 20.dp,
+                                top = 20.dp,
+                                bottom = 5.dp
+                            )
+                            .background(
+                                color = Black.copy(0.1f),
+                                shape = RoundedCornerShape(5.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = newsById?.category ?: "",
+                            style = TextStyle(
+                                fontSize = FontSize.MEDIUM.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = White
+                            ),
+                            modifier = Modifier
+                                .padding(all = 5.dp)
                         )
-                        .sharedElement(
-                            state = rememberSharedContentState(key = "title/$newsId"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                        )
-                )
+                    }
 
-                SelectionContainer {
+                    val customLineBreak = LineBreak(
+                        strategy = LineBreak.Strategy.HighQuality,
+                        strictness = LineBreak.Strictness.Strict,
+                        wordBreak = LineBreak.WordBreak.Phrase
+                    )
+
                     Text(
-                        text = newsById?.description ?: "",
+                        text = newsById?.title ?: "",
                         style = TextStyle(
-                            fontSize = FontSize.MEDIUM.sp,
+                            fontSize = FontSize.LARGE.sp,
+                            fontWeight = FontWeight.Bold,
                             lineBreak = customLineBreak,
                             hyphens = Hyphens.Auto,
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(all = 20.dp)
+                            .padding(
+                                start = 20.dp,
+                                end = 20.dp,
+                                top = 10.dp,
+                                bottom = 10.dp
+                            )
+                            .sharedElement(
+                                state = rememberSharedContentState(key = "title/$newsId"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
                     )
-                }
+                    Text(
+                        text = newsById?.title ?: "",
+                        style = TextStyle(
+                            fontSize = FontSize.LARGE.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineBreak = customLineBreak,
+                            hyphens = Hyphens.Auto,
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                start = 20.dp,
+                                end = 20.dp,
+                                top = 10.dp,
+                                bottom = 10.dp
+                            )
+                            .sharedElement(
+                                state = rememberSharedContentState(key = "title/$newsId"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                    )
 
-                if (!newsById?.link.isNullOrEmpty()) {
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    if (newsById?.link.toString().toUri().isAbsolute) {
-                        FilledTonalButton(
-                            onClick = {
-                                navHostController.navigate(
-                                    NewsDestination.NEWS_LINK_SCREEN(
-                                        link = newsById?.link ?: ""
-                                    )
-                                )
-                            },
-                            colors = ButtonColors(
-                                containerColor = Green.copy(0.5f),
-                                contentColor = White
+                    SelectionContainer {
+                        Text(
+                            text = newsById?.description ?: "",
+                            style = TextStyle(
+                                fontSize = FontSize.MEDIUM.sp,
+                                lineBreak = customLineBreak,
+                                hyphens = Hyphens.Auto,
                             ),
                             modifier = Modifier
+                                .fillMaxWidth()
                                 .padding(all = 20.dp)
-                        ) {
-                            Text(text = newsById?.linkTitle ?: "")
+                        )
+                    }
+                    SelectionContainer {
+                        Text(
+                            text = newsById?.description ?: "",
+                            style = TextStyle(
+                                fontSize = FontSize.MEDIUM.sp,
+                                lineBreak = customLineBreak,
+                                hyphens = Hyphens.Auto,
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 20.dp)
+                        )
+                    }
+
+                    if (!newsById?.link.isNullOrEmpty()) {
+                        if (!newsById?.link.isNullOrEmpty()) {
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            if (newsById?.link.toString().toUri().isAbsolute) {
+                                FilledTonalButton(
+                                    onClick = {
+                                        navHostController.navigate(
+                                            NewsDestination.NEWS_LINK_SCREEN(
+                                                link = newsById?.link ?: ""
+                                            )
+                                        )
+                                    },
+                                    colors = ButtonColors(
+                                        containerColor = Green.copy(0.5f),
+                                        contentColor = White
+                                    ),
+                                    modifier = Modifier
+                                        .padding(all = 20.dp)
+                                ) {
+                                    Text(text = newsById?.linkTitle ?: "")
+                                    if (newsById?.link.toString().toUri().isAbsolute) {
+                                        FilledTonalButton(
+                                            onClick = {
+                                                navHostController.navigate(
+                                                    NewsDestination.NEWS_LINK_SCREEN(
+                                                        link = newsById?.link ?: ""
+                                                    )
+                                                )
+                                            },
+                                            colors = ButtonColors(
+                                                containerColor = Green.copy(0.5f),
+                                                contentColor = White
+                                            ),
+                                            modifier = Modifier
+                                                .padding(all = 20.dp)
+                                        ) {
+                                            Text(text = newsById?.linkTitle ?: "")
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
+
             }
+
         }
-
     }
-
 }
 
 fun getUrlOfImageNotVideo(urlList: List<UrlList?>): String {
