@@ -110,17 +110,16 @@ fun SharedTransitionScope.NewsDetailScreen(
     val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
-    val savedNewsById by newsDetailViewModel.savedNewsById.collectAsStateWithLifecycle()
-    val currentUser by newsViewModel.currentUser.collectAsStateWithLifecycle()
+    val newsById = newsDetailViewModel.newsById.collectAsStateWithLifecycle()
+    val savedNewsById = newsDetailViewModel.savedNewsById.collectAsStateWithLifecycle()
 
-    var isSaved by remember(savedNewsById) {
-        mutableStateOf(savedNewsById != null)
+    var isSaved by remember(savedNewsById.value) {
+        mutableStateOf(savedNewsById.value != null)
     }
 
     val pagerState = rememberPagerState(
         pageCount = {
-            newsById?.urlList?.size ?: 1
+            newsById.value?.urlList?.size ?: 1
         }
     )
 
@@ -183,7 +182,7 @@ fun SharedTransitionScope.NewsDetailScreen(
 
                                 isSaved = !isSaved
 
-                                newsById?.let {
+                                newsById.value?.let {
                                     if (isSaved) {
                                         val news = NewsModel(
                                             newsId = it.newsId,
@@ -252,9 +251,9 @@ fun SharedTransitionScope.NewsDetailScreen(
                     ) {
                         IconButton(
                             onClick = {
-                                val title = newsById?.title ?: ""
+                                val title = newsById.value?.title ?: ""
                                 val imageUrl = getUrlOfImageNotVideo(
-                                    newsById?.urlList ?: emptyList()
+                                    newsById.value?.urlList ?: emptyList()
                                 )
 
                                 newsDetailViewModel.onShareNews(
@@ -294,9 +293,9 @@ fun SharedTransitionScope.NewsDetailScreen(
                                 contentDescription = "Icon for unSaved News",
                             )
                         }
-                        AnimatedVisibility((newsById?.shareCount ?: 0) > 0) {
+                        AnimatedVisibility((newsById.value?.shareCount ?: 0) > 0) {
                             Text(
-                                text = "${newsById?.shareCount ?: 0}",
+                                text = "${newsById.value?.shareCount ?: 0}",
                                 style = TextStyle(
                                     fontSize = FontSize.MEDIUM.sp
                                 ),
@@ -332,7 +331,7 @@ fun SharedTransitionScope.NewsDetailScreen(
                         .height(300.dp),
                 ) { page ->
 
-                    val item = newsById?.urlList?.get(page)
+                    val item = newsById.value?.urlList?.get(page)
 
                     Box(
                         modifier = Modifier
@@ -506,7 +505,7 @@ fun SharedTransitionScope.NewsDetailScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = newsById?.category ?: "",
+                        text = newsById.value?.category ?: "",
                         style = TextStyle(
                             fontSize = FontSize.MEDIUM.sp,
                             fontWeight = FontWeight.Bold,
@@ -524,7 +523,7 @@ fun SharedTransitionScope.NewsDetailScreen(
                 )
 
                 Text(
-                    text = newsById?.title ?: "",
+                    text = newsById.value?.title ?: "",
                     style = TextStyle(
                         fontSize = FontSize.LARGE.sp,
                         fontWeight = FontWeight.Bold,
@@ -547,7 +546,7 @@ fun SharedTransitionScope.NewsDetailScreen(
 
                 SelectionContainer {
                     Text(
-                        text = newsById?.description ?: "",
+                        text = newsById.value?.description ?: "",
                         style = TextStyle(
                             fontSize = FontSize.MEDIUM.sp,
                             lineBreak = customLineBreak,
@@ -559,16 +558,16 @@ fun SharedTransitionScope.NewsDetailScreen(
                     )
                 }
 
-                if (!newsById?.link.isNullOrEmpty()) {
+                if (!newsById.value?.link.isNullOrEmpty()) {
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    if (newsById?.link.toString().toUri().isAbsolute) {
+                    if (newsById.value?.link.toString().toUri().isAbsolute) {
                         FilledTonalButton(
                             onClick = {
                                 navHostController.navigate(
                                     NewsDestination.NEWS_LINK_SCREEN(
-                                        link = newsById?.link ?: ""
+                                        link = newsById.value?.link ?: ""
                                     )
                                 )
                             },
@@ -579,7 +578,7 @@ fun SharedTransitionScope.NewsDetailScreen(
                             modifier = Modifier
                                 .padding(all = 20.dp)
                         ) {
-                            Text(text = newsById?.linkTitle ?: "")
+                            Text(text = newsById.value?.linkTitle ?: "")
                         }
                     }
                 }
