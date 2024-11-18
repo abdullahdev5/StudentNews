@@ -5,8 +5,13 @@ package com.android.studentnews.main.news.ui.screens
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.BoundsTransform
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.ArcMode
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -31,6 +36,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkAdd
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
@@ -53,14 +59,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -93,11 +102,18 @@ import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.model.UrlList
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
+import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 
 @UnstableApi
@@ -126,6 +142,7 @@ fun SharedTransitionScope.NewsDetailScreen(
             newsById?.likes?.contains(currentUser?.uid ?: "") ?: false
         )
     }
+    var isShareBtnClicked by remember { mutableStateOf(false) }
 
     val pagerState = rememberPagerState(
         pageCount = {
@@ -138,12 +155,48 @@ fun SharedTransitionScope.NewsDetailScreen(
         newsDetailViewModel.getSavedNewsById(newsId)
     }
 
+    LaunchedEffect(isShareBtnClicked) {
+        if (isShareBtnClicked) {
+            val title = newsById?.title ?: ""
+            val imageUrl = getUrlOfImageNotVideo(
+                newsById?.urlList ?: emptyList()
+            )
+
+            newsDetailViewModel.onShareNews(
+                imageUrl,
+                context,
+                onShare = { fileUri ->
+                    Intent(
+                        Intent.ACTION_SEND,
+                    ).apply {
+                        if (fileUri != null) {
+                            putExtra(Intent.EXTRA_STREAM, fileUri)
+                            type = "image/*"
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        putExtra(Intent.EXTRA_TEXT, title)
+                        type = "text/plain"
+                    }.let { intent ->
+                        val sharedIntent = Intent.createChooser(
+                            intent,
+                            null,
+                        )
+
+                        context.startActivity(sharedIntent)
+                        newsDetailViewModel.storeShareCount(newsId)
+                    }
+                }
+            )
+        }
+    }
+
 
     Scaffold(
         bottomBar = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .height(50.dp)
                     .navigationBarsPadding()
             ) {
                 HorizontalDivider(color = Gray)
@@ -151,43 +204,25 @@ fun SharedTransitionScope.NewsDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            color = Green.copy(0.1f)/*LightGray.copy(0.3f)*/
+                            color = if (isSystemInDarkTheme()) Color.Black else White
                         )
                         .padding(all = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    ExtendedFloatingActionButton(
-                        text = {
-                            Text(text = "Back")
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBackIos,
-                                contentDescription = "Icon for Navigate Back",
-                            )
-                        },
-                        onClick = {
-                            navHostController.navigateUp()
-                        },
-                        expanded = scrollState.value < 20,
-                        elevation = FloatingActionButtonDefaults.elevation(
-                            defaultElevation = 0.dp,
-                            pressedElevation = 0.dp,
-                        ),
-                        containerColor = Green.copy(0.5f),
-                        contentColor = White,
-                        modifier = Modifier
-                            .border(
-                                width = 1.dp,
-                                color = Gray,
-                                shape = FloatingActionButtonDefaults.extendedFabShape
-                            )
-                    )
+                    IconButton(onClick = {
+                        navHostController.navigateUp()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBackIos,
+                            contentDescription = "Icon for Navigate Back"
+                        )
+                    }
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    // Like
-                    AnimatedVisibility(!(scrollState.value < 100)) {
+                    Row() {
+
+                        // Like
                         IconButton(
                             onClick = {
                                 isLiked = !isLiked
@@ -199,12 +234,12 @@ fun SharedTransitionScope.NewsDetailScreen(
                                 }
                             },
                             colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = Green.copy(0.5f),
                                 contentColor = if (isLiked) Red else {
                                     if (isSystemInDarkTheme()) White else Black
                                 }
                             ),
                         ) {
+
                             AnimatedVisibility(isLiked) {
                                 Icon(
                                     imageVector = Icons.Default.Favorite,
@@ -219,134 +254,83 @@ fun SharedTransitionScope.NewsDetailScreen(
                                 )
                             }
                         }
-                    }
 
-                    IconButton(
-                        onClick = {
-                            if (isInternetAvailable(context)) {
-
-                                isSaved = !isSaved
-
-                                newsById?.let {
-                                    if (isSaved) {
-                                        val news = NewsModel(
-                                            newsId = it.newsId,
-                                            title = it.title,
-                                            description = it.description,
-                                            category = it.category,
-                                            timestamp = Timestamp.now(),
-                                            link = it.link,
-                                            linkTitle = it.linkTitle,
-                                            urlList = it.urlList,
-                                            shareCount = it.shareCount ?: 0
-                                        )
-
-                                        newsViewModel.viewModelScope.launch {
-                                            newsViewModel
-                                                .onNewsSave(news)
-                                                .collect { result ->
-                                                    when (result) {
-                                                        else -> {}
-                                                    }
-                                                }
-                                        }
-                                    } else {
-                                        newsViewModel.onNewsRemoveFromSave(
-                                            it.newsId ?: "",
-                                            wantToShowSnackBar = false
-                                        )
-                                    }
-                                }
-
-                            } else {
-                                scope.launch {
-                                    SnackBarController
-                                        .sendEvent(
-                                            SnackBarEvents(
-                                                message = "No Internet Connection!",
-                                                duration = SnackbarDuration.Long
-                                            )
-                                        )
-                                }
-                            }
-                        },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Green.copy(0.5f),
-                            contentColor = White
-                        ),
-                    ) {
-                        AnimatedVisibility(isSaved) {
-                            Icon(
-                                imageVector = Icons.Filled.Bookmark,
-                                contentDescription = "Icon for Saved News",
-                            )
-                        }
-
-                        AnimatedVisibility(!isSaved) {
-                            Icon(
-                                imageVector = Icons.Outlined.BookmarkAdd,
-                                contentDescription = "Icon for unSaved News",
-                            )
-                        }
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
                         IconButton(
                             onClick = {
-                                val title = newsById?.title ?: ""
-                                val imageUrl = getUrlOfImageNotVideo(
-                                    newsById?.urlList ?: emptyList()
-                                )
+                                if (isInternetAvailable(context)) {
 
-                                newsDetailViewModel.onShareNews(
-                                    imageUrl,
-                                    context,
-                                    onShare = { fileUri ->
-                                        Intent(
-                                            Intent.ACTION_SEND,
-                                        ).apply {
-                                            if (fileUri != null) {
-                                                putExtra(Intent.EXTRA_STREAM, fileUri)
-                                                type = "image/*"
-                                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                            }
-                                            putExtra(Intent.EXTRA_TEXT, title)
-                                            type = "text/plain"
-                                        }.let { intent ->
-                                            val sharedIntent = Intent.createChooser(
-                                                intent,
-                                                null,
+                                    isSaved = !isSaved
+
+                                    newsById?.let {
+                                        if (isSaved) {
+                                            val news = NewsModel(
+                                                newsId = it.newsId,
+                                                title = it.title,
+                                                description = it.description,
+                                                category = it.category,
+                                                timestamp = Timestamp.now(),
+                                                link = it.link,
+                                                linkTitle = it.linkTitle,
+                                                urlList = it.urlList,
+                                                shareCount = it.shareCount ?: 0
                                             )
 
-                                            context.startActivity(sharedIntent)
-                                            newsDetailViewModel.storeShareCount(newsId)
+                                            newsViewModel.viewModelScope.launch {
+                                                newsViewModel
+                                                    .onNewsSave(news)
+                                                    .collect { result ->
+                                                        when (result) {
+                                                            else -> {}
+                                                        }
+                                                    }
+                                            }
+                                        } else {
+                                            newsViewModel.onNewsRemoveFromSave(
+                                                it.newsId ?: "",
+                                                wantToShowSnackBar = false
+                                            )
                                         }
                                     }
-                                )
 
+                                } else {
+                                    scope.launch {
+                                        SnackBarController
+                                            .sendEvent(
+                                                SnackBarEvents(
+                                                    message = "No Internet Connection!",
+                                                    duration = SnackbarDuration.Long
+                                                )
+                                            )
+                                    }
+                                }
                             },
-                            colors = IconButtonDefaults.iconButtonColors(
-                                containerColor = Green.copy(0.5f),
-                                contentColor = White
-                            ),
+                        ) {
+                            AnimatedVisibility(isSaved) {
+                                Icon(
+                                    imageVector = Icons.Filled.Bookmark,
+                                    contentDescription = "Icon for Saved News",
+                                )
+                            }
+
+                            AnimatedVisibility(!isSaved) {
+                                Icon(
+                                    imageVector = Icons.Outlined.BookmarkAdd,
+                                    contentDescription = "Icon for unSaved News",
+                                )
+                            }
+                        }
+
+                        IconButton(
+                            onClick = {
+                                isShareBtnClicked = true
+                            },
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Share,
                                 contentDescription = "Icon for unSaved News",
                             )
                         }
-                        AnimatedVisibility((newsById?.shareCount ?: 0) > 0) {
-                            Text(
-                                text = "${newsById?.shareCount ?: 0}",
-                                style = TextStyle(
-                                    fontSize = FontSize.MEDIUM.sp
-                                ),
-                            )
-                        }
                     }
-
                 }
             }
         }
@@ -523,43 +507,123 @@ fun SharedTransitionScope.NewsDetailScreen(
                 Row(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(bottom = 20.dp, end = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
+                        .padding(bottom = 20.dp, end = 10.dp)
                 ) {
-                    // Like Icon
+
+                    // Share
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Share Icon
+                        IconButton(
+                            onClick = {
+                                isShareBtnClicked = true
+                            },
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Icon of unliked News",
+                            )
+                        }
+                        // Share Count
+                        if ((newsById?.shareCount ?: 0) > 0) {
+                            Text(text = (newsById?.shareCount ?: 0).toString())
+                        }
+                    }
+
+                    // Save
                     IconButton(
                         onClick = {
-                            isLiked = !isLiked
+                            isSaved = !isSaved
 
-                            if (isLiked) {
-                                newsDetailViewModel.onNewsLike(newsId)
+                            if (isSaved) {
+                                val news = NewsModel(
+                                    newsId = newsById?.newsId ?: "",
+                                    title = newsById?.title ?: "",
+                                    description = newsById?.description ?: "",
+                                    category = newsById?.category ?: "",
+                                    timestamp = Timestamp.now(),
+                                    link = newsById?.link ?: "",
+                                    linkTitle = newsById?.linkTitle ?: "",
+                                    urlList = newsById?.urlList ?: emptyList(),
+                                    shareCount = newsById?.shareCount ?: 0,
+                                    likes = newsById?.likes ?: emptyList()
+                                )
+
+                                scope.launch {
+                                    newsViewModel.onNewsSave(news).collect { result ->
+                                        when (result) {
+                                            else -> {}
+                                        }
+                                    }
+                                }
                             } else {
-                                newsDetailViewModel.onNewsUnLike(newsId)
+                                newsViewModel.onNewsRemoveFromSave(newsId, false)
                             }
                         },
-                        colors = IconButtonDefaults.iconButtonColors(
-                            contentColor = if (isLiked) Red else {
-                                if (isSystemInDarkTheme()) White else Black
-                            }
-                        ),
                     ) {
-                        this@Column.AnimatedVisibility(isLiked) {
+                        this@Column.AnimatedVisibility(isSaved) {
                             Icon(
-                                imageVector = Icons.Default.Favorite,
+                                imageVector = Icons.Default.Bookmark,
                                 contentDescription = "Icon of Liked News",
                             )
                         }
 
-                        this@Column.AnimatedVisibility(!isLiked) {
+                        this@Column.AnimatedVisibility(!isSaved) {
                             Icon(
-                                imageVector = Icons.Default.FavoriteBorder,
+                                imageVector = Icons.Default.BookmarkAdd,
                                 contentDescription = "Icon of unliked News",
                             )
                         }
                     }
-                    // Like Size
-                    AnimatedVisibility(isLiked && (newsById?.likes?.size ?: 0) > 0) {
-                        Text(text = (newsById?.likes?.size ?: 0).toString())
+
+                    // Like
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .sharedElement(
+                                state = rememberSharedContentState(key = "like/$newsId"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                renderInOverlayDuringTransition = true
+                            ),
+                    ) {
+                        // Like Icon
+                        IconButton(
+                            onClick = {
+                                isLiked = !isLiked
+
+                                if (isLiked) {
+                                    newsDetailViewModel.onNewsLike(newsId)
+                                } else {
+                                    newsDetailViewModel.onNewsUnLike(newsId)
+                                }
+                            },
+                            colors = IconButtonDefaults.iconButtonColors(
+                                contentColor = if (isLiked) Red else {
+                                    if (isSystemInDarkTheme()) White else Black
+                                }
+                            ),
+                        ) {
+                            this@Column.AnimatedVisibility(isLiked) {
+                                Icon(
+                                    imageVector = Icons.Default.Favorite,
+                                    contentDescription = "Icon of Liked News",
+                                )
+                            }
+
+                            this@Column.AnimatedVisibility(!isLiked) {
+                                Icon(
+                                    imageVector = Icons.Default.FavoriteBorder,
+                                    contentDescription = "Icon of unliked News",
+                                )
+                            }
+                        }
+                        // Like Count
+                        this@Column.AnimatedVisibility(
+                            isLiked && (newsById?.likes?.size ?: 0) > 0
+                        ) {
+                            Text(text = (newsById?.likes?.size ?: 0).toString())
+                        }
                     }
                 }
 

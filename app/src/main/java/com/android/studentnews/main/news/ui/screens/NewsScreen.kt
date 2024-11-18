@@ -583,7 +583,8 @@ fun SharedTransitionScope.NewsItem(
                                         link = it.link,
                                         linkTitle = it.linkTitle,
                                         urlList = it.urlList,
-                                        shareCount = it.shareCount ?: 0
+                                        shareCount = it.shareCount ?: 0,
+                                        likes = it.likes
                                     )
 
                                     newsViewModel.viewModelScope.launch {
