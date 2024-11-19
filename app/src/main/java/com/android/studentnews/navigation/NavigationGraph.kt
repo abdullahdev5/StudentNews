@@ -57,12 +57,6 @@ fun NavigationGraph(
             navController = navHostController,
             startDestination = if (authViewModel.currentUser != null)
                 SubGraph.Main else SubGraph.AUTH,
-//            enterTransition = {
-//                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-//            },
-//            exitTransition = {
-//                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-//            },
         ) {
 
             // Auth Graph
@@ -79,6 +73,18 @@ fun NavigationGraph(
                     typeMap = mapOf(
                         typeOf<RegistrationData>() to RegistrationDataNavType.registrationDataType
                     ),
+                    enterTransition = {
+                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                    },
+                    exitTransition = {
+                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                    },
+                    popEnterTransition = {
+                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                    },
+                    popExitTransition = {
+                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                    }
                 ) {
                     val arguments = it.toRoute<AuthDestination.AUTHENTICATION_SCREEN>()
                     AuthenticationScreen(
@@ -127,15 +133,42 @@ fun NavigationGraph(
                     }
 
 
-                    composable<NewsDestination.NEWS_LINK_SCREEN>() {
+                    composable<NewsDestination.NEWS_LINK_SCREEN>(
+                        enterTransition = {
+                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        },
+                        exitTransition = {
+                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        },
+                        popEnterTransition = {
+                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        },
+                        popExitTransition = {
+                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        }
+                    ) {
                         val arguments = it.toRoute<NewsDestination.NEWS_LINK_SCREEN>()
 
                         NewsLinkScreen(
-                            link = arguments.link
+                            link = arguments.link,
+                            navHostController = navHostController
                         )
                     }
 
-                    composable<NewsDestination.SAVED_NEWS_SCREEN>() {
+                    composable<NewsDestination.SAVED_NEWS_SCREEN>(
+                        enterTransition = {
+                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        },
+                        exitTransition = {
+                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        },
+                        popEnterTransition = {
+                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        },
+                        popExitTransition = {
+                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        }
+                    ) {
                         val savedNewsViewModel = koinViewModel<SavedNewsViewModel>()
                         val newsViewModel = koinViewModel<NewsViewModel>()
 
@@ -157,7 +190,20 @@ fun NavigationGraph(
                     )
                 }
 
-                composable<MainDestination.SEARCH_SCREEN>() {
+                composable<MainDestination.SEARCH_SCREEN>(
+                    enterTransition = {
+                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                    },
+                    exitTransition = {
+                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                    },
+                    popEnterTransition = {
+                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                    },
+                    popExitTransition = {
+                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                    }
+                ) {
                     val searchViewModel = koinViewModel<SearchViewModel>()
                     val newsViewModel = koinViewModel<NewsViewModel>()
 

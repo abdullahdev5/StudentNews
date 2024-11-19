@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -56,6 +57,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -196,7 +198,7 @@ fun SharedTransitionScope.NewsDetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(60.dp)
                     .navigationBarsPadding()
             ) {
                 HorizontalDivider(color = Gray)
@@ -204,18 +206,20 @@ fun SharedTransitionScope.NewsDetailScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            color = if (isSystemInDarkTheme()) Color.Black else White
+                            color = if (isSystemInDarkTheme()) DarkGray else White
                         )
                         .padding(all = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    IconButton(onClick = {
+                    TextButton(
+                        onClick = {
                         navHostController.navigateUp()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBackIos,
-                            contentDescription = "Icon for Navigate Back"
+                    },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = if (isSystemInDarkTheme()) White else Black
                         )
+                    ) {
+                        Text(text = "Back")
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
