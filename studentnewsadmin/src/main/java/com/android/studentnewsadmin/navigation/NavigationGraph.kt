@@ -7,6 +7,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.android.studentnewsadmin.main.events.ui.screens.UploadEVentsScreen
 import com.android.studentnewsadmin.main.news.ui.screens.UploadCategoryScreen
 import com.android.studentnewsadmin.main.news.ui.screens.UploadNewsScreen
 import com.android.studentnewsadmin.main.news.ui.screens.NewsScreen
@@ -46,6 +47,12 @@ fun NavigationGraph(
             UploadCategoryScreen(
                 navHostController = navHostController,
                 newsViewModel = newsViewModel
+            )
+        }
+
+        composable<Destination.UPLOAD_EVENTS_SCREEN>() {
+            UploadEVentsScreen(
+                navHostController = navHostController,
             )
         }
 
