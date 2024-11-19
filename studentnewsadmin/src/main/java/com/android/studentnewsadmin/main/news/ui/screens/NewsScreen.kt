@@ -40,6 +40,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PostAdd
 import androidx.compose.material3.Card
@@ -132,7 +133,7 @@ fun NewsScreen(
 
     LaunchedEffect(isActionButtonClick) {
         if (isActionButtonClick) {
-            animatedHeight.animateTo(100f)
+            animatedHeight.animateTo(150f)
         }
     }
 
@@ -250,6 +251,21 @@ fun NewsScreen(
                                         contentDescription = "Icon for Category"
                                     )
                                 }
+
+                                SmallFloatingActionButton(
+                                    onClick = {
+                                        isActionButtonClick = false
+                                        navHostController.navigate(Destination.UPLOAD_EVENTS_SCREEN)
+                                    },
+                                    containerColor = if (isSystemInDarkTheme()) Color.DarkGray else Color.LightGray
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Event,
+                                        contentDescription = "Icon for Events"
+                                    )
+                                }
+
+
                             }
 
                         }
@@ -315,7 +331,7 @@ fun NewsScreen(
                                                     newsDeletedStatus = Status.Loading
                                                 }
 
-                                                is NewsState.Progress -> TODO()
+                                                is NewsState.Progress -> {}
                                                 is NewsState.Success -> {
                                                     newsDeletedStatus = Status.Success
                                                     Toast.makeText(
@@ -325,6 +341,7 @@ fun NewsScreen(
                                                     )
                                                         .show()
                                                 }
+
                                             }
                                         }
                                 }

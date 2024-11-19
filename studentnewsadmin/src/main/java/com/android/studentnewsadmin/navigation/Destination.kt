@@ -13,4 +13,7 @@ sealed class Destination {
     @Serializable
     object UPLOAD_CATEGORY_SCREEN
 
+    @Serializable
+    object UPLOAD_EVENTS_SCREEN
+
 }
