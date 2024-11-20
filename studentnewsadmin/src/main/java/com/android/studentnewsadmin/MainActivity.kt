@@ -34,11 +34,9 @@ class MainActivity : ComponentActivity() {
                 Scaffold(modifier = Modifier.fillMaxSize()) {
 
                     val navHostController = rememberNavController()
-                    val newsViewModel = getViewModel<NewsViewModel>()
 
                     NavigationGraph(
                         navHostController = navHostController,
-                        newsViewModel = newsViewModel
                     )
                 }
             }

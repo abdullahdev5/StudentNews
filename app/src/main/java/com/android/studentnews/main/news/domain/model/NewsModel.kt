@@ -22,7 +22,8 @@ data class NewsModel(
 data class UrlList(
     val url: String,
     val contentType: String,
-    val sizeBytes: Long
+    val sizeBytes: Long,
+    val lastPathSegment: String? = ""
 ) {
-    constructor() : this("", "", 0L)
+    constructor() : this("", "", 0L, "")
 }

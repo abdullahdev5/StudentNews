@@ -84,7 +84,7 @@ class NewsWorker(
             }
 
         val serializedUrlList = news?.urlList?.fastJoinToString(",") {
-            "${it.url};${it.contentType};${it.sizeBytes}"
+            "${it.url};${it.contentType};${it.sizeBytes};${it.lastPathSegment}"
         }
         val title = news?.title ?: "empty"
         val description = news?.description

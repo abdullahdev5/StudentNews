@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 sealed class Destination {
 
     @Serializable
-    object NEWS_SCREEN
+    object MAIN_SCREEN
 
     @Serializable
     object UPLOAD_NEWS_SCREEN

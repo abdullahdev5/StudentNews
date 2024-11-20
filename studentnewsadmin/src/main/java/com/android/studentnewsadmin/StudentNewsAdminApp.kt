@@ -4,8 +4,15 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import androidx.core.app.NotificationManagerCompat
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.disk.DiskCache
+import coil.memory.MemoryCache
+import coil.request.CachePolicy
+import coil.util.DebugLogger
 import com.android.studentnewsadmin.core.data.module.firebaseModule
 import com.android.studentnewsadmin.core.data.module.workManagerModule
+import com.android.studentnewsadmin.main.events.data.module.eventsModule
 import com.android.studentnewsadmin.main.news.data.module.newsModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -14,7 +21,7 @@ import org.koin.core.component.KoinComponent
 import org.koin.core.context.startKoin
 
 
-class StudentNewsAdminApp : Application(), KoinComponent {
+class StudentNewsAdminApp : Application(), KoinComponent, ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
@@ -27,6 +34,7 @@ class StudentNewsAdminApp : Application(), KoinComponent {
                     firebaseModule,
                     workManagerModule,
                     newsModule,
+                    eventsModule,
                 )
             )
         }
@@ -55,6 +63,26 @@ class StudentNewsAdminApp : Application(), KoinComponent {
         notificationManager.createNotificationChannel(successNotificationChannel)
         notificationManager.createNotificationChannel(failureNotificationChannel)
 
+    }
+
+    override fun newImageLoader(): ImageLoader {
+        return ImageLoader.Builder(this)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .memoryCache {
+                MemoryCache.Builder(this)
+                    .maxSizePercent(0.1)
+                    .strongReferencesEnabled(true)
+                    .build()
+            }
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .diskCache {
+                DiskCache.Builder()
+                    .maxSizePercent(0.03)
+                    .directory(cacheDir)
+                    .build()
+            }
+            .logger(DebugLogger())
+            .build()
     }
 
 }

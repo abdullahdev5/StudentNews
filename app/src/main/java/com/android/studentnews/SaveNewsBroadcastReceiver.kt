@@ -42,7 +42,7 @@ class SaveNewsBroadcastReceiver : BroadcastReceiver(), KoinComponent {
                 ?.split(",")
                 ?.map {
                     val parts = it.split(";")
-                    UrlList(parts[0], parts[1], parts[2].toLong())
+                    UrlList(parts[0], parts[1], parts[2].toLong(), parts[3])
                 } ?: emptyList()
 
             try {

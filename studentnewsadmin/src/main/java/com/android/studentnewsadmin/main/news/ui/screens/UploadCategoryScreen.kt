@@ -189,7 +189,7 @@ fun UploadCategoryScreen(
                                         galleryImageBitmap = null
                                         cameraImageBitmap = null
                                         category = ""
-                                        navHostController.navigate(Destination.NEWS_SCREEN) {
+                                        navHostController.navigate(Destination.MAIN_SCREEN) {
                                             popUpTo(Destination.UPLOAD_CATEGORY_SCREEN) {
                                                 inclusive = true
                                             }

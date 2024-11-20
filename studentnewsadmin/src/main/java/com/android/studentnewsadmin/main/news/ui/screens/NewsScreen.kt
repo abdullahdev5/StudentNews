@@ -3,6 +3,7 @@
 package com.android.studentnewsadmin.main.news.ui.screens
 
 
+import android.annotation.SuppressLint
 import com.android.studentnewsadmin.main.news.domain.model.NewsModel
 import android.content.Context
 import android.widget.Toast
@@ -110,6 +111,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun NewsScreen(
     navHostController: NavHostController,
@@ -118,267 +120,84 @@ fun NewsScreen(
 
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    val scrollBehaviour = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
     var newsDeletedStatus by remember { mutableStateOf("") }
-    var isActionButtonClick by remember { mutableStateOf(false) }
-
-    val animatedHeight = remember { Animatable(0f) }
 
 
     val newsList = newsViewModel.newsList.collectAsStateWithLifecycle()
 
 
-    LaunchedEffect(isActionButtonClick) {
-        if (isActionButtonClick) {
-            animatedHeight.animateTo(150f)
-        }
-    }
+    Surface {
 
-
-    BackHandler(isActionButtonClick || drawerState.isOpen) {
-        if (isActionButtonClick) {
-            scope.launch {
-                animatedHeight.animateTo(0f)
-            }.invokeOnCompletion {
-                isActionButtonClick = false
-            }
-        }
-        if (drawerState.isOpen) {
-            scope.launch {
-                drawerState.close()
-            }
-        }
-    }
-
-
-    Surface(
-        modifier = Modifier
-            .fillMaxSize()
-    ) {
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            drawerContent = {
-                ModalDrawerSheet(
-                    drawerContainerColor = if (isSystemInDarkTheme()) Color.DarkGray else Color.White,
-                    modifier = Modifier
-                        .widthIn(max = configuration.screenWidthDp.dp / 1.3f)
-                ) {
-                    DrawerContent(
-                        onUploadNewsClick = {
-                            scope.launch {
-                                drawerState.close()
-                            }.invokeOnCompletion {
-                                navHostController.navigate(Destination.UPLOAD_NEWS_SCREEN)
-                            }
-                        },
-                        onUploadCategoryClick = {
-                            scope.launch {
-                                drawerState.close()
-                            }.invokeOnCompletion {
-                                navHostController.navigate(Destination.UPLOAD_CATEGORY_SCREEN)
-                            }
-                        },
-                        onUploadEvents = {
-                            scope.launch {
-                                drawerState.close()
-                            }.invokeOnCompletion {
-                                navHostController.navigate(Destination.UPLOAD_EVENTS_SCREEN)
-                            }
-                        },
-                    )
-                }
-            }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
         ) {
 
-            Scaffold(
-                topBar = {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Text(text = "News")
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = {
-                                scope.launch {
-                                    drawerState.open()
-                                }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Menu,
-                                    contentDescription = "Icon for Drawer"
-                                )
-                            }
-                        },
-                        scrollBehavior = scrollBehaviour,
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            scrolledContainerColor = Color.Transparent
-                        )
-                    )
-                },
-                floatingActionButton = {
+            items(newsList.value.size) { index ->
+                val item = newsList.value[index]
 
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(5.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-
-                        if (isActionButtonClick) {
-
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(5.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier
-                                    .height(animatedHeight.value.dp)
-                            ) {
-
-                                SmallFloatingActionButton(
-                                    onClick = {
-                                        isActionButtonClick = false
-                                        navHostController.navigate(Destination.UPLOAD_NEWS_SCREEN)
-                                    },
-                                    containerColor = if (isSystemInDarkTheme()) Color.DarkGray else Color.LightGray
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.PostAdd,
-                                        contentDescription = "Icon for News"
-                                    )
-                                }
-
-                                SmallFloatingActionButton(
-                                    onClick = {
-                                        isActionButtonClick = false
-                                        navHostController.navigate(Destination.UPLOAD_CATEGORY_SCREEN)
-                                    },
-                                    containerColor = if (isSystemInDarkTheme()) Color.DarkGray else Color.LightGray
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Category,
-                                        contentDescription = "Icon for Category"
-                                    )
-                                }
-
-                                SmallFloatingActionButton(
-                                    onClick = {
-                                        isActionButtonClick = false
-                                        navHostController.navigate(Destination.UPLOAD_EVENTS_SCREEN)
-                                    },
-                                    containerColor = if (isSystemInDarkTheme()) Color.DarkGray else Color.LightGray
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Event,
-                                        contentDescription = "Icon for Events"
-                                    )
-                                }
-
-
-                            }
-
-                        }
-
-                        FloatingActionButton(
-                            onClick = {
-                                scope.launch {
-                                    delay(500L)
-                                }.invokeOnCompletion {
-                                    if (!isActionButtonClick) {
-                                        isActionButtonClick = true
-                                    } else {
-                                        scope.launch {
-                                            animatedHeight.animateTo(0f)
-                                        }.invokeOnCompletion {
-                                            isActionButtonClick = false
+                NewsItem(
+                    item = item,
+                    context = context,
+                    onNewsDelete = { newsId ->
+                        scope.launch(Dispatchers.Main) {
+                            newsViewModel
+                                .onNewsDelete(newsId)
+                                .collect { result ->
+                                    when (result) {
+                                        is NewsState.Failed -> {
+                                            newsDeletedStatus = Status.Failed
+                                            Toast.makeText(
+                                                context,
+                                                result.message.toString(),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         }
+
+                                        NewsState.Loading -> {
+                                            newsDeletedStatus = Status.Loading
+                                        }
+
+                                        is NewsState.Progress -> {}
+                                        is NewsState.Success -> {
+                                            newsDeletedStatus = Status.Success
+                                            Toast.makeText(
+                                                context,
+                                                result.data,
+                                                Toast.LENGTH_SHORT
+                                            )
+                                                .show()
+                                        }
+
                                     }
                                 }
-                            },
-                            containerColor = Green,
-                            contentColor = Color.White
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "Icon for Add News"
-                            )
                         }
                     }
-                },
+                )
+            }
+
+        }
+
+        if (newsViewModel.newsListStatus.value == Status.Loading) {
+            LoadingDialog()
+        }
+
+        if (newsDeletedStatus == Status.Loading) {
+            LoadingDialog()
+        }
+
+        if (newsViewModel.newsListStatus.value == Status.Failed) {
+            Column(
                 modifier = Modifier
-                    .nestedScroll(scrollBehaviour.nestedScrollConnection)
-            ) { innerPadding ->
-
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues = innerPadding)
-                ) {
-
-                    items(newsList.value.size) { index ->
-                        val item = newsList.value[index]
-
-                        NewsItem(
-                            item = item,
-                            context = context,
-                            onNewsDelete = { newsId ->
-                                scope.launch(Dispatchers.Main) {
-                                    newsViewModel
-                                        .onNewsDelete(newsId)
-                                        .collect { result ->
-                                            when (result) {
-                                                is NewsState.Failed -> {
-                                                    newsDeletedStatus = Status.Failed
-                                                    Toast.makeText(
-                                                        context,
-                                                        result.message.toString(),
-                                                        Toast.LENGTH_SHORT
-                                                    ).show()
-                                                }
-
-                                                NewsState.Loading -> {
-                                                    newsDeletedStatus = Status.Loading
-                                                }
-
-                                                is NewsState.Progress -> {}
-                                                is NewsState.Success -> {
-                                                    newsDeletedStatus = Status.Success
-                                                    Toast.makeText(
-                                                        context,
-                                                        result.data,
-                                                        Toast.LENGTH_SHORT
-                                                    )
-                                                        .show()
-                                                }
-
-                                            }
-                                        }
-                                }
-                            }
-                        )
-                    }
-
-                }
-
-                if (newsViewModel.newsListStatus.value == Status.Loading) {
-                    LoadingDialog()
-                }
-
-                if (newsDeletedStatus == Status.Loading) {
-                    LoadingDialog()
-                }
-
-                if (newsViewModel.newsListStatus.value == Status.Failed) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = newsViewModel.errorMsg.value)
-                    }
-                }
-
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(text = newsViewModel.errorMsg.value)
             }
         }
+
     }
 
 }

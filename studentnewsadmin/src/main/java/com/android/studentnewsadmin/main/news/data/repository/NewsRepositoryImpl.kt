@@ -65,8 +65,6 @@ class NewsRepositoryImpl(
 
         val urlsList = mutableStateListOf<UrlList>()
 
-        var int = mutableStateOf(0)
-
         val fileRef = storageRef
             ?.child("news")?.child(newsId.toString())?.child("files")
 
@@ -81,7 +79,7 @@ class NewsRepositoryImpl(
 
             var uploadTask = inputBytes?.let {
                 fileRef
-                    ?.child("${int.value++}")?.putBytes(it)
+                    ?.child("${file.lastPathSegment}")?.putBytes(it)
             }
 
             uploadTask
@@ -97,7 +95,8 @@ class NewsRepositoryImpl(
                                         url = imageUri.toString(),
                                         contentType = task.result.metadata?.contentType
                                             ?: "",
-                                        sizeBytes = task.result.metadata?.sizeBytes ?: 0L
+                                        sizeBytes = task.result.metadata?.sizeBytes ?: 0L,
+                                        lastPathSegment = file.lastPathSegment ?: ""
                                     )
                                 )
 

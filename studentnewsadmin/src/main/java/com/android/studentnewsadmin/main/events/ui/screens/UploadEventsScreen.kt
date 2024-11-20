@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
@@ -39,6 +40,7 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
@@ -50,12 +52,10 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TimePickerLayoutType
 import androidx.compose.material3.TimePickerState
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
@@ -84,7 +84,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
@@ -96,8 +95,13 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.android.studentnewsadmin.core.domain.common.formatDateToString
 import com.android.studentnewsadmin.core.domain.common.formatTimeToString
+import com.android.studentnewsadmin.core.ui.common.LoadingDialog
 import com.android.studentnewsadmin.core.ui.common.OutlinedTextFieldColors
+import com.android.studentnewsadmin.main.events.ui.viewModels.EventsViewModel
+import com.android.studentnewsadmin.main.navigation.Destination
 import com.android.studentnewsadmin.main.news.ui.screens.ImageOrVideoPickDialog
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 const val START = "start"
 const val END = "end"
@@ -106,6 +110,7 @@ const val END = "end"
 @Composable
 fun UploadEVentsScreen(
     navHostController: NavHostController,
+    eventsViewModel: EventsViewModel
 ) {
 
     val context = LocalContext.current
@@ -119,12 +124,13 @@ fun UploadEVentsScreen(
     // Date Picker State
     val datePickerState = rememberDatePickerState()
     // Time Picker State
-    val startingTimePickerState = rememberTimePickerState(
+    val timePickerState = rememberTimePickerState(
         initialHour = calendar.get(Calendar.HOUR_OF_DAY),
         initialMinute = calendar.get(Calendar.MINUTE)
     )
 
     var isImageOrVideoPickDialogOpen by rememberSaveable { mutableStateOf(false) }
+    var eventWorkStarts by rememberSaveable { mutableStateOf(false) }
 
     //  Starting Date and Time Dialog
     var isDatePickerDialogOpen by rememberSaveable { mutableStateOf(false) }
@@ -134,18 +140,18 @@ fun UploadEVentsScreen(
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
-    val uriList = remember { mutableStateListOf<Uri>() }
+    val uriList = remember { mutableStateListOf<Uri?>() }
 
     // Starting Date and Time
     var startingDate by rememberSaveable { mutableLongStateOf(0L) }
     var startingTimeHour by rememberSaveable { mutableIntStateOf(0) }
-    var startingTimeMinute by rememberSaveable { mutableIntStateOf(0) }
+    var startingTimeMinutes by rememberSaveable { mutableIntStateOf(0) }
     var startingTimeStatus by rememberSaveable { mutableStateOf("") }
 
     // Ending Date and Time
     var endingDate by remember { mutableLongStateOf(0L) }
     var endingTimeHour by remember { mutableIntStateOf(0) }
-    var endingTimeMinute by remember { mutableIntStateOf(0) }
+    var endingTimeMinutes by remember { mutableIntStateOf(0) }
     var endingTimeStatus by remember { mutableStateOf("") }
 
 
@@ -187,6 +193,48 @@ fun UploadEVentsScreen(
                 }
             )
         },
+        bottomBar = {
+            Button(
+                onClick = {
+                    scope.launch {
+                        val stringArray = uriList.map { it.toString() }.toTypedArray()
+                        eventWorkStarts = true
+                        eventsViewModel
+                            .onUploadEventWorkerStart(
+                                title = title,
+                                description = description,
+                                startingDate = startingDate,
+                                startingTimeHour = startingTimeHour,
+                                startingTimeMinutes = startingTimeMinutes,
+                                startingTimeStatus = startingTimeStatus,
+                                endingDate = endingDate,
+                                endingTimeHour = endingTimeHour,
+                                endingTimeMinutes = endingTimeMinutes,
+                                endingTimeStatus = endingTimeStatus,
+                                stringArray = stringArray
+                            )
+                        delay(2000)
+                        eventWorkStarts = false
+                        navHostController.navigate(Destination.MAIN_SCREEN) {
+                            popUpTo(Destination.UPLOAD_EVENTS_SCREEN) {
+                                inclusive = true
+                            }
+                        }
+                    }
+
+                },
+                enabled = title.isNotEmpty() && description.isNotEmpty() && startingDate != 0L
+                        && startingTimeHour != 0 && startingTimeStatus.isNotEmpty() && endingDate != 0L
+                        && endingTimeHour != 0 && endingTimeStatus.isNotEmpty() && uriList.isNotEmpty(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp)
+                    .navigationBarsPadding()
+                    .background(color = Color.Transparent),
+            ) {
+                Text(text = "Upload")
+            }
+        }
     ) { innerPadding ->
 
         Column(
@@ -474,7 +522,7 @@ fun UploadEVentsScreen(
 
                     AnimatedVisibility(startingTimeHour != 0) {
                         val time =
-                            formatTimeToString(startingTimeHour, startingTimeMinute)
+                            formatTimeToString(startingTimeHour, startingTimeMinutes)
                         startingTimeStatus = getAmPmFromTimeString(time)
 
                         Text(
@@ -548,7 +596,7 @@ fun UploadEVentsScreen(
                     Text(text = "Ending Time")
 
                     AnimatedVisibility(endingTimeHour != 0) {
-                        val time = formatTimeToString(endingTimeHour, endingTimeMinute)
+                        val time = formatTimeToString(endingTimeHour, endingTimeMinutes)
                         endingTimeStatus = getAmPmFromTimeString(time)
 
                         Text(
@@ -595,15 +643,15 @@ fun UploadEVentsScreen(
         // Time Picker
         if (isTimePickerDialogOpen) {
             ModalTimePickerDialog(
-                state = startingTimePickerState,
+                state = timePickerState,
                 onTimeSelected = { hour, minute ->
                     if (hour != 0) {
                         if (comeFor == START) {
                             startingTimeHour = hour
-                            startingTimeMinute = minute
+                            startingTimeMinutes = minute
                         } else if (comeFor == END) {
                             endingTimeHour = hour
-                            endingTimeMinute = minute
+                            endingTimeMinutes = minute
                         }
                     }
                 },
@@ -628,6 +676,10 @@ fun UploadEVentsScreen(
                     isImageOrVideoPickDialogOpen = false
                 }
             )
+        }
+
+        if (eventWorkStarts) {
+            LoadingDialog()
         }
 
     }
