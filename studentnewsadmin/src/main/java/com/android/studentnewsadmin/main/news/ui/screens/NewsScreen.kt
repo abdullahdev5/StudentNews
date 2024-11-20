@@ -180,7 +180,14 @@ fun NewsScreen(
                             }.invokeOnCompletion {
                                 navHostController.navigate(Destination.UPLOAD_CATEGORY_SCREEN)
                             }
-                        }
+                        },
+                        onUploadEvents = {
+                            scope.launch {
+                                drawerState.close()
+                            }.invokeOnCompletion {
+                                navHostController.navigate(Destination.UPLOAD_EVENTS_SCREEN)
+                            }
+                        },
                     )
                 }
             }
@@ -536,6 +543,7 @@ fun NewsItem(
 fun DrawerContent(
     onUploadNewsClick: () -> Unit,
     onUploadCategoryClick: () -> Unit,
+    onUploadEvents: () -> Unit,
 ) {
     // Add News
     NavigationDrawerItem(
@@ -570,6 +578,27 @@ fun DrawerContent(
             Icon(
                 imageVector = Icons.Default.Category,
                 contentDescription = "Icon for Category"
+            )
+        },
+        selected = false,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+        ),
+        shape = RectangleShape,
+    )
+
+    // Add Events
+    NavigationDrawerItem(
+        label = {
+            Text(text = "Upload Events")
+        },
+        onClick = {
+            onUploadEvents.invoke()
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Event,
+                contentDescription = "Icon for Events"
             )
         },
         selected = false,

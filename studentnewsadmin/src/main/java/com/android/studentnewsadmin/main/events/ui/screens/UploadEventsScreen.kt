@@ -7,6 +7,7 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,10 +50,12 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerLayoutType
 import androidx.compose.material3.TimePickerState
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
@@ -78,8 +81,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
@@ -93,6 +98,9 @@ import com.android.studentnewsadmin.core.domain.common.formatDateToString
 import com.android.studentnewsadmin.core.domain.common.formatTimeToString
 import com.android.studentnewsadmin.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnewsadmin.main.news.ui.screens.ImageOrVideoPickDialog
+
+const val START = "start"
+const val END = "end"
 
 @UnstableApi
 @Composable
@@ -108,16 +116,10 @@ fun UploadEVentsScreen(
 
     val calendar = Calendar.getInstance()
 
-    // Starting Date and Time Picker State
-    val startingDatePickerState = rememberDatePickerState()
+    // Date Picker State
+    val datePickerState = rememberDatePickerState()
+    // Time Picker State
     val startingTimePickerState = rememberTimePickerState(
-        initialHour = calendar.get(Calendar.HOUR_OF_DAY),
-        initialMinute = calendar.get(Calendar.MINUTE)
-    )
-
-    // Ending Date and Time Picker State
-    val endingDatePickerState = rememberDatePickerState()
-    val endingTimePickerState = rememberTimePickerState(
         initialHour = calendar.get(Calendar.HOUR_OF_DAY),
         initialMinute = calendar.get(Calendar.MINUTE)
     )
@@ -125,12 +127,10 @@ fun UploadEVentsScreen(
     var isImageOrVideoPickDialogOpen by rememberSaveable { mutableStateOf(false) }
 
     //  Starting Date and Time Dialog
-    var isStartingDatePickerDialogOpen by rememberSaveable { mutableStateOf(false) }
-    var isStartingTimePickerDialogOpen by rememberSaveable { mutableStateOf(false) }
+    var isDatePickerDialogOpen by rememberSaveable { mutableStateOf(false) }
+    var isTimePickerDialogOpen by rememberSaveable { mutableStateOf(false) }
 
-    // Ending Date and Time Dialog
-    var isEndingDatePickerDialogOpen by rememberSaveable { mutableStateOf(false) }
-    var isEndingTimePickerDialogOpen by rememberSaveable { mutableStateOf(false) }
+    var comeFor by rememberSaveable { mutableStateOf("") } // Like for Starting Date & Time OR Ending
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
@@ -433,18 +433,18 @@ fun UploadEVentsScreen(
                     imageVector = Icons.Default.DateRange,
                     contentDescription = "Icon for Date"
                 )
-                Text(
-                    text = "Starting Date${
-                        if (startingDate != 0L) ":- ${
-                            formatDateToString(
-                                startingDate
-                            )
-                        }" else ""
-                    }"
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Text(text = "Starting Date")
+                    AnimatedVisibility(startingDate != 0L) {
+                        Text(text = formatDateToString(startingDate))
+                    }
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = {
-                    isStartingDatePickerDialogOpen = true
+                    isDatePickerDialogOpen = true
+                    comeFor = START
                 }) {
                     Icon(
                         imageVector = if (startingDate == 0L)
@@ -467,20 +467,25 @@ fun UploadEVentsScreen(
                     contentDescription = "Icon for Date"
                 )
 
-                if (startingTimeHour != 0) {
-                    val time =
-                        formatTimeToString(startingTimeHour, startingTimeMinute)
-                    startingTimeStatus = getAmPmFromTimeString(time)
-
-                    Text(
-                        text = "Starting Time:- ${time.dropLast(2)} $startingTimeStatus"
-                    )
-                } else {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
                     Text(text = "Starting Time")
+
+                    AnimatedVisibility(startingTimeHour != 0) {
+                        val time =
+                            formatTimeToString(startingTimeHour, startingTimeMinute)
+                        startingTimeStatus = getAmPmFromTimeString(time)
+
+                        Text(
+                            text = "${time.dropLast(2)} $startingTimeStatus"
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = {
-                    isStartingTimePickerDialogOpen = true
+                    isTimePickerDialogOpen = true
+                    comeFor = START
                 }) {
                     Icon(
                         imageVector = if (startingTimeHour == 0)
@@ -505,18 +510,19 @@ fun UploadEVentsScreen(
                     imageVector = Icons.Default.DateRange,
                     contentDescription = "Icon for Date"
                 )
-                Text(
-                    text = "Ending Date${
-                        if (endingDate != 0L) ":- ${
-                            formatDateToString(
-                                endingDate
-                            )
-                        }" else ""
-                    }"
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Text(text = "Ending Date")
+
+                    AnimatedVisibility(endingDate != 0L) {
+                        Text(text = formatDateToString(endingDate))
+                    }
+                }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = {
-                    isEndingDatePickerDialogOpen = true
+                    isDatePickerDialogOpen = true
+                    comeFor = END
                 }) {
                     Icon(
                         imageVector = if (endingDate == 0L)
@@ -538,19 +544,22 @@ fun UploadEVentsScreen(
                     contentDescription = "Icon for Date"
                 )
 
-                if (endingTimeHour != 0) {
-                    val time = formatTimeToString(endingTimeHour, endingTimeMinute)
-                    endingTimeStatus = getAmPmFromTimeString(time)
-
-                    Text(
-                        text = "Ending Time:- ${time.dropLast(2)} $endingTimeStatus"
-                    )
-                } else {
+                Column {
                     Text(text = "Ending Time")
+
+                    AnimatedVisibility(endingTimeHour != 0) {
+                        val time = formatTimeToString(endingTimeHour, endingTimeMinute)
+                        endingTimeStatus = getAmPmFromTimeString(time)
+
+                        Text(
+                            text = "${time.dropLast(2)} $endingTimeStatus"
+                        )
+                    }
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 IconButton(onClick = {
-                    isEndingTimePickerDialogOpen = true
+                    isTimePickerDialogOpen = true
+                    comeFor = END
                 }) {
                     Icon(
                         imageVector = if (endingTimeHour == 0)
@@ -564,62 +573,43 @@ fun UploadEVentsScreen(
         }
 
 
-        // Starting
-
-        // Starting Date Picker
-        if (isStartingDatePickerDialogOpen) {
+        // Date Picker
+        if (isDatePickerDialogOpen) {
             ModalDatePickerDialog(
-                state = startingDatePickerState,
+                state = datePickerState,
                 onDateSelected = { thisStartingDate ->
                     thisStartingDate?.let {
-                        startingDate = it
+                        if (comeFor == START) {
+                            startingDate = it
+                        } else if (comeFor == END) {
+                            endingDate = it
+                        }
                     }
                 },
+                comeFor = comeFor,
                 onDismiss = {
-                    isStartingDatePickerDialogOpen = false
+                    isDatePickerDialogOpen = false
                 }
             )
         }
-        // Starting Time Picker
-        if (isStartingTimePickerDialogOpen) {
+        // Time Picker
+        if (isTimePickerDialogOpen) {
             ModalTimePickerDialog(
                 state = startingTimePickerState,
                 onTimeSelected = { hour, minute ->
-                    startingTimeHour = hour
-                    startingTimeMinute = minute
-                },
-                onDismiss = {
-                    isStartingTimePickerDialogOpen = false
-                }
-            )
-        }
-
-        // Ending
-
-        // Ending Date Picker
-        if (isEndingDatePickerDialogOpen) {
-            ModalDatePickerDialog(
-                state = endingDatePickerState,
-                onDateSelected = { thisEndingDate ->
-                    thisEndingDate?.let {
-                        endingDate = it
+                    if (hour != 0) {
+                        if (comeFor == START) {
+                            startingTimeHour = hour
+                            startingTimeMinute = minute
+                        } else if (comeFor == END) {
+                            endingTimeHour = hour
+                            endingTimeMinute = minute
+                        }
                     }
                 },
+                comeFor = comeFor,
                 onDismiss = {
-                    isEndingDatePickerDialogOpen = false
-                }
-            )
-        }
-        // Ending Time Picker
-        if (isEndingTimePickerDialogOpen) {
-            ModalTimePickerDialog(
-                state = endingTimePickerState,
-                onTimeSelected = { hour, minute ->
-                    endingTimeHour = hour
-                    endingTimeMinute = minute
-                },
-                onDismiss = {
-                    isEndingTimePickerDialogOpen = false
+                    isTimePickerDialogOpen = false
                 }
             )
         }
@@ -648,6 +638,7 @@ fun UploadEVentsScreen(
 @Composable
 fun ModalDatePickerDialog(
     state: DatePickerState,
+    comeFor: String,
     onDateSelected: (Long?) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -674,6 +665,13 @@ fun ModalDatePickerDialog(
     ) {
         DatePicker(
             state = state,
+            title = {
+                Text(
+                    text = if (comeFor == START) "Starting Date" else "Ending Date",
+                    modifier = Modifier
+                        .padding(all = 10.dp)
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
         )
@@ -683,6 +681,7 @@ fun ModalDatePickerDialog(
 @Composable
 fun ModalTimePickerDialog(
     state: TimePickerState,
+    comeFor: String,
     onTimeSelected: (Int, Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -701,28 +700,27 @@ fun ModalTimePickerDialog(
                     .fillMaxWidth()
                     .padding(all = 10.dp)
             ) {
+                Text(
+                    text = if (comeFor == START) "Starting Time" else "Ending Time",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(all = 20.dp)
+                )
                 TimePicker(
                     state = state,
                 )
-
-                Row(
-                    modifier = Modifier
-                        .align(Alignment.End),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    TextButton(onClick = {
-                        onDismiss.invoke()
-                    }) {
-                        Text(text = "Cancel")
-                    }
-
-                    TextButton(onClick = {
+                TextButton(
+                    onClick = {
                         onTimeSelected.invoke(state.hour, state.minute)
                         onDismiss.invoke()
-                    }) {
-                        Text(text = "Confirm")
-                    }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                ) {
+                    Text(text = "OK")
                 }
+
             }
         }
     }
