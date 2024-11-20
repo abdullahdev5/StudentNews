@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 sealed class NewsDestination {
     @Serializable
-    object NEWS_SCREEN: NewsDestination()
+    object MAIN_SCREEN: NewsDestination()
 
     @Serializable
     data class NEWS_DETAIL_SCREEN(

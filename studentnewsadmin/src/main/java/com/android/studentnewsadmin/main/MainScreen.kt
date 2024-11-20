@@ -25,6 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationDrawerItem
+import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Surface
@@ -46,6 +48,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
@@ -53,7 +56,6 @@ import androidx.navigation.NavHostController
 import com.android.studentnewsadmin.main.events.ui.screens.EventsScreen
 import com.android.studentnewsadmin.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnewsadmin.main.navigation.Destination
-import com.android.studentnewsadmin.main.news.ui.screens.DrawerContent
 import com.android.studentnewsadmin.main.news.ui.screens.NewsScreen
 import com.android.studentnewsadmin.main.news.ui.viewmodel.NewsViewModel
 import com.android.studentnewsadmin.ui.theme.Green
@@ -297,4 +299,74 @@ fun MainScreen(
 
         }
     }
+}
+
+@Composable
+fun DrawerContent(
+    onUploadNewsClick: () -> Unit,
+    onUploadCategoryClick: () -> Unit,
+    onUploadEvents: () -> Unit,
+) {
+    // Add News
+    NavigationDrawerItem(
+        label = {
+            Text(text = "Upload News")
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Default.PostAdd,
+                contentDescription = "Icon for News"
+            )
+        },
+        onClick = {
+            onUploadNewsClick.invoke()
+        },
+        selected = false,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+        ),
+        shape = RectangleShape,
+    )
+
+    // Add Category
+    NavigationDrawerItem(
+        label = {
+            Text(text = "Upload Category")
+        },
+        onClick = {
+            onUploadCategoryClick.invoke()
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Category,
+                contentDescription = "Icon for Category"
+            )
+        },
+        selected = false,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+        ),
+        shape = RectangleShape,
+    )
+
+    // Add Events
+    NavigationDrawerItem(
+        label = {
+            Text(text = "Upload Events")
+        },
+        onClick = {
+            onUploadEvents.invoke()
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Event,
+                contentDescription = "Icon for Events"
+            )
+        },
+        selected = false,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+        ),
+        shape = RectangleShape,
+    )
 }

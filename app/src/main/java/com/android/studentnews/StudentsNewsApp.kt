@@ -19,6 +19,7 @@ import com.android.studentnews.main.search.searchModule
 import com.android.studentnews.news.data.module.newsDetailModule
 import com.android.studentnews.news.data.module.newsModule
 import com.android.studentnews.news.data.module.savedNewsModule
+import com.android.studentnewsadmin.main.events.data.module.eventsModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.androidx.workmanager.koin.workManagerFactory
 import org.koin.core.component.KoinComponent
@@ -43,6 +44,7 @@ class StudentsNewsApp : Application(), KoinComponent, ImageLoaderFactory {
                     workManagerModule,
                     newsModule,
                     newsDetailModule,
+                    eventsModule,
                     searchModule,
                     savedNewsModule,
                     notificationModule,

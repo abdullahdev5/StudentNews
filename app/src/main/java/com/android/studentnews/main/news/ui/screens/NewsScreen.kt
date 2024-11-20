@@ -13,10 +13,10 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -51,7 +51,9 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Bookmark
 import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Logout
+import androidx.compose.material.icons.outlined.Newspaper
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
@@ -76,6 +78,9 @@ import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -85,6 +90,7 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -124,6 +130,8 @@ import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.NavigationBarItems
+import com.android.studentnews.main.events.ui.screens.EventsScreen
+import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
@@ -141,6 +149,7 @@ import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 
 @SuppressLint(
@@ -169,6 +178,8 @@ fun SharedTransitionScope.NewsScreen(
 
     var newsCategoryStatus by rememberSaveable { mutableStateOf("") }
     var isMoreDropDownMenuItemOpen by rememberSaveable { mutableStateOf(false) }
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
+
 
     val newsList = newsViewModel.newsList.collectAsStateWithLifecycle()
     val categoriesList = newsViewModel.categoriesList.collectAsStateWithLifecycle()
@@ -214,7 +225,9 @@ fun SharedTransitionScope.NewsScreen(
             gesturesEnabled = true,
             drawerContent = {
                 ModalDrawerSheet(
-                    drawerContainerColor = if (isSystemInDarkTheme()) DarkGray else White,
+                    drawerContainerColor = if (isSystemInDarkTheme()) DarkGray.copy(0.9f) else White.copy(
+                        0.9f
+                    ),
                     modifier = Modifier
                         .widthIn(max = configuration.screenWidthDp.dp / 1.3f)
                 ) {
@@ -259,7 +272,8 @@ fun SharedTransitionScope.NewsScreen(
                     CenterAlignedTopAppBar(
                         title = {
                             Text(
-                                text = "News",
+                                text = if (selectedTabIndex == 0) "News"
+                                else "Events",
                                 modifier = Modifier
                                     .pointerInput(true) {
                                         detectTapGestures(
@@ -379,141 +393,197 @@ fun SharedTransitionScope.NewsScreen(
                     .nestedScroll(topBarScrollBehavior.nestedScrollConnection)
             ) { innerPadding ->
 
-                Box(
+                Column(
                     modifier = Modifier
-                        .fillMaxSize()
                         .padding(paddingValues = innerPadding)
-                        .nestedScroll(pullToRefreshState.nestedScrollConnection),
                 ) {
 
-                    LazyColumn(
-                        state = lazyListState,
-                        flingBehavior = ScrollableDefaults.flingBehavior(),
-                        userScrollEnabled = true,
-                        modifier = Modifier
-                            .fillMaxSize(),
+                    TabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        indicator = {
+                            TabRowDefaults.PrimaryIndicator(
+                                color = Color.Transparent //if (isSystemInDarkTheme()) White else Black
+                            )
+                        }
                     ) {
-                        item {
+                        // News
+                        Tab(
+                            selected = selectedTabIndex == 0,
+                            onClick = { selectedTabIndex = 0 },
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Newspaper,
+                                    contentDescription = "Icon For News"
+                                )
+                            },
+                            selectedContentColor = Green,
+                            unselectedContentColor = if (isSystemInDarkTheme()) White else Black
+                        )
+                        // Events
+                        Tab(
+                            selected = selectedTabIndex == 1,
+                            onClick = { selectedTabIndex = 1 },
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.Event,
+                                    contentDescription = "Icon For Events"
+                                )
+                            },
+                            selectedContentColor = Green,
+                            unselectedContentColor = if (isSystemInDarkTheme()) White else Black
+                        )
+                    }
 
-                            Column {
-                                HorizontalPager(
-                                    state = pagerState,
-                                    pageSpacing = if (pagerState.currentPage != pagerState.pageCount - 1)
-                                        (-30).dp else (-15).dp,
-                                    flingBehavior = PagerDefaults.flingBehavior(
-                                        state = pagerState,
-                                        pagerSnapDistance = PagerSnapDistance.atMost(1),
-                                        snapAnimationSpec = spring(
-                                            stiffness = Spring.StiffnessVeryLow,
-                                            dampingRatio = Spring.DampingRatioLowBouncy
-                                        )
-                                    )
-                                ) { pagerIndex ->
-                                    val item = categoriesList.value[pagerIndex]
-                                    CategoriesListPagerItem(
-                                        item = item,
-                                        context = context,
-                                        onItemCLick = { category ->
-                                            newsViewModel.getNewsListByCategory(category)
-                                            newsCategoryStatus = "${category} News"
+                    when (selectedTabIndex) {
+
+                        0 -> {
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .nestedScroll(pullToRefreshState.nestedScrollConnection),
+                            ) {
+
+                                LazyColumn(
+                                    state = lazyListState,
+                                    flingBehavior = ScrollableDefaults.flingBehavior(),
+                                    userScrollEnabled = true,
+                                    modifier = Modifier
+                                        .fillMaxSize(),
+                                ) {
+                                    item {
+
+                                        Column {
+                                            HorizontalPager(
+                                                state = pagerState,
+                                                pageSpacing = if (pagerState.currentPage != pagerState.pageCount - 1)
+                                                    (-30).dp else (-15).dp,
+                                                flingBehavior = PagerDefaults.flingBehavior(
+                                                    state = pagerState,
+                                                    pagerSnapDistance = PagerSnapDistance.atMost(1),
+                                                    snapAnimationSpec = spring(
+                                                        stiffness = Spring.StiffnessVeryLow,
+                                                        dampingRatio = Spring.DampingRatioLowBouncy
+                                                    )
+                                                )
+                                            ) { pagerIndex ->
+                                                val item = categoriesList.value[pagerIndex]
+                                                CategoriesListPagerItem(
+                                                    item = item,
+                                                    context = context,
+                                                    onItemCLick = { category ->
+                                                        newsViewModel.getNewsListByCategory(category)
+                                                        newsCategoryStatus = "${category} News"
+                                                    }
+                                                )
+                                            }
+
+                                            Row(
+                                                modifier = Modifier
+                                                    .align(alignment = Alignment.CenterHorizontally),
+                                            ) {
+                                                repeat(categoriesList.value.size) { index ->
+                                                    PagerIndicator(
+                                                        index = index,
+                                                        pagerState = pagerState
+                                                    )
+                                                }
+                                            }
+
+                                            Spacer(modifier = Modifier.height(10.dp))
+                                            Text(
+                                                text = if (newsCategoryStatus.isNotEmpty())
+                                                    newsCategoryStatus else "For You",
+                                                style = TextStyle(
+                                                    fontSize = FontSize.LARGE.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Gray
+                                                ),
+                                                modifier = Modifier
+                                                    .padding(start = 15.dp)
+                                            )
                                         }
-                                    )
+                                    }
+
+                                    items(
+                                        count = newsList.value.size,
+                                        key = { index ->
+                                            newsList.value[index].newsId ?: ""
+                                        }
+                                    ) { index ->
+                                        val item = newsList.value[index]
+
+                                        NewsItem(
+                                            item = item,
+                                            onItemClick = { newsId ->
+                                                navHostController.navigate(
+                                                    NewsDestination.NEWS_DETAIL_SCREEN(
+                                                        newsId
+                                                    )
+                                                )
+                                            },
+                                            context = context,
+                                            scope = scope,
+                                            newsViewModel = newsViewModel,
+                                            animatedVisibilityScope = animatedVisibilityScope
+                                        )
+                                    }
+
                                 }
 
-                                Row(
-                                    modifier = Modifier
-                                        .align(alignment = Alignment.CenterHorizontally),
-                                ) {
-                                    repeat(categoriesList.value.size) { index ->
-                                        PagerIndicator(
-                                            index = index,
-                                            pagerState = pagerState
-                                        )
+                                if (pullToRefreshState.isRefreshing) {
+                                    LaunchedEffect(true) {
+                                        scope.launch {
+                                            newsViewModel.isRefreshing.value = true
+                                            delay(1000L)
+                                            newsViewModel.isRefreshing.value = false
+                                        }
                                     }
                                 }
 
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Text(
-                                    text = if (newsCategoryStatus.isNotEmpty())
-                                        newsCategoryStatus else "For You",
-                                    style = TextStyle(
-                                        fontSize = FontSize.LARGE.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Gray
-                                    ),
+                                PullToRefreshContainer(
+                                    state = pullToRefreshState,
+                                    containerColor = Color.Transparent,
                                     modifier = Modifier
-                                        .padding(start = 15.dp)
+                                        .align(Alignment.TopCenter)
                                 )
+
+                            }
+
+                            if (newsViewModel.newsListStatus.value == Status.Loading) {
+                                LoadingDialog()
+                            }
+
+                            if (newsViewModel.newsListStatus.value == Status.FAILED
+                                || newsList.value.isEmpty()
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(paddingValues = innerPadding),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = if (newsViewModel.newsListStatus.value == Status.FAILED)
+                                            "${newsViewModel.errorMsg}"
+                                        else if (newsList.value.isEmpty()) {
+                                            if (newsViewModel.newsListStatus.value == Status.SUCCESS)
+                                                "No News Found!" else ""
+                                        } else ""
+                                    )
+                                }
                             }
                         }
 
-                        items(
-                            count = newsList.value.size,
-                            key = { index ->
-                                newsList.value[index].newsId ?: ""
-                            }
-                        ) { index ->
-                            val item = newsList.value[index]
-
-                            NewsItem(
-                                item = item,
-                                onItemClick = { newsId ->
-                                    navHostController.navigate(
-                                        NewsDestination.NEWS_DETAIL_SCREEN(
-                                            newsId
-                                        )
-                                    )
-                                },
-                                context = context,
-                                scope = scope,
-                                newsViewModel = newsViewModel,
-                                animatedVisibilityScope = animatedVisibilityScope
+                        1 -> {
+                            val eventsViewModel = koinViewModel<EventsViewModel>()
+                            EventsScreen(
+                                navHostController = navHostController,
+                                eventsViewModel = eventsViewModel
                             )
                         }
 
-                    }
-
-                    if (pullToRefreshState.isRefreshing) {
-                        LaunchedEffect(true) {
-                            scope.launch {
-                                newsViewModel.isRefreshing.value = true
-                                delay(1000L)
-                                newsViewModel.isRefreshing.value = false
-                            }
-                        }
-                    }
-
-                    PullToRefreshContainer(
-                        state = pullToRefreshState,
-                        containerColor = Color.Transparent,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                    )
-
-                }
-
-                if (newsViewModel.newsListStatus.value == Status.Loading) {
-                    LoadingDialog()
-                }
-
-                if (newsViewModel.newsListStatus.value == Status.FAILED
-                    || newsList.value.isEmpty()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues = innerPadding),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = if (newsViewModel.newsListStatus.value == Status.FAILED)
-                                "${newsViewModel.errorMsg}"
-                            else if (newsList.value.isEmpty()) {
-                                if (newsViewModel.newsListStatus.value == Status.SUCCESS)
-                                    "No News Found!" else ""
-                            } else ""
-                        )
                     }
                 }
 
@@ -867,7 +937,8 @@ fun SharedTransitionScope.MainDrawerContent(
                     ) {
                         if (currentUser?.profilePic.isNullOrEmpty()) {
                             Text(
-                                text = currentUser?.registrationData?.name?.first().toString() ?: "",
+                                text = currentUser?.registrationData?.name?.first().toString()
+                                    ?: "",
                                 color = White,
                                 fontSize = FontSize.LARGE.sp,
                                 modifier = Modifier

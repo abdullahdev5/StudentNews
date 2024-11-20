@@ -6,6 +6,7 @@ class FirestoreNodes {
         const val NEWS_COL = "News"
         const val CATEGORIES_COL = "Categories"
         const val SAVED_NEWS_COL = "SavedNews"
+        const val EVENTS_COL = "Events"
     }
 }
 

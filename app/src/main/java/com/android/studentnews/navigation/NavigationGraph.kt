@@ -5,16 +5,7 @@ package com.android.studentnews.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideIn
-import androidx.compose.animation.slideOut
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.unit.center
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -100,9 +91,9 @@ fun NavigationGraph(
                 startDestination = SubGraph.NEWS,
             ) {
                 navigation<SubGraph.NEWS>(
-                    startDestination = NewsDestination.NEWS_SCREEN
+                    startDestination = NewsDestination.MAIN_SCREEN
                 ) {
-                    composable<NewsDestination.NEWS_SCREEN>() {
+                    composable<NewsDestination.MAIN_SCREEN>() {
                         val newsViewModel = koinViewModel<NewsViewModel>()
 
                         NewsScreen(
