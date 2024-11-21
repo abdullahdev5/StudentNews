@@ -16,7 +16,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -172,45 +171,31 @@ fun SharedTransitionScope.NewsScreen(
     val drawerState = rememberDrawerState(
         initialValue = DrawerValue.Closed
     )
+    val tabPagerState = rememberPagerState(pageCount = { 2 })
     val topBarScrollBehavior =
         TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
 
     var newsCategoryStatus by rememberSaveable { mutableStateOf("") }
     var isMoreDropDownMenuItemOpen by rememberSaveable { mutableStateOf(false) }
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-
 
     val newsList = newsViewModel.newsList.collectAsStateWithLifecycle()
     val categoriesList = newsViewModel.categoriesList.collectAsStateWithLifecycle()
     val currentUser = newsViewModel.currentUser.collectAsStateWithLifecycle()
 
-    val pagerState = rememberPagerState(
+    val categoryPagerState = rememberPagerState(
         pageCount = {
             categoriesList.value.size
         }
     )
 
-    LaunchedEffect(newsViewModel.isRefreshing.value) {
-        if (newsViewModel.isRefreshing.value) {
-            scope.launch {
-                pullToRefreshState.startRefresh()
-                delay(1000L)
-                newsViewModel.getNewsList()
-                newsCategoryStatus = ""
-            }
-        } else {
-            pullToRefreshState.endRefresh()
-        }
-    }
-
-    BackHandler(drawerState.isOpen || lazyListState.firstVisibleItemIndex != 0) {
+    BackHandler(drawerState.isOpen || tabPagerState.currentPage != 0) {
         scope.launch {
             if (drawerState.isOpen) {
                 drawerState.close()
 
-            } else if (lazyListState.firstVisibleItemIndex != 0) {
-                lazyListState.scrollToItem(0)
+            } else if (tabPagerState.currentPage != 0) {
+                tabPagerState.animateScrollToPage(0)
             }
         }
     }
@@ -272,20 +257,8 @@ fun SharedTransitionScope.NewsScreen(
                     CenterAlignedTopAppBar(
                         title = {
                             Text(
-                                text = if (selectedTabIndex == 0) "News"
+                                text = if (tabPagerState.currentPage == 0) "News"
                                 else "Events",
-                                modifier = Modifier
-                                    .pointerInput(true) {
-                                        detectTapGestures(
-                                            onTap = {
-                                                if (lazyListState.firstVisibleItemIndex != 0) {
-                                                    scope.launch {
-                                                        lazyListState.scrollToItem(0)
-                                                    }
-                                                }
-                                            }
-                                        )
-                                    }
                             )
                         },
                         actions = {
@@ -399,7 +372,7 @@ fun SharedTransitionScope.NewsScreen(
                 ) {
 
                     TabRow(
-                        selectedTabIndex = selectedTabIndex,
+                        selectedTabIndex = tabPagerState.currentPage,
                         indicator = {
                             TabRowDefaults.PrimaryIndicator(
                                 color = Color.Transparent //if (isSystemInDarkTheme()) White else Black
@@ -408,8 +381,12 @@ fun SharedTransitionScope.NewsScreen(
                     ) {
                         // News
                         Tab(
-                            selected = selectedTabIndex == 0,
-                            onClick = { selectedTabIndex = 0 },
+                            selected = tabPagerState.currentPage == 0,
+                            onClick = {
+                                scope.launch {
+                                    tabPagerState.animateScrollToPage(0)
+                                }
+                            },
                             icon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Newspaper,
@@ -421,8 +398,12 @@ fun SharedTransitionScope.NewsScreen(
                         )
                         // Events
                         Tab(
-                            selected = selectedTabIndex == 1,
-                            onClick = { selectedTabIndex = 1 },
+                            selected = tabPagerState.currentPage == 1,
+                            onClick = {
+                                scope.launch {
+                                    tabPagerState.animateScrollToPage(1)
+                                }
+                            },
                             icon = {
                                 Icon(
                                     imageVector = Icons.Outlined.Event,
@@ -434,160 +415,199 @@ fun SharedTransitionScope.NewsScreen(
                         )
                     }
 
-                    when (selectedTabIndex) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .nestedScroll(pullToRefreshState.nestedScrollConnection),
+                    ) {
+                        HorizontalPager(
+                            state = tabPagerState
+                        ) { page ->
+                            when (page) {
 
-                        0 -> {
+                                0 -> {
 
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .nestedScroll(pullToRefreshState.nestedScrollConnection),
-                            ) {
-
-                                LazyColumn(
-                                    state = lazyListState,
-                                    flingBehavior = ScrollableDefaults.flingBehavior(),
-                                    userScrollEnabled = true,
-                                    modifier = Modifier
-                                        .fillMaxSize(),
-                                ) {
-                                    item {
-
-                                        Column {
-                                            HorizontalPager(
-                                                state = pagerState,
-                                                pageSpacing = if (pagerState.currentPage != pagerState.pageCount - 1)
-                                                    (-30).dp else (-15).dp,
-                                                flingBehavior = PagerDefaults.flingBehavior(
-                                                    state = pagerState,
-                                                    pagerSnapDistance = PagerSnapDistance.atMost(1),
-                                                    snapAnimationSpec = spring(
-                                                        stiffness = Spring.StiffnessVeryLow,
-                                                        dampingRatio = Spring.DampingRatioLowBouncy
-                                                    )
-                                                )
-                                            ) { pagerIndex ->
-                                                val item = categoriesList.value[pagerIndex]
-                                                CategoriesListPagerItem(
-                                                    item = item,
-                                                    context = context,
-                                                    onItemCLick = { category ->
-                                                        newsViewModel.getNewsListByCategory(category)
-                                                        newsCategoryStatus = "${category} News"
-                                                    }
-                                                )
-                                            }
-
-                                            Row(
-                                                modifier = Modifier
-                                                    .align(alignment = Alignment.CenterHorizontally),
-                                            ) {
-                                                repeat(categoriesList.value.size) { index ->
-                                                    PagerIndicator(
-                                                        index = index,
-                                                        pagerState = pagerState
-                                                    )
+                                    LaunchedEffect(newsViewModel.isRefreshing.value) {
+                                        if (newsViewModel.isRefreshing.value) {
+                                            scope.launch {
+                                                pullToRefreshState.startRefresh()
+                                                delay(1000L)
+                                                if (tabPagerState.currentPage == 0) {
+                                                    newsViewModel.getNewsList()
+                                                    newsCategoryStatus = ""
                                                 }
                                             }
+                                        } else {
+                                            pullToRefreshState.endRefresh()
+                                        }
+                                    }
 
-                                            Spacer(modifier = Modifier.height(10.dp))
-                                            Text(
-                                                text = if (newsCategoryStatus.isNotEmpty())
-                                                    newsCategoryStatus else "For You",
-                                                style = TextStyle(
-                                                    fontSize = FontSize.LARGE.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Gray
-                                                ),
-                                                modifier = Modifier
-                                                    .padding(start = 15.dp)
+                                    LazyColumn(
+                                        state = lazyListState,
+                                        flingBehavior = ScrollableDefaults.flingBehavior(),
+                                        userScrollEnabled = true,
+                                        modifier = Modifier
+                                            .fillMaxSize(),
+                                    ) {
+
+                                        item {
+
+                                            Column {
+                                                HorizontalPager(
+                                                    state = categoryPagerState,
+                                                    pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
+                                                        (-30).dp else (-15).dp,
+                                                    flingBehavior = PagerDefaults.flingBehavior(
+                                                        state = categoryPagerState,
+                                                        pagerSnapDistance = PagerSnapDistance.atMost(
+                                                            1
+                                                        ),
+                                                        snapAnimationSpec = spring(
+                                                            stiffness = Spring.StiffnessVeryLow,
+                                                            dampingRatio = Spring.DampingRatioLowBouncy
+                                                        )
+                                                    )
+                                                ) { pagerIndex ->
+                                                    val item = categoriesList.value[pagerIndex]
+                                                    CategoriesListPagerItem(
+                                                        item = item,
+                                                        context = context,
+                                                        onItemCLick = { category ->
+                                                            newsViewModel.getNewsListByCategory(
+                                                                category
+                                                            )
+                                                            newsCategoryStatus =
+                                                                "${category} News"
+                                                        }
+                                                    )
+                                                }
+
+                                                Row(
+                                                    modifier = Modifier
+                                                        .align(alignment = Alignment.CenterHorizontally),
+                                                ) {
+                                                    repeat(categoriesList.value.size) { index ->
+                                                        PagerIndicator(
+                                                            index = index,
+                                                            pagerState = categoryPagerState
+                                                        )
+                                                    }
+                                                }
+
+                                                Spacer(modifier = Modifier.height(10.dp))
+                                                Text(
+                                                    text = if (newsCategoryStatus.isNotEmpty())
+                                                        newsCategoryStatus else "For You",
+                                                    style = TextStyle(
+                                                        fontSize = FontSize.LARGE.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Gray
+                                                    ),
+                                                    modifier = Modifier
+                                                        .padding(start = 15.dp)
+                                                )
+                                            }
+                                        }
+
+                                        items(
+                                            count = newsList.value.size,
+                                            key = { index ->
+                                                newsList.value[index].newsId ?: ""
+                                            }
+                                        ) { index ->
+                                            val item = newsList.value[index]
+
+                                            NewsItem(
+                                                item = item,
+                                                onItemClick = { newsId ->
+                                                    navHostController.navigate(
+                                                        NewsDestination.NEWS_DETAIL_SCREEN(
+                                                            newsId
+                                                        )
+                                                    )
+                                                },
+                                                context = context,
+                                                scope = scope,
+                                                newsViewModel = newsViewModel,
+                                                animatedVisibilityScope = animatedVisibilityScope
                                             )
                                         }
-                                    }
 
-                                    items(
-                                        count = newsList.value.size,
-                                        key = { index ->
-                                            newsList.value[index].newsId ?: ""
-                                        }
-                                    ) { index ->
-                                        val item = newsList.value[index]
-
-                                        NewsItem(
-                                            item = item,
-                                            onItemClick = { newsId ->
-                                                navHostController.navigate(
-                                                    NewsDestination.NEWS_DETAIL_SCREEN(
-                                                        newsId
-                                                    )
-                                                )
-                                            },
-                                            context = context,
-                                            scope = scope,
-                                            newsViewModel = newsViewModel,
-                                            animatedVisibilityScope = animatedVisibilityScope
-                                        )
-                                    }
-
-                                }
-
-                                if (pullToRefreshState.isRefreshing) {
-                                    LaunchedEffect(true) {
-                                        scope.launch {
-                                            newsViewModel.isRefreshing.value = true
-                                            delay(1000L)
-                                            newsViewModel.isRefreshing.value = false
-                                        }
                                     }
                                 }
 
-                                PullToRefreshContainer(
-                                    state = pullToRefreshState,
-                                    containerColor = Color.Transparent,
-                                    modifier = Modifier
-                                        .align(Alignment.TopCenter)
-                                )
+                                1 -> {
+                                    val eventsViewModel = koinViewModel<EventsViewModel>()
 
-                            }
+                                    LaunchedEffect(newsViewModel.isRefreshing.value) {
+                                        if (newsViewModel.isRefreshing.value) {
+                                            scope.launch {
+                                                pullToRefreshState.startRefresh()
+                                                delay(1000L)
+                                                if (tabPagerState.currentPage == 1) {
+                                                    eventsViewModel.getEventsList()
+                                                }
+                                            }
+                                        } else {
+                                            pullToRefreshState.endRefresh()
+                                        }
+                                    }
 
-                            if (newsViewModel.newsListStatus.value == Status.Loading) {
-                                LoadingDialog()
-                            }
-
-                            if (newsViewModel.newsListStatus.value == Status.FAILED
-                                || newsList.value.isEmpty()
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(paddingValues = innerPadding),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = if (newsViewModel.newsListStatus.value == Status.FAILED)
-                                            "${newsViewModel.errorMsg}"
-                                        else if (newsList.value.isEmpty()) {
-                                            if (newsViewModel.newsListStatus.value == Status.SUCCESS)
-                                                "No News Found!" else ""
-                                        } else ""
+                                    EventsScreen(
+                                        navHostController = navHostController,
+                                        eventsViewModel = eventsViewModel
                                     )
                                 }
+
                             }
                         }
 
-                        1 -> {
-                            val eventsViewModel = koinViewModel<EventsViewModel>()
-                            EventsScreen(
-                                navHostController = navHostController,
-                                eventsViewModel = eventsViewModel
-                            )
+                        if (pullToRefreshState.isRefreshing) {
+                            LaunchedEffect(true) {
+                                scope.launch {
+                                    newsViewModel.isRefreshing.value = true
+                                    delay(1000L)
+                                    newsViewModel.isRefreshing.value = false
+                                }
+                            }
                         }
 
+                        PullToRefreshContainer(
+                            state = pullToRefreshState,
+                            containerColor = Color.Transparent,
+                            modifier = Modifier
+                                .align(Alignment.TopCenter)
+                        )
+
+                    }
+
+                    if (newsViewModel.newsListStatus.value == Status.Loading) {
+                        LoadingDialog()
+                    }
+
+                    if (newsViewModel.newsListStatus.value == Status.FAILED
+                        || newsList.value.isEmpty()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(paddingValues = innerPadding),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = if (newsViewModel.newsListStatus.value == Status.FAILED)
+                                    "${newsViewModel.errorMsg}"
+                                else if (newsList.value.isEmpty()) {
+                                    if (newsViewModel.newsListStatus.value == Status.SUCCESS)
+                                        "No News Found!" else ""
+                                } else ""
+                            )
+                        }
                     }
                 }
-
             }
+
         }
     }
 }

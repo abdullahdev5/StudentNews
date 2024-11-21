@@ -9,7 +9,6 @@ fun formatDateToString(dateMillis: Long): String {
     val date = Date(dateMillis)
     val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
     return dateFormat.format(date)
-
 }
 
 

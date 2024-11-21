@@ -9,6 +9,6 @@ interface EventsRepository {
 
     val eventsColRef: CollectionReference?
 
-    fun getEventsList(): Flow<EventsState<List<EventsModel>>>
+    fun getEventsList(): Flow<EventsState<List<EventsModel?>>>
 
 }

@@ -9,6 +9,7 @@ import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -18,7 +19,7 @@ class EventsViewModel(
     private val eventsRepository: EventsRepository,
 ): ViewModel() {
 
-    private val _eventsList = MutableStateFlow<List<EventsModel>>(emptyList())
+    private val _eventsList = MutableStateFlow<List<EventsModel?>>(emptyList())
     val eventsList = _eventsList.asStateFlow()
 
     var eventsListStatus by mutableStateOf("")
@@ -35,13 +36,12 @@ class EventsViewModel(
 
     fun getEventsList() {
         viewModelScope.launch {
+            eventsListStatus = Status.Loading
+            delay(500L)
             eventsRepository
                 .getEventsList()
                 .collectLatest { result ->
                     when (result) {
-                        is EventsState.Loading -> {
-                            eventsListStatus = Status.Loading
-                        }
                         is EventsState.Success -> {
                             _eventsList.value = result.data
                             eventsListStatus = Status.SUCCESS

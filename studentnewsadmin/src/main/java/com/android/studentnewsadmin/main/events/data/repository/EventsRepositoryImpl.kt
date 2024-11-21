@@ -74,6 +74,7 @@ class EventsRepositoryImpl(
             val eventId = eventsColRef?.document()?.id.toString()
             val urlList = mutableStateListOf<UrlList>()
             val eventsFilesRef = storageRef?.child("events")?.child(eventId)?.child("files")
+            val int = mutableIntStateOf(0)
 
             uriList.forEach { file ->
 
@@ -86,7 +87,7 @@ class EventsRepositoryImpl(
 
                 val uploadTask = inputBytes?.let { inputBytes ->
                     eventsFilesRef
-                        ?.child("${file.lastPathSegment}")?.putBytes(inputBytes)
+                        ?.child(file.lastPathSegment ?: "lastPathSegment")?.putBytes(inputBytes)
                 }
 
                 uploadTask
@@ -95,14 +96,12 @@ class EventsRepositoryImpl(
                             val uri = task.result.storage.downloadUrl
 
                             uri.addOnSuccessListener { imageUri ->
-                                val contentType = task.result.metadata?.contentType ?: ""
-                                val sizeBytes = task.result.metadata?.sizeBytes ?: 0L
 
                                 urlList.add(
                                     UrlList(
                                         url = imageUri.toString(),
-                                        contentType = contentType,
-                                        sizeBytes = sizeBytes,
+                                        contentType = task.result.metadata?.contentType ?: "",
+                                        sizeBytes = task.result.metadata?.sizeBytes ?: 0L,
                                         lastPathSegment = file.lastPathSegment ?: ""
                                     )
                                 )
@@ -141,6 +140,12 @@ class EventsRepositoryImpl(
                         } else {
                             trySend(EventsState.Failed(task.exception!!))
                         }
+                    }
+                    ?.addOnPausedListener {
+                        uploadTask.pause()
+                    }
+                    ?.addOnCanceledListener {
+                        uploadTask.cancel()
                     }
 
             }
@@ -254,11 +259,7 @@ class EventsRepositoryImpl(
 
 
         workManager
-            .beginUniqueWork(
-                "upload_events_work",
-                ExistingWorkPolicy.KEEP,
-                workRequest
-            )
+            .beginWith(workRequest)
             .then(successRequest)
             .enqueue()
     }
