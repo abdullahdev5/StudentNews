@@ -555,7 +555,8 @@ fun SharedTransitionScope.NewsScreen(
 
                                     EventsScreen(
                                         navHostController = navHostController,
-                                        eventsViewModel = eventsViewModel
+                                        eventsViewModel = eventsViewModel,
+                                        animatedVisibilityScope = animatedVisibilityScope
                                     )
                                 }
 

@@ -6,6 +6,7 @@ import android.content.Context
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -47,6 +49,7 @@ import coil.request.ImageRequest
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
+import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Green
@@ -55,10 +58,10 @@ import com.android.studentnewsadmin.core.domain.common.formatTimeToString
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 
 @Composable
-fun EventsScreen(
+fun SharedTransitionScope.EventsScreen(
     navHostController: NavHostController,
     eventsViewModel: EventsViewModel,
-//    animatedVisibilityScope: AnimatedVisibilityScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
 
     val context = LocalContext.current
@@ -85,7 +88,12 @@ fun EventsScreen(
             EventsItem(
                 item = item,
                 context = context,
-//                    animatedVisibilityScope = animatedVisibilityScope,
+                animatedVisibilityScope = animatedVisibilityScope,
+                onItemClick = { clickedEventId ->
+                    navHostController.navigate(
+                        EventsDestination.EVENTS_DETAIL_SCREEN(clickedEventId)
+                    )
+                },
             )
         }
 
@@ -98,10 +106,11 @@ fun EventsScreen(
 }
 
 @Composable
-fun EventsItem(
+fun SharedTransitionScope.EventsItem(
     item: EventsModel?,
     context: Context,
-//    animatedVisibilityScope: AnimatedVisibilityScope,
+    onItemClick: (String) -> Unit,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     Card(
         modifier = Modifier
@@ -111,12 +120,10 @@ fun EventsItem(
                 end = 20.dp,
                 top = 10.dp,
                 bottom = 10.dp,
-            ),
-//            .sharedElement(
-//                state = rememberSharedContentState(key = "container/${item.eventId ?: ""}"),
-//                animatedVisibilityScope = animatedVisibilityScope,
-//                renderInOverlayDuringTransition = true
-//            ),
+            )
+            .clickable {
+                onItemClick(item?.eventId ?: "")
+            },
         colors = CardDefaults.cardColors(
             containerColor = Green.copy(0.1f) // LightGray.copy(alpha = 0.3f)
         )
@@ -138,12 +145,12 @@ fun EventsItem(
                 modifier = Modifier
                     .width(90.dp)
                     .heightIn(max = 100.dp)
-                    .clip(shape = RoundedCornerShape(10.dp)),
-//                    .sharedElement(
-//                        state = rememberSharedContentState(key = "image/${item.eventId ?: ""}"),
-//                        animatedVisibilityScope = animatedVisibilityScope,
-//                        clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
-//                    )
+                    .clip(shape = RoundedCornerShape(10.dp))
+                    .sharedElement(
+                        state = rememberSharedContentState(key = "image/${item?.eventId ?: ""}"),
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
+                    )
             )
 
 
@@ -159,11 +166,11 @@ fun EventsItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
-//                        .sharedElement(
-//                            state = rememberSharedContentState(key = "title/${item.eventId ?: ""}"),
-//                            animatedVisibilityScope = animatedVisibilityScope,
-//                            renderInOverlayDuringTransition = true,
-//                        )
+                        .sharedElement(
+                            state = rememberSharedContentState(key = "title/${item?.eventId ?: ""}"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            renderInOverlayDuringTransition = true,
+                        ),
                 )
 
                 // Date

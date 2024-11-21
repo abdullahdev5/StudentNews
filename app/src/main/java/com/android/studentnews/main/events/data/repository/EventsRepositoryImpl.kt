@@ -42,4 +42,29 @@ class EventsRepositoryImpl(
         }
     }
 
+    override fun getEventById(eventId: String): Flow<EventsState<EventsModel?>> {
+        return callbackFlow {
+
+            trySend(EventsState.Loading)
+
+            eventsColRef
+                ?.document(eventId)
+                ?.addSnapshotListener { value, error ->
+                    if (error != null) {
+                        trySend(EventsState.Failed(error))
+                    }
+
+                    if (value != null) {
+                        val event = value.toObject(EventsModel::class.java)
+                        trySend(EventsState.Success(event))
+                    }
+                }
+
+
+            awaitClose {
+                close()
+            }
+        }
+    }
+
 }

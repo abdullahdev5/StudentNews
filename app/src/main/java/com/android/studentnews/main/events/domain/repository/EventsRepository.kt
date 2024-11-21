@@ -11,4 +11,6 @@ interface EventsRepository {
 
     fun getEventsList(): Flow<EventsState<List<EventsModel?>>>
 
+    fun getEventById(eventId: String): Flow<EventsState<EventsModel?>>
+
 }

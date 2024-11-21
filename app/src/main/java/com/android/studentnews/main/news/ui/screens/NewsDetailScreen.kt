@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -360,7 +361,11 @@ fun SharedTransitionScope.NewsDetailScreen(
                     state = pagerState,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp),
+                        .height(300.dp)
+                        .sharedElement(
+                            state = rememberSharedContentState(key = "image/$newsId"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                        ),
                 ) { page ->
 
                     val item = newsById?.urlList?.get(page)
@@ -392,10 +397,6 @@ fun SharedTransitionScope.NewsDetailScreen(
                                 },
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .sharedElement(
-                                        state = rememberSharedContentState(key = "image/$newsId"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                    ),
                             )
 
                         }
@@ -435,11 +436,7 @@ fun SharedTransitionScope.NewsDetailScreen(
                                             }
                                         },
                                         modifier = Modifier
-                                            .fillMaxSize()
-                                            .sharedElement(
-                                                state = rememberSharedContentState(key = "image/$newsId"),
-                                                animatedVisibilityScope = animatedVisibilityScope,
-                                            ),
+                                            .fillMaxSize(),
                                     )
 
                                     // Video Play Icon
@@ -484,23 +481,12 @@ fun SharedTransitionScope.NewsDetailScreen(
 
                         }
 
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Black.copy(0.3f)
-                            ),
+                        UrlListPagerIndicator(
+                            state = pagerState,
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
                                 .padding(top = 10.dp, end = 10.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(all = 5.dp)
-                            ) {
-                                Text(text = "${pagerState.currentPage + 1}", color = White)
-                                Text(text = "/", color = White)
-                                Text(text = "${pagerState.pageCount}", color = White)
-                            }
-                        }
+                        )
                     }
 
                 }
@@ -744,6 +730,28 @@ fun SharedTransitionScope.NewsDetailScreen(
 
             }
 
+        }
+    }
+}
+
+@Composable
+fun UrlListPagerIndicator(
+    state: PagerState,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = Black.copy(0.3f)
+        ),
+        modifier = modifier
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(all = 5.dp)
+        ) {
+            Text(text = "${state.currentPage + 1}", color = White)
+            Text(text = "/", color = White)
+            Text(text = "${state.pageCount}", color = White)
         }
     }
 }

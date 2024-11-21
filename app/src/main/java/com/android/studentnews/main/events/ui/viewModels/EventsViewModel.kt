@@ -29,6 +29,16 @@ class EventsViewModel(
         private set
 
 
+    private val _eventById = MutableStateFlow<EventsModel?>(null)
+    val eventById = _eventById.asStateFlow()
+
+    var eventsByIdStatus by mutableStateOf("")
+        private set
+
+    var eventsByIdErrorMsg by mutableStateOf("")
+        private set
+
+
     init {
         getEventsList()
     }
@@ -49,6 +59,27 @@ class EventsViewModel(
                         is EventsState.Failed -> {
                             eventsListStatus = Status.FAILED
                             eventsListErrorMsg = result.error.localizedMessage ?: ""
+                        }
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun getEventById(eventId: String) {
+        viewModelScope.launch {
+            eventsByIdStatus = Status.Loading
+            eventsRepository
+                .getEventById(eventId)
+                .collectLatest { result ->
+                    when (result) {
+                        is EventsState.Success -> {
+                            _eventById.value = result.data
+                            eventsByIdStatus = Status.SUCCESS
+                        }
+                        is EventsState.Failed -> {
+                            eventsByIdStatus = Status.FAILED
+                            eventsByIdErrorMsg = result.error.localizedMessage ?: ""
                         }
                         else -> {}
                     }

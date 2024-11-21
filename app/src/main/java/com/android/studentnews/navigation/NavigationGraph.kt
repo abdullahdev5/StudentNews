@@ -22,6 +22,9 @@ import com.android.studentnews.auth.ui.RegistrationFormScreen
 import com.android.studentnews.auth.ui.viewModel.AuthViewModel
 import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
+import com.android.studentnews.main.events.domain.destination.EventsDestination
+import com.android.studentnews.main.events.ui.screens.EventsDetailScreen
+import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.ui.screens.NewsDetailScreen
@@ -168,6 +171,33 @@ fun NavigationGraph(
                             navHostController = navHostController,
                             savedNewsViewModel = savedNewsViewModel,
                             newsViewModel = newsViewModel,
+                            animatedVisibilityScope = this
+                        )
+                    }
+                }
+
+                navigation<SubGraph.EVENTS>(
+                    startDestination = EventsDestination.EVENTS_SCREEN
+                ) {
+                    composable<EventsDestination.EVENTS_SCREEN> {
+                        val eventsViewModel = koinViewModel<EventsViewModel>()
+
+                        EventsScreen(
+                            navHostController = navHostController,
+                            eventsViewModel = eventsViewModel,
+                            animatedVisibilityScope = this
+                        )
+                    }
+
+                    composable<EventsDestination.EVENTS_DETAIL_SCREEN> {
+
+                        val arguments = it.toRoute<EventsDestination.EVENTS_DETAIL_SCREEN>()
+                        val eventsViewModel = koinViewModel<EventsViewModel>()
+
+                        EventsDetailScreen(
+                            eventId = arguments.eventId,
+                            navHostController = navHostController,
+                            eventsViewModel = eventsViewModel,
                             animatedVisibilityScope = this
                         )
                     }
