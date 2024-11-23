@@ -6,6 +6,9 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.studentnews.auth.domain.models.UserModel
+import com.android.studentnews.auth.domain.repository.AuthRepository
+import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
@@ -21,6 +24,8 @@ import java.io.File
 
 class NewsDetailViewModel(
     private val newsDetailRepository: NewsDetailRepository,
+    private val newsRepository: NewsRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _newsById = MutableStateFlow<NewsModel?>(null)
@@ -30,6 +35,15 @@ class NewsDetailViewModel(
     val savedNewsById = _savedNewsById.asStateFlow()
 
     val newsByIdStatus = mutableStateOf("")
+
+    private val _currentUser = MutableStateFlow<UserModel?>(null)
+    val currentUser = _currentUser.asStateFlow()
+
+
+    init {
+        getCurrentUser()
+    }
+
 
 
     fun getNewsById(newsId: String) {
@@ -86,6 +100,53 @@ class NewsDetailViewModel(
         }
     }
 
+    fun onNewsSave(news: NewsModel) {
+        viewModelScope.launch {
+            newsRepository
+                .onNewsSave(news)
+                .collectLatest { result ->
+                    when (result) {
+
+                        is NewsState.Failed -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage
+                                            ?: "",
+                                        duration = SnackbarDuration.Long,
+                                    )
+                                )
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun onNewsRemoveFromSave(newsId: String) {
+        viewModelScope.launch {
+            newsRepository
+                .onNewsRemoveFromSave(newsId)
+                .collectLatest { result ->
+                    when (result) {
+
+                        is NewsState.Failed -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage ?: "",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                )
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
+
     fun onShareNews(
         imageUrl: String,
         context: Context,
@@ -134,7 +195,26 @@ class NewsDetailViewModel(
         }
     }
 
+
     fun storeShareCount(newsId: String) = newsDetailRepository.storeShareCount(newsId)
+
+
+
+    fun getCurrentUser() {
+        viewModelScope.launch {
+            authRepository
+                .getCurrentUser()
+                .collectLatest { result ->
+                    when (result) {
+                        is NewsState.Success -> {
+                            _currentUser.value = result.data
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
 
 
 }

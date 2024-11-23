@@ -1,22 +1,13 @@
 package com.android.studentnews.main.news.data.repository
 
 import android.content.Context
-import android.content.Intent
-import android.content.IntentSender
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.os.Parcel
 import android.util.Log
 import androidx.core.content.FileProvider
-import androidx.credentials.Credential
-import androidx.credentials.provider.getGetCredentialResponse
-import coil.ImageLoader
 import coil.imageLoader
 import coil.request.ImageRequest
-import com.android.studentnews.SaveNewsBroadcastReceiver
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.domain.model.NewsModel
@@ -31,7 +22,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import java.io.File
 import java.io.FileOutputStream
-import kotlin.math.log
 
 class NewsDetailRepositoryImpl(
     private val auth: FirebaseAuth,

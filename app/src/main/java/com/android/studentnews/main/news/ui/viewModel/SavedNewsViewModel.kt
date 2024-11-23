@@ -4,6 +4,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
@@ -30,6 +31,38 @@ class SavedNewsViewModel(
         getSavedNewsList()
     }
 
+
+    fun onNewsRemoveFromSave(newsId: String) {
+        viewModelScope.launch {
+            newsRepository
+                .onNewsRemoveFromSave(newsId)
+                .collectLatest { result ->
+                    when (result) {
+                        is NewsState.Success -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.data,
+                                        duration = SnackbarDuration.Short,
+                                    )
+                                )
+                        }
+
+                        is NewsState.Failed -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage ?: "",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                )
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
 
     fun getSavedNewsList() {
         viewModelScope.launch {

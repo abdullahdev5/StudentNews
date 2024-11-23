@@ -301,6 +301,10 @@ fun EventsItem(
                             ).dropLast(2)
                         } ${item.endingTimeStatus}"
                     )
+
+                    Text(
+                        text = "Address:- ${if (!item.address.isNullOrEmpty()) item.address else "No Address Available"}"
+                    )
                 }
             }
         }

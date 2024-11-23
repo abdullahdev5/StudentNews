@@ -7,6 +7,7 @@ data class EventsModel(
     val title: String? = "", // title
     val description: String? = "", // description
     val eventId: String? = "", // event ID
+    val address: String? = "", // Address
     val startingDate: Long? = 0L, // starting date
     val startingTimeHour: Int? = 0, // starting time hour
     val startingTimeMinutes: Int? = 0, // starting time minutes
@@ -16,12 +17,14 @@ data class EventsModel(
     val endingTimeMinutes: Int? = 0, // ending time minutes
     val endingTimeStatus: String? = "", // ending time status
     val timestamp: Timestamp? = null, // timestamp
-    val urlList: List<UrlList>? = emptyList() // url List
+    val urlList: List<UrlList>? = emptyList(), // url List
+    val bookings: List<EventsBookingModel>? = emptyList() // bookings
 ) {
     constructor() : this(
         title = "",
         description = "",
         eventId = "",
+        address = "",
         startingDate = 0L,
         startingTimeHour = 0,
         startingTimeMinutes = 0,
@@ -31,6 +34,7 @@ data class EventsModel(
         endingTimeMinutes = 0,
         endingTimeStatus = "",
         timestamp = null,
-        urlList = emptyList()
+        urlList = emptyList(),
+        bookings = emptyList(),
     )
 }

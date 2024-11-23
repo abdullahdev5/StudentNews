@@ -8,11 +8,15 @@ package com.android.studentnews.news.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -188,6 +192,7 @@ fun SharedTransitionScope.NewsScreen(
             categoriesList.value.size
         }
     )
+
 
     BackHandler(drawerState.isOpen || tabPagerState.currentPage != 0) {
         scope.launch {
@@ -371,48 +376,107 @@ fun SharedTransitionScope.NewsScreen(
                         .padding(paddingValues = innerPadding)
                 ) {
 
-                    TabRow(
-                        selectedTabIndex = tabPagerState.currentPage,
-                        indicator = {
-                            TabRowDefaults.PrimaryIndicator(
-                                color = Color.Transparent //if (isSystemInDarkTheme()) White else Black
+                    AnimatedVisibility(
+                        lazyListState.firstVisibleItemIndex < 1 &&
+                                tabPagerState.currentPage == 0
+                    ) {
+                        HorizontalPager(
+                            state = categoryPagerState,
+                            pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
+                                (-30).dp else (-15).dp,
+                            flingBehavior = PagerDefaults.flingBehavior(
+                                state = categoryPagerState,
+                                pagerSnapDistance = PagerSnapDistance.atMost(
+                                    1
+                                ),
+                                snapAnimationSpec = spring(
+                                    stiffness = Spring.StiffnessVeryLow,
+                                    dampingRatio = Spring.DampingRatioLowBouncy
+                                )
+                            ),
+                            modifier = Modifier
+                                .height(270.dp)
+//                                    .height(newsCategoryPagerHeight.value)
+                        ) { pagerIndex ->
+                            val item = categoriesList.value[pagerIndex]
+                            CategoriesListPagerItem(
+                                item = item,
+                                categoriesList = categoriesList.value,
+                                categoryPagerState = categoryPagerState,
+                                context = context,
+                                onItemCLick = { category ->
+                                    newsViewModel.getNewsListByCategory(
+                                        category
+                                    )
+                                    newsCategoryStatus =
+                                        "${category} News"
+                                }
                             )
                         }
-                    ) {
-                        // News
-                        Tab(
-                            selected = tabPagerState.currentPage == 0,
-                            onClick = {
-                                scope.launch {
-                                    tabPagerState.animateScrollToPage(0)
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Newspaper,
-                                    contentDescription = "Icon For News"
-                                )
-                            },
-                            selectedContentColor = Green,
-                            unselectedContentColor = if (isSystemInDarkTheme()) White else Black
-                        )
-                        // Events
-                        Tab(
-                            selected = tabPagerState.currentPage == 1,
-                            onClick = {
-                                scope.launch {
-                                    tabPagerState.animateScrollToPage(1)
-                                }
-                            },
-                            icon = {
-                                Icon(
-                                    imageVector = Icons.Outlined.Event,
-                                    contentDescription = "Icon For Events"
-                                )
-                            },
-                            selectedContentColor = Green,
-                            unselectedContentColor = if (isSystemInDarkTheme()) White else Black
-                        )
+
+                    }
+
+
+                    Column {
+
+                        TabRow(
+                            selectedTabIndex = tabPagerState.currentPage,
+                        ) {
+                            // News
+                            Tab(
+                                selected = tabPagerState.currentPage == 0,
+                                onClick = {
+                                    scope.launch {
+                                        tabPagerState.animateScrollToPage(0)
+                                    }
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Newspaper,
+                                        contentDescription = "Icon For News"
+                                    )
+                                },
+                                text = {
+                                    Text(text = "News")
+                                },
+                                selectedContentColor = Green,
+                                unselectedContentColor = if (isSystemInDarkTheme()) White else Black
+                            )
+                            // Events
+                            Tab(
+                                selected = tabPagerState.currentPage == 1,
+                                onClick = {
+                                    scope.launch {
+                                        tabPagerState.animateScrollToPage(1)
+                                    }
+                                },
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Event,
+                                        contentDescription = "Icon For Events"
+                                    )
+                                },
+                                text = {
+                                    Text(text = "Events")
+                                },
+                                selectedContentColor = Green,
+                                unselectedContentColor = if (isSystemInDarkTheme()) White else Black
+                            )
+                        }
+
+                        AnimatedVisibility(tabPagerState.currentPage == 0) {
+                            Text(
+                                text = if (newsCategoryStatus.isNotEmpty())
+                                    newsCategoryStatus else "For You",
+                                style = TextStyle(
+                                    fontSize = FontSize.LARGE.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Gray
+                                ),
+                                modifier = Modifier
+                                    .padding(all = 15.dp)
+                            )
+                        }
                     }
 
                     Box(
@@ -450,65 +514,6 @@ fun SharedTransitionScope.NewsScreen(
                                             .fillMaxSize(),
                                     ) {
 
-                                        item {
-
-                                            Column {
-                                                HorizontalPager(
-                                                    state = categoryPagerState,
-                                                    pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
-                                                        (-30).dp else (-15).dp,
-                                                    flingBehavior = PagerDefaults.flingBehavior(
-                                                        state = categoryPagerState,
-                                                        pagerSnapDistance = PagerSnapDistance.atMost(
-                                                            1
-                                                        ),
-                                                        snapAnimationSpec = spring(
-                                                            stiffness = Spring.StiffnessVeryLow,
-                                                            dampingRatio = Spring.DampingRatioLowBouncy
-                                                        )
-                                                    )
-                                                ) { pagerIndex ->
-                                                    val item = categoriesList.value[pagerIndex]
-                                                    CategoriesListPagerItem(
-                                                        item = item,
-                                                        context = context,
-                                                        onItemCLick = { category ->
-                                                            newsViewModel.getNewsListByCategory(
-                                                                category
-                                                            )
-                                                            newsCategoryStatus =
-                                                                "${category} News"
-                                                        }
-                                                    )
-                                                }
-
-                                                Row(
-                                                    modifier = Modifier
-                                                        .align(alignment = Alignment.CenterHorizontally),
-                                                ) {
-                                                    repeat(categoriesList.value.size) { index ->
-                                                        PagerIndicator(
-                                                            index = index,
-                                                            pagerState = categoryPagerState
-                                                        )
-                                                    }
-                                                }
-
-                                                Spacer(modifier = Modifier.height(10.dp))
-                                                Text(
-                                                    text = if (newsCategoryStatus.isNotEmpty())
-                                                        newsCategoryStatus else "For You",
-                                                    style = TextStyle(
-                                                        fontSize = FontSize.LARGE.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = Gray
-                                                    ),
-                                                    modifier = Modifier
-                                                        .padding(start = 15.dp)
-                                                )
-                                            }
-                                        }
-
                                         items(
                                             count = newsList.value.size,
                                             key = { index ->
@@ -527,9 +532,45 @@ fun SharedTransitionScope.NewsScreen(
                                                     )
                                                 },
                                                 context = context,
-                                                scope = scope,
-                                                newsViewModel = newsViewModel,
-                                                animatedVisibilityScope = animatedVisibilityScope
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                onSave = { it ->
+                                                    if (isInternetAvailable(context)) {
+
+                                                        val news = NewsModel(
+                                                            newsId = it.newsId,
+                                                            title = it.title,
+                                                            description = it.description,
+                                                            category = it.category,
+                                                            timestamp = Timestamp.now(),
+                                                            link = it.link,
+                                                            linkTitle = it.linkTitle,
+                                                            urlList = it.urlList,
+                                                            shareCount = it.shareCount ?: 0,
+                                                            likes = it.likes
+                                                        )
+
+                                                        newsViewModel.onNewsSave(
+                                                            news,
+                                                            onSeeAction = { thisNewsId ->
+                                                                navHostController.navigate(
+                                                                    NewsDestination.NEWS_DETAIL_SCREEN(
+                                                                        thisNewsId
+                                                                    )
+                                                                )
+                                                            },
+                                                        )
+                                                    } else {
+                                                        scope.launch {
+                                                            SnackBarController
+                                                                .sendEvent(
+                                                                    SnackBarEvents(
+                                                                        message = "No Internet Connection!",
+                                                                        duration = SnackbarDuration.Long
+                                                                    )
+                                                                )
+                                                        }
+                                                    }
+                                                }
                                             )
                                         }
 
@@ -617,9 +658,8 @@ fun SharedTransitionScope.NewsScreen(
 fun SharedTransitionScope.NewsItem(
     item: NewsModel?,
     context: Context,
-    scope: CoroutineScope,
     onItemClick: (String) -> Unit,
-    newsViewModel: NewsViewModel,
+    onSave: (NewsModel) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     Card(
@@ -661,72 +701,8 @@ fun SharedTransitionScope.NewsItem(
 
                     IconButton(
                         onClick = {
-                            if (isInternetAvailable(context)) {
-
-                                item?.let {
-
-                                    val news = NewsModel(
-                                        newsId = it.newsId,
-                                        title = it.title,
-                                        description = it.description,
-                                        category = it.category,
-                                        timestamp = Timestamp.now(),
-                                        link = it.link,
-                                        linkTitle = it.linkTitle,
-                                        urlList = it.urlList,
-                                        shareCount = it.shareCount ?: 0,
-                                        likes = it.likes
-                                    )
-
-                                    newsViewModel.viewModelScope.launch {
-                                        newsViewModel
-                                            .onNewsSave(news)
-                                            .collect { result ->
-                                                when (result) {
-                                                    is NewsState.Success -> {
-                                                        SnackBarController
-                                                            .sendEvent(
-                                                                SnackBarEvents(
-                                                                    message = "News Saved",
-                                                                    duration = SnackbarDuration.Long,
-                                                                    action = SnackBarActions(
-                                                                        label = "See",
-                                                                        action = {
-                                                                            onItemClick.invoke(
-                                                                                result.data
-                                                                            )
-                                                                        }
-                                                                    )
-                                                                )
-                                                            )
-                                                    }
-
-                                                    is NewsState.Failed -> {
-                                                        SnackBarController
-                                                            .sendEvent(
-                                                                SnackBarEvents(
-                                                                    message = result.error.localizedMessage
-                                                                        ?: "",
-                                                                    duration = SnackbarDuration.Long,
-                                                                )
-                                                            )
-                                                    }
-
-                                                    else -> {}
-                                                }
-                                            }
-                                    }
-                                }
-                            } else {
-                                scope.launch {
-                                    SnackBarController
-                                        .sendEvent(
-                                            SnackBarEvents(
-                                                message = "No Internet Connection!",
-                                                duration = SnackbarDuration.Long
-                                            )
-                                        )
-                                }
+                            item?.let {
+                                onSave.invoke(it)
                             }
                         },
                         modifier = Modifier
@@ -808,70 +784,85 @@ fun SharedTransitionScope.NewsItem(
 @Composable
 fun CategoriesListPagerItem(
     item: CategoryModel,
+    categoriesList: List<CategoryModel>,
+    categoryPagerState: PagerState,
     context: Context,
     onItemCLick: (String) -> Unit,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(
-                max = 270.dp
-            )
-            .padding(
-                start = 20.dp,
-                end = 20.dp,
-                top = 20.dp,
-                bottom = 5.dp
-            )
-            .clickable {
-                onItemCLick.invoke(item.name ?: "")
-            },
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        )
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
+    Column {
 
-            SubcomposeAsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(item.imageUrl ?: "")
-                    .crossfade(true)
-                    .build(),
-                contentDescription = "Category Image",
-                contentScale = ContentScale.Crop,
-                loading = {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                },
+        Card(
+            modifier = Modifier
+                .padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 20.dp,
+                    bottom = 5.dp
+                )
+                .clickable {
+                    onItemCLick.invoke(item.name ?: "")
+                }
+                .weight(1f),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Transparent
+            )
+        ) {
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-            )
+            ) {
 
-            Text(
-                text = item.name ?: "",
-                style = TextStyle(
-                    fontSize = FontSize.LARGE.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = White
-                ),
-                modifier = Modifier
-                    .padding(all = 10.dp)
-                    .align(alignment = Alignment.BottomStart)
-                    .shadow(
-                        elevation = 10.dp,
-                    )
-            )
+                SubcomposeAsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(item.imageUrl ?: "")
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = "Category Image",
+                    contentScale = ContentScale.Crop,
+                    loading = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                )
+
+                Text(
+                    text = item.name ?: "",
+                    style = TextStyle(
+                        fontSize = FontSize.LARGE.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = White
+                    ),
+                    modifier = Modifier
+                        .padding(all = 10.dp)
+                        .align(alignment = Alignment.BottomStart)
+                        .shadow(
+                            elevation = 10.dp,
+                        )
+                )
 
 
+            }
         }
+
+        Row(
+            modifier = Modifier
+                .align(alignment = Alignment.CenterHorizontally),
+        ) {
+            repeat(categoriesList.size) { index ->
+                PagerIndicator(
+                    index = index,
+                    pagerState = categoryPagerState
+                )
+            }
+        }
+
     }
 }
 

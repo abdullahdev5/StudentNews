@@ -125,7 +125,6 @@ fun SharedTransitionScope.NewsDetailScreen(
     newsId: String,
     navHostController: NavHostController,
     newsDetailViewModel: NewsDetailViewModel,
-    newsViewModel: NewsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
 
@@ -135,7 +134,7 @@ fun SharedTransitionScope.NewsDetailScreen(
 
     val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
     val savedNewsById by newsDetailViewModel.savedNewsById.collectAsStateWithLifecycle()
-    val currentUser by newsViewModel.currentUser.collectAsStateWithLifecycle()
+    val currentUser by newsDetailViewModel.currentUser.collectAsStateWithLifecycle()
 
     var isSaved by remember(savedNewsById) {
         mutableStateOf(savedNewsById != null)
@@ -214,8 +213,8 @@ fun SharedTransitionScope.NewsDetailScreen(
                 ) {
                     TextButton(
                         onClick = {
-                        navHostController.navigateUp()
-                    },
+                            navHostController.navigateUp()
+                        },
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = if (isSystemInDarkTheme()) White else Black
                         )
@@ -280,19 +279,11 @@ fun SharedTransitionScope.NewsDetailScreen(
                                                 shareCount = it.shareCount ?: 0
                                             )
 
-                                            newsViewModel.viewModelScope.launch {
-                                                newsViewModel
-                                                    .onNewsSave(news)
-                                                    .collect { result ->
-                                                        when (result) {
-                                                            else -> {}
-                                                        }
-                                                    }
-                                            }
+                                            newsDetailViewModel.onNewsSave(news)
+
                                         } else {
-                                            newsViewModel.onNewsRemoveFromSave(
-                                                it.newsId ?: "",
-                                                wantToShowSnackBar = false
+                                            newsDetailViewModel.onNewsRemoveFromSave(
+                                                it.newsId ?: ""
                                             )
                                         }
                                     }
@@ -343,11 +334,7 @@ fun SharedTransitionScope.NewsDetailScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(
-                    top = innerPadding.calculateTopPadding(),
-                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
-                    end = innerPadding.calculateLeftPadding(LayoutDirection.Rtl),
-                )
+                .padding(innerPadding)
                 .verticalScroll(scrollState)
                 .sharedElement(
                     state = rememberSharedContentState(key = "container/$newsId"),
@@ -540,15 +527,9 @@ fun SharedTransitionScope.NewsDetailScreen(
                                     likes = newsById?.likes ?: emptyList()
                                 )
 
-                                scope.launch {
-                                    newsViewModel.onNewsSave(news).collect { result ->
-                                        when (result) {
-                                            else -> {}
-                                        }
-                                    }
-                                }
+                                newsDetailViewModel.onNewsSave(news)
                             } else {
-                                newsViewModel.onNewsRemoveFromSave(newsId, false)
+                                newsDetailViewModel.onNewsRemoveFromSave(newsId)
                             }
                         },
                     ) {
@@ -737,7 +718,7 @@ fun SharedTransitionScope.NewsDetailScreen(
 @Composable
 fun UrlListPagerIndicator(
     state: PagerState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
         colors = CardDefaults.cardColors(

@@ -4,6 +4,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
@@ -14,6 +15,7 @@ import com.android.studentnews.news.domain.resource.NewsState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
@@ -97,6 +99,48 @@ class SearchViewModel(
                     when (result) {
                         is NewsState.Success<*> -> {
                             _categoriesList.value = result.data as List<CategoryModel>
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun onNewsSave(
+        news: NewsModel,
+        onSeeAction: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            newsRepository
+                .onNewsSave(news)
+                .collectLatest { result ->
+                    when (result) {
+                        is NewsState.Success -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = "News Saved",
+                                        duration = SnackbarDuration.Long,
+                                        action = SnackBarActions(
+                                            label = "See",
+                                            action = {
+                                                onSeeAction.invoke(result.data)
+                                            }
+                                        )
+                                    )
+                                )
+                        }
+
+                        is NewsState.Failed -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage
+                                            ?: "",
+                                        duration = SnackbarDuration.Long,
+                                    )
+                                )
                         }
 
                         else -> {}

@@ -79,8 +79,7 @@ import kotlinx.coroutines.launch
 fun SharedTransitionScope.SavedNewsScreen(
     navHostController: NavHostController,
     savedNewsViewModel: SavedNewsViewModel,
-    newsViewModel: NewsViewModel,
-    animatedVisibilityScope: AnimatedVisibilityScope
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
 
     val context = LocalContext.current
@@ -124,13 +123,14 @@ fun SharedTransitionScope.SavedNewsScreen(
                 val item = savedNewsList[index]
                 SavedNewsItem(
                     item = item,
-                    newsViewModel = newsViewModel,
                     context = context,
-                    scope = scope,
                     onItemClick = { newsId ->
                         navHostController.navigate(NewsDestination.NEWS_DETAIL_SCREEN(newsId))
                     },
-                    animatedVisibilityScope = animatedVisibilityScope
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    onRemoveFromSavedList = { thisNewsId ->
+                        savedNewsViewModel.onNewsRemoveFromSave(thisNewsId)
+                    }
                 )
             }
         }
@@ -141,11 +141,10 @@ fun SharedTransitionScope.SavedNewsScreen(
 @Composable
 fun SharedTransitionScope.SavedNewsItem(
     item: NewsModel?,
-    newsViewModel: NewsViewModel,
     context: Context,
-    scope: CoroutineScope,
     onItemClick: (String) -> Unit,
-    animatedVisibilityScope: AnimatedVisibilityScope
+    onRemoveFromSavedList: (String) -> Unit,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
 
     var isRemoveSaveNewsAlertDialogOpen by remember { mutableStateOf(false) }
@@ -274,22 +273,7 @@ fun SharedTransitionScope.SavedNewsItem(
                 title = it.title ?: "",
                 imageUrl = imageUrl,
                 onConfirm = {
-                    if (isInternetAvailable(context)) {
-                        newsViewModel.onNewsRemoveFromSave(
-                            it.newsId ?: "",
-                            wantToShowSnackBar = true
-                        )
-                    } else {
-                        scope.launch {
-                            SnackBarController
-                                .sendEvent(
-                                    SnackBarEvents(
-                                        message = "No Internet Connection!",
-                                        duration = SnackbarDuration.Long
-                                    )
-                                )
-                        }
-                    }
+                    onRemoveFromSavedList.invoke(it.newsId ?: "")
                 },
                 onDismiss = {
                     isRemoveSaveNewsAlertDialogOpen = false

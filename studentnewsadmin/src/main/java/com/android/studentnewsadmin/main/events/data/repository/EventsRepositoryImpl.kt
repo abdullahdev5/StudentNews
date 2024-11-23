@@ -13,6 +13,7 @@ import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import com.android.studentnewsadmin.core.domain.constants.FirestoreNodes
 import com.android.studentnewsadmin.core.domain.resource.EventsState
+import com.android.studentnewsadmin.main.events.data.worker.ADDRESS
 import com.android.studentnewsadmin.main.events.data.worker.ENDING_DATE
 import com.android.studentnewsadmin.main.events.data.worker.ENDING_TIME_HOUR
 import com.android.studentnewsadmin.main.events.data.worker.ENDING_TIME_MINUTES
@@ -58,6 +59,7 @@ class EventsRepositoryImpl(
     override fun onEventUpload(
         title: String,
         description: String,
+        address: String,
         startingDate: Long,
         startingTimeHour: Int,
         startingTimeMinutes: Int,
@@ -221,6 +223,7 @@ class EventsRepositoryImpl(
     override fun onUploadEventWorkerStart(
         title: String,
         description: String,
+        address: String,
         startingDate: Long,
         startingTimeHour: Int,
         startingTimeMinutes: Int,
@@ -235,6 +238,7 @@ class EventsRepositoryImpl(
         val inputData = Data.Builder()
             .putString(TITLE, title)
             .putString(DESCRIPTION, description)
+            .putString(ADDRESS, address)
             .putLong(STARTING_DATE, startingDate)
             .putInt(STARTING_TIME_HOUR, startingTimeHour)
             .putInt(STARTING_TIME_MINUTES, startingTimeMinutes)

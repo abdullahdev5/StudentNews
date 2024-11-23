@@ -140,6 +140,7 @@ fun UploadEVentsScreen(
 
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
+    var address by rememberSaveable { mutableStateOf("") }
     val uriList = remember { mutableStateListOf<Uri?>() }
 
     // Starting Date and Time
@@ -203,6 +204,7 @@ fun UploadEVentsScreen(
                             .onUploadEventWorkerStart(
                                 title = title,
                                 description = description,
+                                address = address,
                                 startingDate = startingDate,
                                 startingTimeHour = startingTimeHour,
                                 startingTimeMinutes = startingTimeMinutes,
@@ -223,9 +225,10 @@ fun UploadEVentsScreen(
                     }
 
                 },
-                enabled = title.isNotEmpty() && description.isNotEmpty() && startingDate != 0L
-                        && startingTimeHour != 0 && startingTimeStatus.isNotEmpty() && endingDate != 0L
-                        && endingTimeHour != 0 && endingTimeStatus.isNotEmpty() && uriList.isNotEmpty(),
+                enabled = title.isNotEmpty() && description.isNotEmpty() && address.isNotEmpty()
+                        && startingDate != 0L && startingTimeHour != 0 && startingTimeStatus.isNotEmpty()
+                        && endingDate != 0L && endingTimeHour != 0 && endingTimeStatus.isNotEmpty()
+                        && uriList.isNotEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp)
@@ -462,6 +465,21 @@ fun UploadEVentsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 250.dp)
+                    .padding(all = 20.dp)
+            )
+
+            TextField(
+                value = address,
+                onValueChange = {
+                    address = it
+                },
+                label = {
+                    Text(text = "Address")
+                },
+                colors = OutlinedTextFieldColors(),
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
                     .padding(all = 20.dp)
             )
 

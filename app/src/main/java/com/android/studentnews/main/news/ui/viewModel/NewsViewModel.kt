@@ -1,13 +1,16 @@
 package com.android.studentnews.news.ui.viewModel
 
+import android.content.Context
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.auth.domain.repository.AuthRepository
+import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
+import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
@@ -49,7 +52,7 @@ class NewsViewModel(
         getCategoriesList()
         getCurrentUser()
         setupPeriodicNewsWorkRequest()
-        // // // /// //// // / //// cancelPeriodicNewsWorkRequest()
+//        cancelPeriodicNewsWorkRequest()
     }
 
 
@@ -80,36 +83,40 @@ class NewsViewModel(
         }
     }
 
-    fun onNewsSave(news: NewsModel) = newsRepository.onNewsSave(news)
-
-    fun onNewsRemoveFromSave(newsId: String, wantToShowSnackBar: Boolean) {
+    fun onNewsSave(
+        news: NewsModel,
+        onSeeAction: (String) -> Unit,
+    ) {
         viewModelScope.launch {
             newsRepository
-                .onNewsRemoveFromSave(newsId)
+                .onNewsSave(news)
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Success -> {
-                            if (wantToShowSnackBar) {
-                                SnackBarController
-                                    .sendEvent(
-                                        SnackBarEvents(
-                                            message = result.data,
-                                            duration = SnackbarDuration.Short,
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = "News Saved",
+                                        duration = SnackbarDuration.Long,
+                                        action = SnackBarActions(
+                                            label = "See",
+                                            action = {
+                                                onSeeAction.invoke(result.data)
+                                            }
                                         )
                                     )
-                            }
+                                )
                         }
 
                         is NewsState.Failed -> {
-                            if (wantToShowSnackBar) {
-                                SnackBarController
-                                    .sendEvent(
-                                        SnackBarEvents(
-                                            message = result.error.localizedMessage ?: "",
-                                            duration = SnackbarDuration.Long
-                                        )
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage
+                                            ?: "",
+                                        duration = SnackbarDuration.Long,
                                     )
-                            }
+                                )
                         }
 
                         else -> {}

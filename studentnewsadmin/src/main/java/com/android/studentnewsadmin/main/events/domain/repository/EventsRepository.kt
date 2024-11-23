@@ -16,6 +16,7 @@ interface EventsRepository {
     fun onEventUpload(
         title: String,
         description: String,
+        address: String,
         startingDate: Long,
         startingTimeHour: Int,
         startingTimeMinutes: Int,
@@ -37,6 +38,7 @@ interface EventsRepository {
     fun onUploadEventWorkerStart(
         title: String,
         description: String,
+        address: String,
         startingDate: Long,
         startingTimeHour: Int,
         startingTimeMinutes: Int,

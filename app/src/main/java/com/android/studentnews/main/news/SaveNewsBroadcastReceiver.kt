@@ -1,4 +1,4 @@
-package com.android.studentnews
+package com.android.studentnews.main.news
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -15,6 +15,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.collections.map
+import kotlin.text.split
+import kotlin.text.toLong
 
 class SaveNewsBroadcastReceiver : BroadcastReceiver(), KoinComponent {
 

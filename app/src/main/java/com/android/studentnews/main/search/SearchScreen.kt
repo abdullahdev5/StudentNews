@@ -37,6 +37,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -64,9 +65,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.android.studentnews.core.data.snackbar_controller.SnackBarController
+import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
+import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.news.domain.destination.NewsDestination
+import com.android.studentnews.news.domain.model.NewsModel
+import com.android.studentnews.news.domain.resource.NewsState
 import com.android.studentnews.news.ui.NewsItem
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
@@ -74,13 +80,14 @@ import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
+import com.google.firebase.Timestamp
+import kotlinx.coroutines.launch
 
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
 fun SharedTransitionScope.SearchScreen(
     navHostController: NavHostController,
     searchViewModel: SearchViewModel,
-    newsViewModel: NewsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope
 ) {
 
@@ -291,9 +298,44 @@ fun SharedTransitionScope.SearchScreen(
                                         )
                                     )
                                 },
-                                scope = scope,
-                                newsViewModel = newsViewModel,
-                                animatedVisibilityScope = animatedVisibilityScope
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                onSave = { it ->
+                                    if (isInternetAvailable(context)) {
+
+                                        val news = NewsModel(
+                                            newsId = it.newsId,
+                                            title = it.title,
+                                            description = it.description,
+                                            category = it.category,
+                                            timestamp = Timestamp.now(),
+                                            link = it.link,
+                                            linkTitle = it.linkTitle,
+                                            urlList = it.urlList,
+                                            shareCount = it.shareCount ?: 0,
+                                            likes = it.likes
+                                        )
+
+                                        searchViewModel.onNewsSave(
+                                            news = news,
+                                            onSeeAction = { thisNewsId ->
+                                                navHostController.navigate(
+                                                    NewsDestination.NEWS_DETAIL_SCREEN(thisNewsId)
+                                                )
+                                            }
+                                        )
+
+                                    } else {
+                                        scope.launch {
+                                            SnackBarController
+                                                .sendEvent(
+                                                    SnackBarEvents(
+                                                        message = "No Internet Connection!",
+                                                        duration = SnackbarDuration.Long
+                                                    )
+                                                )
+                                        }
+                                    }
+                                }
                             )
                         }
                     }

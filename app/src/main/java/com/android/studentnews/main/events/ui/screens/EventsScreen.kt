@@ -53,8 +53,8 @@ import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Green
-import com.android.studentnewsadmin.core.domain.common.formatDateToString
-import com.android.studentnewsadmin.core.domain.common.formatTimeToString
+import com.android.studentnews.core.domain.common.formatDateToString
+import com.android.studentnews.core.domain.common.formatTimeToString
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 
 @Composable

@@ -1,7 +1,6 @@
 package com.android.studentnews.news.data.module
 
-import androidx.navigation.compose.rememberNavController
-import com.android.studentnews.NewsWorker
+import com.android.studentnews.main.news.NewsWorker
 import com.android.studentnews.main.news.data.repository.NewsDetailRepositoryImpl
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel

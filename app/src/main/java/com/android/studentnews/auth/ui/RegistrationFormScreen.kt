@@ -455,9 +455,9 @@ fun RegistrationFormScreen(
                     .padding(start = 20.dp)
             )
             // City
-            DegreeTitleDropDownMenu(
-                degreeTitle = city,
-                degreeTitleList = cityList,
+            CityDropDownMenu(
+                city = city,
+                cityList = cityList,
                 expanded = isCityDropDownMenuOpen,
                 onExpandedChange = {
                     isCityDropDownMenuOpen = !isCityDropDownMenuOpen
@@ -586,7 +586,6 @@ fun DegreeDropDownMenu(
             },
             readOnly = true,
             modifier = Modifier
-                .fillMaxSize()
                 .menuAnchor(),
         )
         ExposedDropdownMenu(
@@ -642,7 +641,6 @@ fun DegreeTitleDropDownMenu(
             },
             readOnly = true,
             modifier = Modifier
-                .fillMaxSize()
                 .menuAnchor(),
         )
         ExposedDropdownMenu(
@@ -698,7 +696,6 @@ fun CityDropDownMenu(
             },
             readOnly = true,
             modifier = Modifier
-                .fillMaxSize()
                 .menuAnchor(),
         )
         ExposedDropdownMenu(

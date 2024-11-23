@@ -23,7 +23,7 @@ import com.android.studentnewsadmin.main.news.data.worker.URI_LIST
 import kotlinx.coroutines.flow.first
 
 
-
+const val ADDRESS = "Address"
 const val STARTING_DATE = "starting_date"
 const val STARTING_TIME_HOUR = "starting_time_hour"
 const val STARTING_TIME_MINUTES = "starting_time_minute"
@@ -47,6 +47,7 @@ class UploadEventsWorker(
 
             val title = inputData.getString(TITLE) ?: ""
             val description = inputData.getString(DESCRIPTION) ?: ""
+            val address = inputData.getString(ADDRESS) ?: ""
             val startingDate = inputData.getLong(STARTING_DATE, 1732082977213L)
             val startingTimeHour = inputData.getInt(STARTING_TIME_HOUR, 12)
             val startingTimeMinutes = inputData.getInt(STARTING_TIME_MINUTES, 10)
@@ -64,18 +65,19 @@ class UploadEventsWorker(
 
             val uploadTask = eventsRepository
                 .onEventUpload(
-                    title,
-                    description,
-                    startingDate,
-                    startingTimeHour,
-                    startingTimeMinutes,
-                    startingTimeStatus,
-                    endingDate,
-                    endingTimeHour,
-                    endingTimeMinutes,
-                    endingTimeStatus,
-                    uriList,
-                    context
+                    title = title,
+                    description = description,
+                    address = address,
+                    startingDate = startingDate,
+                    startingTimeHour = startingTimeHour,
+                    startingTimeMinutes = startingTimeMinutes,
+                    startingTimeStatus = startingTimeStatus,
+                    endingDate = endingDate,
+                    endingTimeHour = endingTimeHour,
+                    endingTimeMinutes = endingTimeMinutes,
+                    endingTimeStatus = endingTimeStatus,
+                    uriList = uriList,
+                    context = context
                 ).first()
 
             when (uploadTask) {

@@ -86,6 +86,7 @@ class EventsViewModel(
     fun onUploadEventWorkerStart(
         title: String,
         description: String,
+        address: String,
         startingDate: Long,
         startingTimeHour: Int,
         startingTimeMinutes: Int,
@@ -96,8 +97,18 @@ class EventsViewModel(
         endingTimeStatus: String,
         stringArray: Array<String>
     ) = eventsRepository.onUploadEventWorkerStart(
-        title, description, startingDate, startingTimeHour, startingTimeMinutes, startingTimeStatus,
-        endingDate, endingTimeHour, endingTimeMinutes, endingTimeStatus, stringArray
+        title = title,
+        description = description,
+        address = address,
+        startingDate = startingDate,
+        startingTimeHour = startingTimeHour,
+        startingTimeMinutes = startingTimeMinutes,
+        startingTimeStatus = startingTimeStatus,
+        endingDate = endingDate,
+        endingTimeHour = endingTimeHour,
+        endingTimeMinutes = endingTimeMinutes,
+        endingTimeStatus = endingTimeStatus,
+        stringArray = stringArray
     )
 
 }

@@ -13,7 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
-import com.android.studentnews.MY_URI
+import com.android.studentnews.main.news.MY_URI
 import com.android.studentnews.auth.domain.RegistrationDataNavType
 import com.android.studentnews.auth.domain.destination.AuthDestination
 import com.android.studentnews.auth.domain.models.RegistrationData
@@ -122,7 +122,6 @@ fun NavigationGraph(
                             newsId = arguments.newsId,
                             navHostController = navHostController,
                             newsDetailViewModel = newsDetailViewModel,
-                            newsViewModel = newsViewModel,
                             animatedVisibilityScope = this
                         )
                     }
@@ -165,12 +164,10 @@ fun NavigationGraph(
                         }
                     ) {
                         val savedNewsViewModel = koinViewModel<SavedNewsViewModel>()
-                        val newsViewModel = koinViewModel<NewsViewModel>()
 
                         SavedNewsScreen(
                             navHostController = navHostController,
                             savedNewsViewModel = savedNewsViewModel,
-                            newsViewModel = newsViewModel,
                             animatedVisibilityScope = this
                         )
                     }
@@ -227,12 +224,10 @@ fun NavigationGraph(
                     }
                 ) {
                     val searchViewModel = koinViewModel<SearchViewModel>()
-                    val newsViewModel = koinViewModel<NewsViewModel>()
 
                     SearchScreen(
                         navHostController = navHostController,
                         searchViewModel = searchViewModel,
-                        newsViewModel = newsViewModel,
                         animatedVisibilityScope = this
                     )
                 }

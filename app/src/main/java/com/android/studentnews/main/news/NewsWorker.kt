@@ -1,32 +1,33 @@
-package com.android.studentnews
+package com.android.studentnews.main.news
 
+import android.Manifest
 import android.app.PendingIntent
 import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.Icon
 import android.os.Build
-import android.service.autofill.Validators.or
 import androidx.compose.ui.util.fastJoinToString
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.graphics.drawable.toBitmap
-import androidx.core.graphics.drawable.toBitmapOrNull
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.core.text.HtmlCompat
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import coil.ImageLoader
 import coil.imageLoader
 import coil.request.ImageRequest
+import com.android.studentnews.MainActivity
+import com.android.studentnews.NotificationRelated
+import com.android.studentnews.R
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
+import kotlin.apply
+import kotlin.jvm.java
+import kotlin.run
 
 const val MY_URI = "https://www.google.com"
 const val SAVE_NEWS_ACTION = "SAVE_NEWS_ACTION"
@@ -144,14 +145,20 @@ class NewsWorker(
                         .addAction(
                             NotificationCompat.Action(
                                 null,
-                                "Save",
+                                HtmlCompat.fromHtml(
+                                    "<font color=\"" + ContextCompat.getColor(
+                                        context,
+                                        R.color.green
+                                    ) + "\">" + "Save" + "</font>",
+                                    HtmlCompat.FROM_HTML_MODE_LEGACY
+                                ),
                                 savedPendingIntent
                             )
                         )
 
                 if (ActivityCompat.checkSelfPermission(
                         context,
-                        android.Manifest.permission.POST_NOTIFICATIONS
+                        Manifest.permission.POST_NOTIFICATIONS
                     ) != PackageManager.PERMISSION_GRANTED
                 ) {
                     // TODO: Consider calling
