@@ -12,11 +12,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -52,8 +49,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Bookmark
-import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Newspaper
@@ -83,7 +80,6 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -93,7 +89,6 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -117,7 +112,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.AsyncImage
@@ -125,7 +119,6 @@ import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
-import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.common.isInternetAvailable
@@ -133,6 +126,7 @@ import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.NavigationBarItems
+import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
@@ -141,7 +135,6 @@ import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.navigation.SubGraph
 import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
-import com.android.studentnews.news.domain.resource.NewsState
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkGray
@@ -149,7 +142,6 @@ import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
 import com.google.firebase.Timestamp
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
@@ -234,6 +226,12 @@ fun SharedTransitionScope.NewsScreen(
                         },
                         onSavedNewsClick = {
                             navHostController.navigate(NewsDestination.SAVED_NEWS_SCREEN)
+                        },
+                        onBookedEventsClick = {
+                            navHostController.navigate(EventsDestination.BOOKED_EVENTS_SCREEN)
+                        },
+                        onSavedEventsClick = {
+                            navHostController.navigate(EventsDestination.SAVED_EVENTS_SCREEN)
                         },
                         onSignOutClick = {
                             newsViewModel.cancelPeriodicNewsWorkRequest()
@@ -376,106 +374,112 @@ fun SharedTransitionScope.NewsScreen(
                         .padding(paddingValues = innerPadding)
                 ) {
 
-                    AnimatedVisibility(
-                        lazyListState.firstVisibleItemIndex < 1 &&
-                                tabPagerState.currentPage == 0
+                    Column(
+                        modifier = Modifier
+                            .verticalScroll(rememberScrollState())
                     ) {
-                        HorizontalPager(
-                            state = categoryPagerState,
-                            pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
-                                (-30).dp else (-15).dp,
-                            flingBehavior = PagerDefaults.flingBehavior(
-                                state = categoryPagerState,
-                                pagerSnapDistance = PagerSnapDistance.atMost(
-                                    1
-                                ),
-                                snapAnimationSpec = spring(
-                                    stiffness = Spring.StiffnessVeryLow,
-                                    dampingRatio = Spring.DampingRatioLowBouncy
-                                )
-                            ),
-                            modifier = Modifier
-                                .height(270.dp)
-//                                    .height(newsCategoryPagerHeight.value)
-                        ) { pagerIndex ->
-                            val item = categoriesList.value[pagerIndex]
-                            CategoriesListPagerItem(
-                                item = item,
-                                categoriesList = categoriesList.value,
-                                categoryPagerState = categoryPagerState,
-                                context = context,
-                                onItemCLick = { category ->
-                                    newsViewModel.getNewsListByCategory(
-                                        category
-                                    )
-                                    newsCategoryStatus =
-                                        "${category} News"
-                                }
-                            )
-                        }
 
-                    }
-
-
-                    Column {
-
-                        TabRow(
-                            selectedTabIndex = tabPagerState.currentPage,
+                        AnimatedVisibility(
+                            lazyListState.firstVisibleItemIndex < 1 &&
+                                    tabPagerState.currentPage == 0
                         ) {
-                            // News
-                            Tab(
-                                selected = tabPagerState.currentPage == 0,
-                                onClick = {
-                                    scope.launch {
-                                        tabPagerState.animateScrollToPage(0)
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Newspaper,
-                                        contentDescription = "Icon For News"
+                            HorizontalPager(
+                                state = categoryPagerState,
+                                pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
+                                    (-30).dp else (-15).dp,
+                                flingBehavior = PagerDefaults.flingBehavior(
+                                    state = categoryPagerState,
+                                    pagerSnapDistance = PagerSnapDistance.atMost(
+                                        1
+                                    ),
+                                    snapAnimationSpec = spring(
+                                        stiffness = Spring.StiffnessVeryLow,
+                                        dampingRatio = Spring.DampingRatioLowBouncy
                                     )
-                                },
-                                text = {
-                                    Text(text = "News")
-                                },
-                                selectedContentColor = Green,
-                                unselectedContentColor = if (isSystemInDarkTheme()) White else Black
-                            )
-                            // Events
-                            Tab(
-                                selected = tabPagerState.currentPage == 1,
-                                onClick = {
-                                    scope.launch {
-                                        tabPagerState.animateScrollToPage(1)
-                                    }
-                                },
-                                icon = {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Event,
-                                        contentDescription = "Icon For Events"
-                                    )
-                                },
-                                text = {
-                                    Text(text = "Events")
-                                },
-                                selectedContentColor = Green,
-                                unselectedContentColor = if (isSystemInDarkTheme()) White else Black
-                            )
-                        }
-
-                        AnimatedVisibility(tabPagerState.currentPage == 0) {
-                            Text(
-                                text = if (newsCategoryStatus.isNotEmpty())
-                                    newsCategoryStatus else "For You",
-                                style = TextStyle(
-                                    fontSize = FontSize.LARGE.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Gray
                                 ),
                                 modifier = Modifier
-                                    .padding(all = 15.dp)
-                            )
+                                    .height(270.dp)
+//                                    .height(newsCategoryPagerHeight.value)
+                            ) { pagerIndex ->
+                                val item = categoriesList.value[pagerIndex]
+                                CategoriesListPagerItem(
+                                    item = item,
+                                    categoriesList = categoriesList.value,
+                                    categoryPagerState = categoryPagerState,
+                                    context = context,
+                                    onItemCLick = { category ->
+                                        newsViewModel.getNewsListByCategory(
+                                            category
+                                        )
+                                        newsCategoryStatus =
+                                            "${category} News"
+                                    }
+                                )
+                            }
+
+                        }
+
+
+                        Column {
+
+                            TabRow(
+                                selectedTabIndex = tabPagerState.currentPage,
+                            ) {
+                                // News
+                                Tab(
+                                    selected = tabPagerState.currentPage == 0,
+                                    onClick = {
+                                        scope.launch {
+                                            tabPagerState.animateScrollToPage(0)
+                                        }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Newspaper,
+                                            contentDescription = "Icon For News"
+                                        )
+                                    },
+                                    text = {
+                                        Text(text = "News")
+                                    },
+                                    selectedContentColor = Green,
+                                    unselectedContentColor = if (isSystemInDarkTheme()) White else Black
+                                )
+                                // Events
+                                Tab(
+                                    selected = tabPagerState.currentPage == 1,
+                                    onClick = {
+                                        scope.launch {
+                                            tabPagerState.animateScrollToPage(1)
+                                        }
+                                    },
+                                    icon = {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Event,
+                                            contentDescription = "Icon For Events"
+                                        )
+                                    },
+                                    text = {
+                                        Text(text = "Events")
+                                    },
+                                    selectedContentColor = Green,
+                                    unselectedContentColor = if (isSystemInDarkTheme()) White else Black
+                                )
+                            }
+
+                            AnimatedVisibility(tabPagerState.currentPage == 0) {
+                                Text(
+                                    text = if (newsCategoryStatus.isNotEmpty())
+                                        newsCategoryStatus else "For You",
+                                    style = TextStyle(
+                                        fontSize = FontSize.LARGE.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Gray
+                                    ),
+                                    modifier = Modifier
+                                        .padding(all = 15.dp)
+                                )
+                            }
                         }
                     }
 
@@ -710,7 +714,7 @@ fun SharedTransitionScope.NewsItem(
                             .height(20.dp),
                     ) {
                         Icon(
-                            imageVector = Icons.Outlined.BookmarkAdd,
+                            imageVector = Icons.Outlined.BookmarkBorder,
                             contentDescription = "Icon for unSaved News"
                         )
                     }
@@ -898,6 +902,8 @@ fun SharedTransitionScope.MainDrawerContent(
     onAccountClick: () -> Unit,
     onSearchClick: () -> Unit,
     onSavedNewsClick: () -> Unit,
+    onBookedEventsClick: () -> Unit,
+    onSavedEventsClick: () -> Unit,
     onSignOutClick: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1017,6 +1023,14 @@ fun SharedTransitionScope.MainDrawerContent(
                 onSavedNewsClick.invoke()
                 onDismiss.invoke()
             },
+            onBookedEventsClick = {
+                onBookedEventsClick.invoke()
+                onDismiss.invoke()
+            },
+            onSavedEventsClick = {
+                onSavedEventsClick.invoke()
+                onDismiss.invoke()
+            },
             onSignOutClick = {
                 onSignOutClick.invoke()
                 onDismiss.invoke()
@@ -1030,6 +1044,8 @@ fun MainDrawerItems(
     onAccountClick: () -> Unit,
     onSearchClick: () -> Unit,
     onSavedNewsClick: () -> Unit,
+    onBookedEventsClick: () -> Unit,
+    onSavedEventsClick: () -> Unit,
     onSignOutClick: () -> Unit,
 ) {
     // Account
@@ -1077,12 +1093,50 @@ fun MainDrawerItems(
         },
         icon = {
             Icon(
-                imageVector = Icons.Outlined.Bookmark,
+                imageVector = Icons.Outlined.BookmarkBorder,
                 contentDescription = "icon for Saved News"
             )
         },
         selected = false,
         onClick = onSavedNewsClick,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+        ),
+        shape = RectangleShape,
+    )
+
+    // Booked Events Item
+    NavigationDrawerItem(
+        label = {
+            Text(text = "Booked Events")
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Outlined.Book,
+                contentDescription = "icon for Booked Events"
+            )
+        },
+        selected = false,
+        onClick = onBookedEventsClick,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+        ),
+        shape = RectangleShape,
+    )
+
+    // Saved Events Item
+    NavigationDrawerItem(
+        label = {
+            Text(text = "Saved Events")
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Outlined.BookmarkBorder,
+                contentDescription = "icon for Saved Events"
+            )
+        },
+        selected = false,
+        onClick = onSavedEventsClick,
         colors = NavigationDrawerItemDefaults.colors(
             unselectedContainerColor = Color.Transparent,
         ),

@@ -1,5 +1,6 @@
 package com.android.studentnews.main.events.ui.viewModels
 
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -7,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.auth.domain.repository.AuthRepository
+import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
@@ -24,7 +26,10 @@ import kotlinx.coroutines.launch
 class EventsViewModel(
     private val eventsRepository: EventsRepository,
     private val authRepository: AuthRepository,
-): ViewModel() {
+) : ViewModel() {
+
+    private val _currentUser = MutableStateFlow<UserModel?>(null)
+    val currentUser = _currentUser.asStateFlow()
 
     private val _eventsList = MutableStateFlow<List<EventsModel?>>(emptyList())
     val eventsList = _eventsList.asStateFlow()
@@ -40,11 +45,19 @@ class EventsViewModel(
     var eventsByIdErrorMsg by mutableStateOf("")
         private set
 
-    private val _currentUser = MutableStateFlow<UserModel?>(null)
-    val currentUser = _currentUser.asStateFlow()
 
     var eventBookingStatus by mutableStateOf("")
         private set
+
+
+    private val _bookedEventsList = MutableStateFlow<List<EventsModel?>>(emptyList())
+    val bookedEventsList = _bookedEventsList.asStateFlow()
+
+    var bookedEventsListStatus by mutableStateOf("")
+        private set
+
+    private val _savedEventById = MutableStateFlow<EventsModel?>(null)
+    val savedEventById = _savedEventById.asStateFlow()
 
 
     init {
@@ -65,10 +78,12 @@ class EventsViewModel(
                             _eventsList.value = result.data
                             eventsListStatus = Status.SUCCESS
                         }
+
                         is EventsState.Failed -> {
                             eventsListStatus = Status.FAILED
                             eventsListErrorMsg = result.error.localizedMessage ?: ""
                         }
+
                         else -> {}
                     }
                 }
@@ -86,10 +101,12 @@ class EventsViewModel(
                             _eventById.value = result.data
                             eventsByIdStatus = Status.SUCCESS
                         }
+
                         is EventsState.Failed -> {
                             eventsByIdStatus = Status.FAILED
                             eventsByIdErrorMsg = result.error.localizedMessage ?: ""
                         }
+
                         else -> {}
                     }
                 }
@@ -114,6 +131,7 @@ class EventsViewModel(
                                     )
                                 )
                         }
+
                         is EventsState.Failed -> {
                             eventBookingStatus = Status.FAILED
                             SnackBarController
@@ -123,8 +141,100 @@ class EventsViewModel(
                                     )
                                 )
                         }
+
                         is EventsState.Loading -> {
                             eventBookingStatus = Status.Loading
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun getBookedEventsList() {
+        viewModelScope.launch {
+            eventsRepository
+                .getBookedEventsList()
+                .collectLatest { result ->
+                    when (result) {
+                        is EventsState.Loading -> {
+                            bookedEventsListStatus = Status.Loading
+                        }
+
+                        is EventsState.Success -> {
+                            bookedEventsListStatus = Status.SUCCESS
+                            _bookedEventsList.value = result.data
+                        }
+
+                        is EventsState.Failed -> {
+                            bookedEventsListStatus = Status.FAILED
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun onEventSave(event: EventsModel) {
+        viewModelScope.launch {
+            eventsRepository
+                .onEventSave(event)
+                .collectLatest { result ->
+                    when (result) {
+                        is EventsState.Failed -> {
+                            SnackBarController.sendEvent(
+                                SnackBarEvents(
+                                    message = result.error.localizedMessage ?: "",
+                                    duration = SnackbarDuration.Long,
+                                )
+                            )
+                        }
+
+                        is EventsState.Success -> {
+
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun onEventRemoveFromSave(eventId: String) {
+        viewModelScope.launch {
+            eventsRepository
+                .onEventRemoveFromSave(eventId)
+                .collectLatest { result ->
+                    when (result) {
+                        is EventsState.Failed -> {
+                            SnackBarController.sendEvent(
+                                SnackBarEvents(
+                                    message = result.error.localizedMessage ?: "",
+                                    duration = SnackbarDuration.Long,
+                                )
+                            )
+                        }
+
+                        is EventsState.Success -> {
+
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun getSavedEventById(eventId: String) {
+        viewModelScope.launch {
+            eventsRepository
+                .getSavedEventById(eventId)
+                .collectLatest { result ->
+                    when (result) {
+                        is EventsState.Success -> {
+                            _savedEventById.value = result.data
                         }
                         else -> {}
                     }
@@ -142,6 +252,7 @@ class EventsViewModel(
                         is NewsState.Success -> {
                             _currentUser.value = result.data
                         }
+
                         else -> {}
                     }
                 }

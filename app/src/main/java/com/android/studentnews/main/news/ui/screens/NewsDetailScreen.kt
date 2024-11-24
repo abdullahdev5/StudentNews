@@ -38,11 +38,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIos
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkAdd
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.BookmarkAdd
+import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -310,7 +312,7 @@ fun SharedTransitionScope.NewsDetailScreen(
 
                             AnimatedVisibility(!isSaved) {
                                 Icon(
-                                    imageVector = Icons.Outlined.BookmarkAdd,
+                                    imageVector = Icons.Outlined.BookmarkBorder,
                                     contentDescription = "Icon for unSaved News",
                                 )
                             }
@@ -542,7 +544,7 @@ fun SharedTransitionScope.NewsDetailScreen(
 
                         this@Column.AnimatedVisibility(!isSaved) {
                             Icon(
-                                imageVector = Icons.Default.BookmarkAdd,
+                                imageVector = Icons.Default.BookmarkBorder,
                                 contentDescription = "Icon of unliked News",
                             )
                         }

@@ -31,6 +31,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddLocation
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
@@ -105,15 +107,18 @@ import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
 import com.android.studentnews.core.domain.common.formatTimeToString
+import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
+import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.Red
+import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
 
@@ -127,6 +132,7 @@ fun SharedTransitionScope.EventsDetailScreen(
 ) {
     LaunchedEffect(Unit) {
         eventsViewModel.getEventById(eventId)
+        eventsViewModel.getSavedEventById(eventId)
     }
 
     val scope = rememberCoroutineScope()
@@ -136,6 +142,7 @@ fun SharedTransitionScope.EventsDetailScreen(
 
     val eventById by eventsViewModel.eventById.collectAsStateWithLifecycle()
     val currentUser by eventsViewModel.currentUser.collectAsStateWithLifecycle()
+    val savedEventById by eventsViewModel.savedEventById.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState(pageCount = { eventById?.urlList?.size ?: 0 })
 
@@ -143,6 +150,12 @@ fun SharedTransitionScope.EventsDetailScreen(
         eventById?.bookings?.map {
             it.userId
         } ?: emptyList()
+    }
+
+    var isSaved by remember(savedEventById) {
+        mutableStateOf(
+            savedEventById?.eventId == eventId
+        )
     }
 
 
@@ -166,6 +179,51 @@ fun SharedTransitionScope.EventsDetailScreen(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Icon foe Navigate Back"
                         )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        isSaved = !isSaved
+
+                        if (isSaved) {
+                            eventById?.let {
+                                val event = EventsModel(
+                                    title = it.title,
+                                    description = it.description,
+                                    eventId = it.eventId,
+                                    address = it.address,
+                                    startingDate = it.startingDate,
+                                    startingTimeHour = it.startingTimeHour,
+                                    startingTimeMinutes = it.startingTimeMinutes,
+                                    startingTimeStatus = it.startingTimeStatus,
+                                    endingDate = it.endingDate,
+                                    endingTimeHour = it.endingTimeHour,
+                                    endingTimeMinutes = it.endingTimeMinutes,
+                                    endingTimeStatus = it.endingTimeStatus,
+                                    timestamp = Timestamp.now(),
+                                    urlList = it.urlList,
+                                    bookings = it.bookings,
+                                )
+
+                                eventsViewModel.onEventSave(event = event)
+                            }
+                        } else {
+                            eventsViewModel.onEventRemoveFromSave(eventId)
+                        }
+
+                    }) {
+                        AnimatedVisibility(isSaved) {
+                            Icon(
+                                imageVector = Icons.Default.Bookmark,
+                                contentDescription = "Icon of Saved Event"
+                            )
+                        }
+                        AnimatedVisibility(!isSaved) {
+                            Icon(
+                                imageVector = Icons.Default.BookmarkBorder,
+                                contentDescription = "Icon of UnSaved Event"
+                            )
+                        }
                     }
                 }
             )

@@ -23,9 +23,12 @@ import com.android.studentnews.auth.ui.viewModel.AuthViewModel
 import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.domain.destination.EventsDestination
+import com.android.studentnews.main.events.ui.screens.BookedEventsScreen
 import com.android.studentnews.main.events.ui.screens.EventsDetailScreen
 import com.android.studentnews.main.events.ui.screens.EventsScreen
+import com.android.studentnews.main.events.ui.screens.SavedEVentsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
+import com.android.studentnews.main.events.ui.viewModels.SavedEventsViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.ui.screens.NewsDetailScreen
 import com.android.studentnews.main.news.ui.screens.NewsLinkScreen
@@ -116,7 +119,6 @@ fun NavigationGraph(
                     ) {
                         val arguments = it.toRoute<NewsDestination.NEWS_DETAIL_SCREEN>()
                         val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
-                        val newsViewModel = koinViewModel<NewsViewModel>()
 
                         NewsDetailScreen(
                             newsId = arguments.newsId,
@@ -198,6 +200,25 @@ fun NavigationGraph(
                             animatedVisibilityScope = this
                         )
                     }
+
+                    composable<EventsDestination.BOOKED_EVENTS_SCREEN>() {
+                        val eventsViewModel = koinViewModel<EventsViewModel>()
+                        BookedEventsScreen(
+                            navHostController = navHostController,
+                            eventsViewModel = eventsViewModel,
+                            animatedVisibilityScope = this
+                        )
+                    }
+
+                    composable<EventsDestination.SAVED_EVENTS_SCREEN>() {
+                        val savedEventsViewModel = koinViewModel<SavedEventsViewModel>()
+                        SavedEVentsScreen(
+                            navHostController = navHostController,
+                            savedEventsViewModel = savedEventsViewModel,
+                            animatedVisibilityScope = this
+                        )
+                    }
+
                 }
 
                 composable<MainDestination.ACCOUNT_SCREEN>() {
