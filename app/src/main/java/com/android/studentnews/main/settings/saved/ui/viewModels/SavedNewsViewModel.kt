@@ -1,4 +1,4 @@
-package com.android.studentnews.main.news.ui.viewModel
+package com.android.studentnews.main.settings.saved.ui.viewModels
 
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
@@ -32,10 +32,10 @@ class SavedNewsViewModel(
     }
 
 
-    fun onNewsRemoveFromSave(newsId: String) {
+    fun onNewsRemoveFromSave(news: NewsModel) {
         viewModelScope.launch {
             newsRepository
-                .onNewsRemoveFromSave(newsId)
+                .onNewsRemoveFromSave(news)
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Success -> {
@@ -43,11 +43,39 @@ class SavedNewsViewModel(
                                 .sendEvent(
                                     SnackBarEvents(
                                         message = result.data,
-                                        duration = SnackbarDuration.Short,
+                                        duration = SnackbarDuration.Long,
+                                        action = SnackBarActions(
+                                            label = "Undo",
+                                            action = {
+                                                onNewsRemoveFromSaveUndo(news)
+                                            }
+                                        )
                                     )
                                 )
                         }
 
+                        is NewsState.Failed -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage ?: "",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                )
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun onNewsRemoveFromSaveUndo(news: NewsModel) {
+        viewModelScope.launch {
+            newsRepository
+                .onNewsSave(news)
+                .collectLatest { result ->
+                    when (result) {
                         is NewsState.Failed -> {
                             SnackBarController
                                 .sendEvent(

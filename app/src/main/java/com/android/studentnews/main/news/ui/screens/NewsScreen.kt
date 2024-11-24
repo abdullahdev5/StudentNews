@@ -224,14 +224,11 @@ fun SharedTransitionScope.NewsScreen(
                         onSearchClick = {
                             navHostController.navigate(MainDestination.SEARCH_SCREEN)
                         },
-                        onSavedNewsClick = {
-                            navHostController.navigate(NewsDestination.SAVED_NEWS_SCREEN)
-                        },
                         onBookedEventsClick = {
                             navHostController.navigate(EventsDestination.BOOKED_EVENTS_SCREEN)
                         },
-                        onSavedEventsClick = {
-                            navHostController.navigate(EventsDestination.SAVED_EVENTS_SCREEN)
+                        onSettingsClick = {
+                            navHostController.navigate(SubGraph.SETTINGS)
                         },
                         onSignOutClick = {
                             newsViewModel.cancelPeriodicNewsWorkRequest()
@@ -538,42 +535,29 @@ fun SharedTransitionScope.NewsScreen(
                                                 context = context,
                                                 animatedVisibilityScope = animatedVisibilityScope,
                                                 onSave = { it ->
-                                                    if (isInternetAvailable(context)) {
+                                                    val news = NewsModel(
+                                                        newsId = it.newsId,
+                                                        title = it.title,
+                                                        description = it.description,
+                                                        category = it.category,
+                                                        timestamp = Timestamp.now(),
+                                                        link = it.link,
+                                                        linkTitle = it.linkTitle,
+                                                        urlList = it.urlList,
+                                                        shareCount = it.shareCount ?: 0,
+                                                        likes = it.likes
+                                                    )
 
-                                                        val news = NewsModel(
-                                                            newsId = it.newsId,
-                                                            title = it.title,
-                                                            description = it.description,
-                                                            category = it.category,
-                                                            timestamp = Timestamp.now(),
-                                                            link = it.link,
-                                                            linkTitle = it.linkTitle,
-                                                            urlList = it.urlList,
-                                                            shareCount = it.shareCount ?: 0,
-                                                            likes = it.likes
-                                                        )
-
-                                                        newsViewModel.onNewsSave(
-                                                            news,
-                                                            onSeeAction = { thisNewsId ->
-                                                                navHostController.navigate(
-                                                                    NewsDestination.NEWS_DETAIL_SCREEN(
-                                                                        thisNewsId
-                                                                    )
+                                                    newsViewModel.onNewsSave(
+                                                        news,
+                                                        onSeeAction = { thisNewsId ->
+                                                            navHostController.navigate(
+                                                                NewsDestination.NEWS_DETAIL_SCREEN(
+                                                                    thisNewsId
                                                                 )
-                                                            },
-                                                        )
-                                                    } else {
-                                                        scope.launch {
-                                                            SnackBarController
-                                                                .sendEvent(
-                                                                    SnackBarEvents(
-                                                                        message = "No Internet Connection!",
-                                                                        duration = SnackbarDuration.Long
-                                                                    )
-                                                                )
-                                                        }
-                                                    }
+                                                            )
+                                                        },
+                                                    )
                                                 }
                                             )
                                         }
@@ -901,9 +885,8 @@ fun SharedTransitionScope.MainDrawerContent(
     animatedVisibilityScope: AnimatedVisibilityScope,
     onAccountClick: () -> Unit,
     onSearchClick: () -> Unit,
-    onSavedNewsClick: () -> Unit,
     onBookedEventsClick: () -> Unit,
-    onSavedEventsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     onSignOutClick: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -1019,16 +1002,12 @@ fun SharedTransitionScope.MainDrawerContent(
                 onDismiss.invoke()
                 onSearchClick.invoke()
             },
-            onSavedNewsClick = {
-                onSavedNewsClick.invoke()
-                onDismiss.invoke()
-            },
             onBookedEventsClick = {
                 onBookedEventsClick.invoke()
                 onDismiss.invoke()
             },
-            onSavedEventsClick = {
-                onSavedEventsClick.invoke()
+            onSettingsClick = {
+                onSettingsClick.invoke()
                 onDismiss.invoke()
             },
             onSignOutClick = {
@@ -1043,9 +1022,8 @@ fun SharedTransitionScope.MainDrawerContent(
 fun MainDrawerItems(
     onAccountClick: () -> Unit,
     onSearchClick: () -> Unit,
-    onSavedNewsClick: () -> Unit,
     onBookedEventsClick: () -> Unit,
-    onSavedEventsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     onSignOutClick: () -> Unit,
 ) {
     // Account
@@ -1086,25 +1064,6 @@ fun MainDrawerItems(
         shape = RectangleShape,
     )
 
-    // Saved News Item
-    NavigationDrawerItem(
-        label = {
-            Text(text = "Saved News")
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Outlined.BookmarkBorder,
-                contentDescription = "icon for Saved News"
-            )
-        },
-        selected = false,
-        onClick = onSavedNewsClick,
-        colors = NavigationDrawerItemDefaults.colors(
-            unselectedContainerColor = Color.Transparent,
-        ),
-        shape = RectangleShape,
-    )
-
     // Booked Events Item
     NavigationDrawerItem(
         label = {
@@ -1124,26 +1083,7 @@ fun MainDrawerItems(
         shape = RectangleShape,
     )
 
-    // Saved Events Item
-    NavigationDrawerItem(
-        label = {
-            Text(text = "Saved Events")
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Outlined.BookmarkBorder,
-                contentDescription = "icon for Saved Events"
-            )
-        },
-        selected = false,
-        onClick = onSavedEventsClick,
-        colors = NavigationDrawerItemDefaults.colors(
-            unselectedContainerColor = Color.Transparent,
-        ),
-        shape = RectangleShape,
-    )
-
-    // Items for Test
+    // Settings Item
     NavigationDrawerItem(
         label = {
             Text(text = "Settings")
@@ -1155,7 +1095,7 @@ fun MainDrawerItems(
             )
         },
         selected = false,
-        onClick = {},
+        onClick = onSettingsClick,
         colors = NavigationDrawerItemDefaults.colors(
             unselectedContainerColor = Color.Transparent,
         ),

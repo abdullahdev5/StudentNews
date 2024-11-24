@@ -27,7 +27,7 @@ interface EventsRepository {
 
     fun onEventSave(event: EventsModel): Flow<EventsState<String>>
 
-    fun onEventRemoveFromSave(eventId: String): Flow<EventsState<String>>
+    fun onEventRemoveFromSave(event: EventsModel): Flow<EventsState<String>>
 
     fun getSavedEventById(eventId: String): Flow<EventsState<EventsModel?>>
 

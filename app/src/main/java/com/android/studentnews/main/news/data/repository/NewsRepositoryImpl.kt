@@ -108,11 +108,11 @@ class NewsRepositoryImpl(
         }
     }
 
-    override fun onNewsRemoveFromSave(newsId: String): Flow<NewsState<String>> {
+    override fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>> {
         return callbackFlow {
 
             savedNewsColRef
-                ?.document(newsId)
+                ?.document(news.newsId.toString())
                 ?.delete()
                 ?.addOnSuccessListener { document ->
                     trySend(NewsState.Success("News Removed from Saved List"))

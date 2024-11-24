@@ -129,13 +129,13 @@ class EventsRepositoryImpl(
         }
     }
 
-    override fun onEventRemoveFromSave(eventId: String): Flow<EventsState<String>> {
+    override fun onEventRemoveFromSave(event: EventsModel): Flow<EventsState<String>> {
         return callbackFlow {
 
             trySend(EventsState.Loading)
 
             savedEventsColRef
-                ?.document(eventId)
+                ?.document(event.eventId.toString())
                 ?.delete()
                 ?.addOnSuccessListener {
                     trySend(EventsState.Success("Event Removed From Saved List"))

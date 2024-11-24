@@ -20,7 +20,7 @@ interface NewsRepository {
     fun getNewsList(): Flow<NewsState<List<NewsModel>>>
     suspend fun getNewsUpdates(): NewsModel?
     fun onNewsSave(news: NewsModel): Flow<NewsState<String>>
-    fun onNewsRemoveFromSave(newsId: String): Flow<NewsState<String>>
+    fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>>
     fun getSavedNewsList(): Flow<NewsState<List<NewsModel>>>
 
     // Category

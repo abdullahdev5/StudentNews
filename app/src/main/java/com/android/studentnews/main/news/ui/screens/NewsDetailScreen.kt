@@ -263,42 +263,28 @@ fun SharedTransitionScope.NewsDetailScreen(
 
                         IconButton(
                             onClick = {
-                                if (isInternetAvailable(context)) {
 
-                                    isSaved = !isSaved
+                                isSaved = !isSaved
 
-                                    newsById?.let {
-                                        if (isSaved) {
-                                            val news = NewsModel(
-                                                newsId = it.newsId,
-                                                title = it.title,
-                                                description = it.description,
-                                                category = it.category,
-                                                timestamp = Timestamp.now(),
-                                                link = it.link,
-                                                linkTitle = it.linkTitle,
-                                                urlList = it.urlList,
-                                                shareCount = it.shareCount ?: 0
-                                            )
+                                newsById?.let {
 
-                                            newsDetailViewModel.onNewsSave(news)
+                                    val news = NewsModel(
+                                        newsId = it.newsId,
+                                        title = it.title,
+                                        description = it.description,
+                                        category = it.category,
+                                        timestamp = Timestamp.now(),
+                                        link = it.link,
+                                        linkTitle = it.linkTitle,
+                                        urlList = it.urlList,
+                                        shareCount = it.shareCount ?: 0,
+                                        likes = it.likes
+                                    )
 
-                                        } else {
-                                            newsDetailViewModel.onNewsRemoveFromSave(
-                                                it.newsId ?: ""
-                                            )
-                                        }
-                                    }
-
-                                } else {
-                                    scope.launch {
-                                        SnackBarController
-                                            .sendEvent(
-                                                SnackBarEvents(
-                                                    message = "No Internet Connection!",
-                                                    duration = SnackbarDuration.Long
-                                                )
-                                            )
+                                    if (isSaved) {
+                                        newsDetailViewModel.onNewsSave(news)
+                                    } else {
+                                        newsDetailViewModel.onNewsRemoveFromSave(news)
                                     }
                                 }
                             },
@@ -513,25 +499,29 @@ fun SharedTransitionScope.NewsDetailScreen(
                     // Save
                     IconButton(
                         onClick = {
+
                             isSaved = !isSaved
 
-                            if (isSaved) {
+                            newsById?.let {
+
                                 val news = NewsModel(
-                                    newsId = newsById?.newsId ?: "",
-                                    title = newsById?.title ?: "",
-                                    description = newsById?.description ?: "",
-                                    category = newsById?.category ?: "",
+                                    newsId = it.newsId,
+                                    title = it.title,
+                                    description = it.description,
+                                    category = it.category,
                                     timestamp = Timestamp.now(),
-                                    link = newsById?.link ?: "",
-                                    linkTitle = newsById?.linkTitle ?: "",
-                                    urlList = newsById?.urlList ?: emptyList(),
-                                    shareCount = newsById?.shareCount ?: 0,
-                                    likes = newsById?.likes ?: emptyList()
+                                    link = it.link,
+                                    linkTitle = it.linkTitle,
+                                    urlList = it.urlList,
+                                    shareCount = it.shareCount ?: 0,
+                                    likes = it.likes
                                 )
 
-                                newsDetailViewModel.onNewsSave(news)
-                            } else {
-                                newsDetailViewModel.onNewsRemoveFromSave(newsId)
+                                if (isSaved) {
+                                    newsDetailViewModel.onNewsSave(news)
+                                } else {
+                                    newsDetailViewModel.onNewsRemoveFromSave(news)
+                                }
                             }
                         },
                     ) {

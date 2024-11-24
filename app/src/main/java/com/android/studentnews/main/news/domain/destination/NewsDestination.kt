@@ -15,7 +15,4 @@ sealed class NewsDestination {
     data class NEWS_LINK_SCREEN(
         val link: String,
     ): NewsDestination()
-
-    @Serializable
-    object SAVED_NEWS_SCREEN: NewsDestination()
 }

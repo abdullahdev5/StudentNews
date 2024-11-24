@@ -202,10 +202,10 @@ class EventsViewModel(
         }
     }
 
-    fun onEventRemoveFromSave(eventId: String) {
+    fun onEventRemoveFromSave(event: EventsModel) {
         viewModelScope.launch {
             eventsRepository
-                .onEventRemoveFromSave(eventId)
+                .onEventRemoveFromSave(event)
                 .collectLatest { result ->
                     when (result) {
                         is EventsState.Failed -> {

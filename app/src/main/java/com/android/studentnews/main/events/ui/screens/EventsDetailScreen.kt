@@ -185,30 +185,31 @@ fun SharedTransitionScope.EventsDetailScreen(
                     IconButton(onClick = {
                         isSaved = !isSaved
 
-                        if (isSaved) {
-                            eventById?.let {
-                                val event = EventsModel(
-                                    title = it.title,
-                                    description = it.description,
-                                    eventId = it.eventId,
-                                    address = it.address,
-                                    startingDate = it.startingDate,
-                                    startingTimeHour = it.startingTimeHour,
-                                    startingTimeMinutes = it.startingTimeMinutes,
-                                    startingTimeStatus = it.startingTimeStatus,
-                                    endingDate = it.endingDate,
-                                    endingTimeHour = it.endingTimeHour,
-                                    endingTimeMinutes = it.endingTimeMinutes,
-                                    endingTimeStatus = it.endingTimeStatus,
-                                    timestamp = Timestamp.now(),
-                                    urlList = it.urlList,
-                                    bookings = it.bookings,
-                                )
+                        eventById?.let {
 
+                            val event = EventsModel(
+                                title = it.title,
+                                description = it.description,
+                                eventId = it.eventId,
+                                address = it.address,
+                                startingDate = it.startingDate,
+                                startingTimeHour = it.startingTimeHour,
+                                startingTimeMinutes = it.startingTimeMinutes,
+                                startingTimeStatus = it.startingTimeStatus,
+                                endingDate = it.endingDate,
+                                endingTimeHour = it.endingTimeHour,
+                                endingTimeMinutes = it.endingTimeMinutes,
+                                endingTimeStatus = it.endingTimeStatus,
+                                timestamp = Timestamp.now(),
+                                urlList = it.urlList,
+                                bookings = it.bookings,
+                            )
+
+                            if (isSaved) {
                                 eventsViewModel.onEventSave(event = event)
+                            } else {
+                                eventsViewModel.onEventRemoveFromSave(event = event)
                             }
-                        } else {
-                            eventsViewModel.onEventRemoveFromSave(eventId)
                         }
 
                     }) {

@@ -124,10 +124,10 @@ class NewsDetailViewModel(
         }
     }
 
-    fun onNewsRemoveFromSave(newsId: String) {
+    fun onNewsRemoveFromSave(news: NewsModel) {
         viewModelScope.launch {
             newsRepository
-                .onNewsRemoveFromSave(newsId)
+                .onNewsRemoveFromSave(news)
                 .collectLatest { result ->
                     when (result) {
 

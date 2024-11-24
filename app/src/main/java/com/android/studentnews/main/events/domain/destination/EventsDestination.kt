@@ -11,7 +11,4 @@ sealed class EventsDestination {
 
     @Serializable
     object BOOKED_EVENTS_SCREEN: EventsDestination()
-
-    @Serializable
-    object SAVED_EVENTS_SCREEN: EventsDestination()
 }

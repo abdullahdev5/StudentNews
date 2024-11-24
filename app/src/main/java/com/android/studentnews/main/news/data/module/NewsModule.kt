@@ -4,7 +4,7 @@ import com.android.studentnews.main.news.NewsWorker
 import com.android.studentnews.main.news.data.repository.NewsDetailRepositoryImpl
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
-import com.android.studentnews.main.news.ui.viewModel.SavedNewsViewModel
+import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
 import com.android.studentnews.news.data.repository.NewsRepositoryImpl
 import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.ui.viewModel.NewsViewModel

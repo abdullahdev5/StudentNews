@@ -14,4 +14,10 @@ sealed class SubGraph {
 
     @Serializable
     object EVENTS: SubGraph()
+
+    @Serializable
+    object SETTINGS: SubGraph()
+
+    @Serializable
+    object SETTINGS_SAVED: SubGraph()
 }
