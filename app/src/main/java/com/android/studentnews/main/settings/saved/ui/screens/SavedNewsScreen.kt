@@ -43,6 +43,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -83,19 +84,24 @@ import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.android.studentnews.core.domain.constants.FontSize
+import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.ui.theme.Black
+import com.android.studentnews.ui.theme.DarkBackgroundColor
 import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
+import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.let
+import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 @Composable
@@ -113,33 +119,49 @@ fun SharedTransitionScope.SavedNewsScreen(
 
 
     Surface(
+        color = if (isSystemInDarkTheme()) Color.Unspecified else White,
         modifier = Modifier
             .fillMaxSize(),
     ) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-        ) {
-            items(
-                count = savedNewsList.size,
-                key = { index ->
-                    savedNewsList[index].newsId ?: ""
+        if (savedNewsList.size != 0) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize(),
+            ) {
+                items(
+                    count = savedNewsList.size,
+                    key = { index ->
+                        savedNewsList[index].newsId ?: ""
+                    }
+                ) { index ->
+                    val item = savedNewsList[index]
+                    SavedNewsItem(
+                        item = item,
+                        context = context,
+                        density = density,
+                        onItemClick = { newsId ->
+                            navHostController.navigate(NewsDestination.NEWS_DETAIL_SCREEN(newsId))
+                        },
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        onRemoveFromSavedList = { thisNews ->
+                            savedNewsViewModel.onNewsRemoveFromSave(thisNews)
+                        },
+                    )
                 }
-            ) { index ->
-                val item = savedNewsList[index]
-                SavedNewsItem(
-                    item = item,
-                    context = context,
-                    density = density,
-                    onItemClick = { newsId ->
-                        navHostController.navigate(NewsDestination.NEWS_DETAIL_SCREEN(newsId))
-                    },
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    onRemoveFromSavedList = { thisNews ->
-                        savedNewsViewModel.onNewsRemoveFromSave(thisNews)
-                    },
-                )
             }
+        } else {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                Text(text = "No Saved News")
+            }
+        }
+
+
+        if (savedNewsViewModel.savedNewsStatus == Status.Loading) {
+            LoadingDialog()
         }
 
     }
@@ -175,20 +197,33 @@ fun SharedTransitionScope.SavedNewsItem(
                         .height(itemHeight)
                         .background(color = Black)
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = "Icon for Remove Item from Saved List",
-                        tint = White,
+                    AnimatedContent(
+                        targetState = offsetX.dp > maxWidth,
+                        label = "start_align",
                         modifier = Modifier
-                            .align(Alignment.CenterStart)
-                    )
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = "Icon for Remove Item from Saved List",
-                        tint = White,
+                            .align(Alignment.CenterStart),
+                    ) { targetState ->
+                        Icon(
+                            imageVector = if (targetState)
+                                Icons.Default.Delete else Icons.Outlined.Delete,
+                            contentDescription = "Icon for Remove Item from Saved List",
+                            tint = if (targetState) Red else White,
+                        )
+                    }
+
+                    AnimatedContent(
+                        targetState = (-offsetX).dp > maxWidth,
+                        label = "end_align",
                         modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                    )
+                            .align(Alignment.CenterEnd),
+                    ) { targetState ->
+                        Icon(
+                            imageVector = if (targetState)
+                                Icons.Default.Delete else Icons.Outlined.Delete,
+                            contentDescription = "Icon for Remove Item from Saved List",
+                            tint = if (targetState) Red else White,
+                        )
+                    }
                 }
             }
 
@@ -209,7 +244,7 @@ fun SharedTransitionScope.SavedNewsItem(
                                 isDragging = true
                             },
                             onDragEnd = {
-                                if (offsetX.dp > maxWidth || (-offsetX.dp) > maxWidth) {
+                                if (offsetX.dp > maxWidth || (-offsetX).dp > maxWidth) {
                                     item?.let { thisItem ->
                                         onRemoveFromSavedList.invoke(thisItem)
                                     }
@@ -310,7 +345,7 @@ fun SharedTransitionScope.SavedNewsItem(
             }
         }
         HorizontalDivider(
-            color = if (isSystemInDarkTheme()) White else Black,
+            color = Gray,
             modifier = Modifier.fillMaxWidth()
         )
     }

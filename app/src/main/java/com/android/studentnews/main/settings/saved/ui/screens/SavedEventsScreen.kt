@@ -3,6 +3,7 @@
 package com.android.studentnews.main.settings.saved.ui.screens
 
 import android.content.Context
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Timer
@@ -69,6 +71,8 @@ import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsView
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.Gray
+import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.Timestamp
@@ -90,8 +94,9 @@ fun SharedTransitionScope.SavedEventsScreen(
 
 
     Surface(
+        color = if (isSystemInDarkTheme()) Color.Unspecified else White,
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxSize(),
     ) {
 
         if (savedEventsList.size != 0) {
@@ -168,21 +173,33 @@ fun SharedTransitionScope.SavedEventsItem(
                         .height(itemHeight)
                         .background(color = Black)
                 ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = "Icon for Removing Event From Saved List",
-                        tint = White,
+                    AnimatedContent(
+                        targetState = offsetX.dp > maxWidth,
+                        label = "start_align",
                         modifier = Modifier
-                            .align(Alignment.CenterStart)
-                    )
+                            .align(Alignment.CenterStart),
+                    ) { targetState ->
+                        Icon(
+                            imageVector = if (targetState)
+                                Icons.Default.Delete else Icons.Outlined.Delete,
+                            contentDescription = "Icon for Remove Item from Saved List",
+                            tint = if (targetState) Red else White,
+                        )
+                    }
 
-                    Icon(
-                        imageVector = Icons.Outlined.Delete,
-                        contentDescription = "Icon for Removing Event From Saved List",
-                        tint = White,
+                    AnimatedContent(
+                        targetState = (-offsetX).dp > maxWidth,
+                        label = "end_align",
                         modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                    )
+                            .align(Alignment.CenterEnd),
+                    ) { targetState ->
+                        Icon(
+                            imageVector = if (targetState)
+                                Icons.Default.Delete else Icons.Outlined.Delete,
+                            contentDescription = "Icon for Remove Item from Saved List",
+                            tint = if (targetState) Red else White,
+                        )
+                    }
                 }
             }
 
@@ -331,7 +348,7 @@ fun SharedTransitionScope.SavedEventsItem(
         }
 
         HorizontalDivider(
-            color = if (isSystemInDarkTheme()) White else Black,
+            color = Gray,
             modifier = Modifier.fillMaxWidth()
         )
     }

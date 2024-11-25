@@ -2,6 +2,7 @@
 
 package com.android.studentnews.main.events.ui.screens
 
+import android.icu.util.Calendar
 import android.widget.CalendarView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -9,7 +10,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
@@ -26,6 +25,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,7 +36,6 @@ import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
@@ -45,7 +44,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
@@ -73,9 +71,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
-import androidx.compose.ui.text.toUpperCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -96,6 +94,7 @@ import com.android.studentnews.auth.ui.DegreeDropDownMenu
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.common.formatDateToDay
+import com.android.studentnews.core.domain.common.formatDateToMonthInt
 import com.android.studentnews.core.domain.common.formatDateToMonthName
 import com.android.studentnews.core.domain.common.formatDateToYear
 import com.android.studentnews.core.domain.common.formatTimeToHour
@@ -107,16 +106,13 @@ import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
 import com.android.studentnews.core.domain.common.formatTimeToString
-import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
-import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
-import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
-import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.Timestamp
@@ -152,6 +148,8 @@ fun SharedTransitionScope.EventsDetailScreen(
         } ?: emptyList()
     }
 
+    var status by rememberSaveable { mutableStateOf("") } // Status, Like Available or Not
+
     var isSaved by remember(savedEventById) {
         mutableStateOf(
             savedEventById?.eventId == eventId
@@ -165,6 +163,36 @@ fun SharedTransitionScope.EventsDetailScreen(
     var isEndingTimeExpanded by rememberSaveable { mutableStateOf(false) }
 
     var isBookingSheetVisible by rememberSaveable { mutableStateOf(false) }
+
+
+    LaunchedEffect(eventById) {
+        eventById?.let {
+            it.endingDate?.let { endingDate ->
+                val calendar = Calendar.getInstance()
+                calendar.timeInMillis = System.currentTimeMillis()
+
+                val endingDay = formatDateToDay(endingDate)
+                val endingMonthInt = formatDateToMonthInt(endingDate)
+
+                val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
+                val currentMonthInt = calendar.get(Calendar.MONTH)
+
+                if (endingDay < currentDay) {
+                    if (endingMonthInt == currentMonthInt) {
+                        status = "Not Available"
+                    } else {
+                        status = "Available"
+                    }
+                } else {
+                    if (endingMonthInt == currentMonthInt) {
+                        status = "Not Available"
+                    } else {
+                        status = "Available"
+                    }
+                }
+            }
+        }
+    }
 
 
     Scaffold(
@@ -230,7 +258,7 @@ fun SharedTransitionScope.EventsDetailScreen(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
+            Button(
                 onClick = {
                     if (!userIdsListFromBookings.contains(currentUser?.uid)) {
                         scope.launch {
@@ -245,32 +273,24 @@ fun SharedTransitionScope.EventsDetailScreen(
                             SnackBarController
                                 .sendEvent(
                                     SnackBarEvents(
-                                        message = "This Event is Already Booked!"
+                                        message = "This Event is Already Registered!"
                                     )
                                 )
                         }
                     }
                 },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Book,
-                        contentDescription = "Icon For Booking"
-                    )
-                },
-                text = {
-                    if (userIdsListFromBookings.contains(currentUser?.uid)) {
-                        Text(text = "Already Booked")
-                    } else {
-                        Text(text = "Book")
-                    }
-                },
-                containerColor = if (!userIdsListFromBookings.contains(currentUser?.uid))
-                    Green else Gray,
-                contentColor = if (!userIdsListFromBookings.contains(currentUser?.uid))
-                    White else Black,
-                modifier = Modifier
-                    .padding(all = 10.dp)
-            )
+                enabled = !userIdsListFromBookings.contains(currentUser?.uid),
+                colors = ButtonColors(
+                    containerColor = Green,
+                    contentColor = White
+                )
+            ) {
+                if (userIdsListFromBookings.contains(currentUser?.uid)) {
+                    Text(text = "Already Registered")
+                } else {
+                    Text(text = "Register")
+                }
+            }
         },
         modifier = Modifier
             .fillMaxSize()
@@ -484,6 +504,23 @@ fun SharedTransitionScope.EventsDetailScreen(
                         style = TextStyle(
                             fontSize = FontSize.SMALL.sp,
                         )
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .padding(all = 20.dp)
+                ) {
+                    Text(
+                        text = "Status",
+                        style = TextStyle(
+                            fontSize = FontSize.MEDIUM.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                    Text(
+                        text = status,
+                        fontSize = FontSize.SMALL.sp
                     )
                 }
 
@@ -975,6 +1012,9 @@ fun EventBookingSheet(
                         placeholder = {
                             Text(text = "Code")
                         },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Phone
+                        ),
                         colors = OutlinedTextFieldColors(),
                         singleLine = true,
                         isError = if (!userCountryCode.startsWith("+") || userCountryCode.length < 2) true else false,
@@ -1001,6 +1041,9 @@ fun EventBookingSheet(
                         placeholder = {
                             Text(text = "Phone Number")
                         },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        ),
                         colors = OutlinedTextFieldColors(),
                         trailingIcon = {
                             Icon(
@@ -1034,16 +1077,11 @@ fun EventBookingSheet(
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = "City",
+                text = "Your City",
                 color = Gray,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(
-                        start = 20.dp,
-                        end = 20.dp,
-                        bottom = 20.dp,
-                        top = 10.dp
-                    ),
+                    .padding(start = 20.dp),
             )
             // City
             CityDropDownMenu(
@@ -1068,7 +1106,7 @@ fun EventBookingSheet(
 
             // Address
             Text(
-                text = "Address",
+                text = "Your Address",
                 color = Gray,
                 modifier = Modifier
                     .padding(start = 20.dp)
@@ -1107,16 +1145,22 @@ fun EventBookingSheet(
                 }
 
                 // userName, userDegree, userPhoneNumber, userCity, userAddress
-                TextButton(onClick = {
-                    onBook.invoke(
-                        userName,
-                        userDegree,
-                        (userCountryCode + userNumber),
-                        userCity,
-                        userAddress
-                    )
-                    onDismiss.invoke()
-                }) {
+                TextButton(
+                    onClick = {
+                        onBook.invoke(
+                            userName,
+                            userDegree,
+                            (userCountryCode + userNumber),
+                            userCity,
+                            userAddress
+                        )
+                        onDismiss.invoke()
+                    },
+                    enabled = userName.isNotEmpty() && userDegree.isNotEmpty() &&
+                            userCountryCode.startsWith("+") && userCountryCode.length >= 2
+                            && userNumber.length >= 10 && userNumber.isDigitsOnly()
+                            && userCity.isNotEmpty() && userAddress.isNotEmpty()
+                ) {
                     Text(text = "Book")
                 }
             }

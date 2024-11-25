@@ -1,17 +1,19 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 
-package com.android.studentnews.main.events.ui.screens
+package com.android.studentnews.main.settings.registrations
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBackIos
+import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,30 +31,30 @@ import androidx.navigation.NavHostController
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.events.domain.destination.EventsDestination
+import com.android.studentnews.main.events.ui.screens.EventsItem
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 
 @Composable
-fun SharedTransitionScope.BookedEventsScreen(
+fun SharedTransitionScope.RegisteredEventsScreen(
     navHostController: NavHostController,
-    eventsViewModel: EventsViewModel,
+    registeredEventsViewModel: RegisteredEventsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope
 ) {
 
     LaunchedEffect(Unit) {
-        eventsViewModel.getBookedEventsList()
+        registeredEventsViewModel.getRegisteredEventsList()
     }
 
     val context = LocalContext.current
 
-    val bookedEventsList by eventsViewModel.bookedEventsList.collectAsStateWithLifecycle()
-    val currentUser by eventsViewModel.currentUser.collectAsStateWithLifecycle()
+    val bookedEventsList by registeredEventsViewModel.registeredEVentsList.collectAsStateWithLifecycle()
 
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = "Booked Events")
+                    Text(text = "Registrations")
                 },
                 navigationIcon = {
                     IconButton(onClick = {
@@ -63,6 +65,12 @@ fun SharedTransitionScope.BookedEventsScreen(
                             contentDescription = "Icon for Navigate Back"
                         )
                     }
+                },
+                actions = {
+                    Icon(
+                        imageVector = Icons.Outlined.Book,
+                        contentDescription = "Icon for Registrations"
+                    )
                 }
             )
         },
@@ -87,8 +95,7 @@ fun SharedTransitionScope.BookedEventsScreen(
                         onItemClick = { thisEventId ->
                             navHostController
                                 .navigate(
-                                    EventsDestination
-                                        .EVENTS_DETAIL_SCREEN(thisEventId)
+                                    EventsDestination.EVENTS_DETAIL_SCREEN(thisEventId)
                                 )
                         }
                     )
@@ -101,12 +108,12 @@ fun SharedTransitionScope.BookedEventsScreen(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Text(text = "No Booked Events")
+                Text(text = "No Registered Events")
             }
         }
 
 
-        if (eventsViewModel.bookedEventsListStatus == Status.Loading) {
+        if (registeredEventsViewModel.registeredEventsListStatus == Status.Loading) {
             LoadingDialog()
         }
 

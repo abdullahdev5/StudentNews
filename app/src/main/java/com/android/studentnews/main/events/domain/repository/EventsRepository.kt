@@ -31,7 +31,7 @@ interface EventsRepository {
 
     fun getSavedEventById(eventId: String): Flow<EventsState<EventsModel?>>
 
-    fun getBookedEventsList(): Flow<EventsState<List<EventsModel?>>> // Booked Events of Current User
+    fun getRegisteredEventsList(): Flow<EventsState<List<EventsModel?>>> // Booked Events of Current User
 
     fun getSavedEventsList(): Flow<EventsState<List<EventsModel?>>>
 

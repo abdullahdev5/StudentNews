@@ -1,5 +1,6 @@
 package com.android.studentnews.main.events.data.repository
 
+import androidx.compose.ui.util.fastJoinToString
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.events.domain.repository.EventsRepository
@@ -13,6 +14,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.getField
 import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -195,7 +197,7 @@ class EventsRepositoryImpl(
     }
 
 
-    override fun getBookedEventsList(): Flow<EventsState<List<EventsModel?>>> {
+    override fun getRegisteredEventsList(): Flow<EventsState<List<EventsModel?>>> {
         return callbackFlow {
 
             trySend(EventsState.Loading)
@@ -205,19 +207,25 @@ class EventsRepositoryImpl(
                 ?.get()
                 ?.addOnSuccessListener { documents ->
 
-
                     val bookedEventsOfCurrentUser = documents.filter {
-                        it.get("bookings.userId") == auth.currentUser?.uid.toString()
-                    }.map {
-                        it.toObject(EventsModel::class.java)
+                        val userIdOfBookings =
+                            it.toObject(EventsModel::class.java).bookings?.map {
+                                it.userId
+                            }
+                        if (
+                            userIdOfBookings?.contains(auth.currentUser?.uid.toString())!!
+                        ) return@filter true else return@filter false
                     }
+                        .map {
+                            it.toObject(EventsModel::class.java)
+                        }
 
                     trySend(EventsState.Success(bookedEventsOfCurrentUser))
-
                 }
                 ?.addOnFailureListener { error ->
                     trySend(EventsState.Failed(error))
                 }
+
 
             awaitClose {
                 close()

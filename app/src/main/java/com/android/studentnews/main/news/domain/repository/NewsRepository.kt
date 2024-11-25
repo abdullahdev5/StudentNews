@@ -22,6 +22,8 @@ interface NewsRepository {
     fun onNewsSave(news: NewsModel): Flow<NewsState<String>>
     fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>>
     fun getSavedNewsList(): Flow<NewsState<List<NewsModel>>>
+    // Liked News
+    fun getLikedNewsList(): Flow<NewsState<List<NewsModel>>>
 
     // Category
     fun getNewsListByCategory(category: String): Flow<NewsState<List<NewsModel>>>
@@ -29,7 +31,6 @@ interface NewsRepository {
 
     // Search
     fun onSearch(query: String, currentSelectedCategory: String?): Flow<NewsState<List<NewsModel>>>
-
 
     fun setupPeriodicNewsWorkRequest()
     fun cancelPeriodicNewsWorkRequest()

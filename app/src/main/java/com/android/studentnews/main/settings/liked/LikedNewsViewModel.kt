@@ -1,9 +1,9 @@
-package com.android.studentnews.main.settings.saved.ui.viewModels
+package com.android.studentnews.main.settings.liked
 
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
@@ -18,26 +18,58 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class SavedNewsViewModel(
+class LikedNewsViewModel(
     private val newsRepository: NewsRepository
 ): ViewModel() {
 
-    private val _savedNewsList = MutableStateFlow<List<NewsModel>>(emptyList())
-    val savedNewsList = _savedNewsList.asStateFlow()
+    private val _likedNewsList = MutableStateFlow<List<NewsModel?>>(emptyList())
+    val likedNewsList = _likedNewsList.asStateFlow()
 
-    var savedNewsStatus by mutableStateOf("")
+    var likedNewsListStatus by mutableStateOf("")
         private set
 
 
     init {
-        getSavedNewsList()
+        getLikedNewsList()
     }
 
 
-    fun onNewsRemoveFromSave(news: NewsModel) {
+    fun getLikedNewsList() {
+        viewModelScope.launch {
+            newsRepository.getLikedNewsList()
+                .collectLatest { result ->
+                    when (result) {
+                        is NewsState.Loading -> {
+                            likedNewsListStatus = Status.Loading
+                        }
+                        is NewsState.Failed -> {
+                            likedNewsListStatus = Status.FAILED
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage ?: "",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                )
+                        }
+                        is NewsState.Success -> {
+                            likedNewsListStatus = Status.SUCCESS
+                            _likedNewsList.value = result.data
+                        }
+                    }
+                }
+        }
+    }
+
+
+
+    fun onNewsSave(
+        news: NewsModel,
+        onSee: (String) -> Unit,
+    ) {
         viewModelScope.launch {
             newsRepository
-                .onNewsRemoveFromSave(news)
+                .onNewsSave(news)
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Success -> {
@@ -47,15 +79,14 @@ class SavedNewsViewModel(
                                         message = result.data,
                                         duration = SnackbarDuration.Long,
                                         action = SnackBarActions(
-                                            label = "Undo",
+                                            label = "See",
                                             action = {
-                                                onNewsRemoveFromSaveUndo(news)
+                                                onSee.invoke(news.newsId ?: "")
                                             }
                                         )
                                     )
                                 )
                         }
-
                         is NewsState.Failed -> {
                             SnackBarController
                                 .sendEvent(
@@ -65,59 +96,7 @@ class SavedNewsViewModel(
                                     )
                                 )
                         }
-
                         else -> {}
-                    }
-                }
-        }
-    }
-
-    fun onNewsRemoveFromSaveUndo(news: NewsModel) {
-        viewModelScope.launch {
-            newsRepository
-                .onNewsSave(news)
-                .collectLatest { result ->
-                    when (result) {
-                        is NewsState.Failed -> {
-                            SnackBarController
-                                .sendEvent(
-                                    SnackBarEvents(
-                                        message = result.error.localizedMessage ?: "",
-                                        duration = SnackbarDuration.Long
-                                    )
-                                )
-                        }
-
-                        else -> {}
-                    }
-                }
-        }
-    }
-
-    fun getSavedNewsList() {
-        viewModelScope.launch {
-            newsRepository
-                .getSavedNewsList()
-                .collectLatest { result ->
-                    when (result) {
-                        is NewsState.Loading -> {
-                            savedNewsStatus = Status.Loading
-                        }
-
-                        is NewsState.Success -> {
-                            _savedNewsList.value = result.data
-                            savedNewsStatus = Status.SUCCESS
-                        }
-
-                        is NewsState.Failed -> {
-                            SnackBarController
-                                .sendEvent(
-                                    SnackBarEvents(
-                                        message = result.error.localizedMessage ?: "",
-                                        duration = SnackbarDuration.Long
-                                    )
-                                )
-                        }
                     }
                 }
         }

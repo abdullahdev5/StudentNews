@@ -6,6 +6,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -35,6 +37,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
+import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -59,7 +63,7 @@ fun SharedTransitionScope.SavedScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = {
                     Text(text = "Saved")
                 },
@@ -84,7 +88,7 @@ fun SharedTransitionScope.SavedScreen(
         },
         modifier = Modifier
             .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection)
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
     ) { innerPadding ->
 
         Column(

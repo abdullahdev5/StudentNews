@@ -68,35 +68,41 @@ fun SharedTransitionScope.EventsScreen(
 
     val eventsList by eventsViewModel.eventsList.collectAsState()
 
+    if (eventsList.size != 0) {
 
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize(),
+        ) {
 
-        item {
-            if (eventsList.isEmpty()) {
-                Text(text = "No Events Available")
-            } else if (eventsViewModel.eventsListErrorMsg.isNotEmpty()) {
+            items(eventsList.size) { index ->
+                val item = eventsList[index]
+
+                EventsItem(
+                    item = item,
+                    context = context,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    onItemClick = { clickedEventId ->
+                        navHostController.navigate(
+                            EventsDestination.EVENTS_DETAIL_SCREEN(clickedEventId)
+                        )
+                    },
+                )
+            }
+
+        }
+    } else {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            if (eventsViewModel.eventsListErrorMsg.isNotEmpty()) {
                 Text(text = eventsViewModel.eventsListErrorMsg)
+            } else {
+                Text(text = "No Events Available")
             }
         }
-
-        items(eventsList.size) { index ->
-            val item = eventsList[index]
-
-            EventsItem(
-                item = item,
-                context = context,
-                animatedVisibilityScope = animatedVisibilityScope,
-                onItemClick = { clickedEventId ->
-                    navHostController.navigate(
-                        EventsDestination.EVENTS_DETAIL_SCREEN(clickedEventId)
-                    )
-                },
-            )
-        }
-
     }
 
 

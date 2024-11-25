@@ -7,17 +7,28 @@ package com.android.studentnews.news.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.browser.trusted.ScreenOrientation
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOut
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -49,7 +60,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Logout
@@ -76,7 +86,6 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -111,6 +120,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
+import androidx.core.os.ConfigurationCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.annotation.ExperimentalCoilApi
@@ -119,9 +129,6 @@ import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
-import com.android.studentnews.core.data.snackbar_controller.SnackBarController
-import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
-import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
@@ -162,8 +169,12 @@ fun SharedTransitionScope.NewsScreen(
     val context = LocalContext.current
     val drawerScrollState = rememberScrollState()
     val lazyListState = rememberLazyListState()
+    val scrollState = rememberScrollState()
     val pullToRefreshState = rememberPullToRefreshState()
     val configuration = LocalConfiguration.current
+    val isLandScape = remember {
+        configuration.orientation.equals(Configuration.ORIENTATION_LANDSCAPE)
+    }
     val drawerState = rememberDrawerState(
         initialValue = DrawerValue.Closed
     )
@@ -207,9 +218,7 @@ fun SharedTransitionScope.NewsScreen(
             gesturesEnabled = true,
             drawerContent = {
                 ModalDrawerSheet(
-                    drawerContainerColor = if (isSystemInDarkTheme()) DarkGray.copy(0.9f) else White.copy(
-                        0.9f
-                    ),
+                    drawerContainerColor = if (isSystemInDarkTheme()) DarkGray else White,
                     modifier = Modifier
                         .widthIn(max = configuration.screenWidthDp.dp / 1.3f)
                 ) {
@@ -223,9 +232,6 @@ fun SharedTransitionScope.NewsScreen(
                         },
                         onSearchClick = {
                             navHostController.navigate(MainDestination.SEARCH_SCREEN)
-                        },
-                        onBookedEventsClick = {
-                            navHostController.navigate(EventsDestination.BOOKED_EVENTS_SCREEN)
                         },
                         onSettingsClick = {
                             navHostController.navigate(SubGraph.SETTINGS)
@@ -273,11 +279,8 @@ fun SharedTransitionScope.NewsScreen(
                             if (isMoreDropDownMenuItemOpen) {
                                 MoreDropDownMenu(
                                     expanded = isMoreDropDownMenuItemOpen,
-                                    onSearchClick = {
-                                        navHostController.navigate(MainDestination.SEARCH_SCREEN)
-                                    },
-                                    onAccountClick = {
-                                        navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
+                                    onSettingsClick = {
+                                        navHostController.navigate(SubGraph.SETTINGS)
                                     },
                                     onDismiss = {
                                         isMoreDropDownMenuItemOpen = false
@@ -373,12 +376,12 @@ fun SharedTransitionScope.NewsScreen(
 
                     Column(
                         modifier = Modifier
-                            .verticalScroll(rememberScrollState())
+                            .verticalScroll(scrollState)
                     ) {
 
                         AnimatedVisibility(
                             lazyListState.firstVisibleItemIndex < 1 &&
-                                    tabPagerState.currentPage == 0
+                                    tabPagerState.currentPage == 0,
                         ) {
                             HorizontalPager(
                                 state = categoryPagerState,
@@ -395,8 +398,7 @@ fun SharedTransitionScope.NewsScreen(
                                     )
                                 ),
                                 modifier = Modifier
-                                    .height(270.dp)
-//                                    .height(newsCategoryPagerHeight.value)
+                                    .height(if (!isLandScape) 270.dp else 0.dp)
                             ) { pagerIndex ->
                                 val item = categoriesList.value[pagerIndex]
                                 CategoriesListPagerItem(
@@ -431,10 +433,12 @@ fun SharedTransitionScope.NewsScreen(
                                         }
                                     },
                                     icon = {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Newspaper,
-                                            contentDescription = "Icon For News"
-                                        )
+                                        if (!isLandScape) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Newspaper,
+                                                contentDescription = "Icon For News"
+                                            )
+                                        }
                                     },
                                     text = {
                                         Text(text = "News")
@@ -451,10 +455,12 @@ fun SharedTransitionScope.NewsScreen(
                                         }
                                     },
                                     icon = {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Event,
-                                            contentDescription = "Icon For Events"
-                                        )
+                                        if (!isLandScape) {
+                                            Icon(
+                                                imageVector = Icons.Outlined.Event,
+                                                contentDescription = "Icon For Events"
+                                            )
+                                        }
                                     },
                                     text = {
                                         Text(text = "Events")
@@ -474,7 +480,7 @@ fun SharedTransitionScope.NewsScreen(
                                         color = Gray
                                     ),
                                     modifier = Modifier
-                                        .padding(all = 15.dp)
+                                        .padding(top = 10.dp, start = 10.dp, bottom = 5.dp)
                                 )
                             }
                         }
@@ -885,7 +891,6 @@ fun SharedTransitionScope.MainDrawerContent(
     animatedVisibilityScope: AnimatedVisibilityScope,
     onAccountClick: () -> Unit,
     onSearchClick: () -> Unit,
-    onBookedEventsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSignOutClick: () -> Unit,
     onDismiss: () -> Unit,
@@ -1002,10 +1007,6 @@ fun SharedTransitionScope.MainDrawerContent(
                 onDismiss.invoke()
                 onSearchClick.invoke()
             },
-            onBookedEventsClick = {
-                onBookedEventsClick.invoke()
-                onDismiss.invoke()
-            },
             onSettingsClick = {
                 onSettingsClick.invoke()
                 onDismiss.invoke()
@@ -1022,7 +1023,6 @@ fun SharedTransitionScope.MainDrawerContent(
 fun MainDrawerItems(
     onAccountClick: () -> Unit,
     onSearchClick: () -> Unit,
-    onBookedEventsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSignOutClick: () -> Unit,
 ) {
@@ -1058,25 +1058,6 @@ fun MainDrawerItems(
         },
         selected = false,
         onClick = onSearchClick,
-        colors = NavigationDrawerItemDefaults.colors(
-            unselectedContainerColor = Color.Transparent,
-        ),
-        shape = RectangleShape,
-    )
-
-    // Booked Events Item
-    NavigationDrawerItem(
-        label = {
-            Text(text = "Booked Events")
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Outlined.Book,
-                contentDescription = "icon for Booked Events"
-            )
-        },
-        selected = false,
-        onClick = onBookedEventsClick,
         colors = NavigationDrawerItemDefaults.colors(
             unselectedContainerColor = Color.Transparent,
         ),
@@ -1125,39 +1106,25 @@ fun MainDrawerItems(
 @Composable
 fun MoreDropDownMenu(
     expanded: Boolean,
-    onSearchClick: () -> Unit,
-    onAccountClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
         properties = PopupProperties(
-            focusable = true,
-            dismissOnBackPress = true,
-            dismissOnClickOutside = true
+            focusable = false,
         ),
         modifier = Modifier
             .background(color = if (isSystemInDarkTheme()) DarkGray else White)
     ) {
-        // Search Item
+        // Settings Item
         DropdownMenuItem(
             text = {
-                Text(text = "Search")
+                Text(text = "Settings")
             },
             onClick = {
-                onSearchClick.invoke()
-                onDismiss.invoke()
-            }
-        )
-
-        // Account Item
-        DropdownMenuItem(
-            text = {
-                Text(text = "Account")
-            },
-            onClick = {
-                onAccountClick.invoke()
+                onSettingsClick.invoke()
                 onDismiss.invoke()
             }
         )

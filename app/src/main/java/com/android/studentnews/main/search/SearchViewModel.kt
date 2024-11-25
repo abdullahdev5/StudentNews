@@ -120,12 +120,12 @@ class SearchViewModel(
                             SnackBarController
                                 .sendEvent(
                                     SnackBarEvents(
-                                        message = "News Saved",
+                                        message = result.data,
                                         duration = SnackbarDuration.Long,
                                         action = SnackBarActions(
                                             label = "See",
                                             action = {
-                                                onSeeAction.invoke(result.data)
+                                                onSeeAction.invoke(news.newsId.toString())
                                             }
                                         )
                                     )

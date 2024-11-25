@@ -4,6 +4,7 @@ import com.android.studentnews.main.news.NewsWorker
 import com.android.studentnews.main.news.data.repository.NewsDetailRepositoryImpl
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
+import com.android.studentnews.main.settings.liked.LikedNewsViewModel
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
 import com.android.studentnews.news.data.repository.NewsRepositoryImpl
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -18,13 +19,12 @@ val newsModule = module {
     singleOf(::NewsRepositoryImpl) { bind<NewsRepository>() }
     viewModelOf(::NewsViewModel)
     workerOf(::NewsWorker)
+
+    viewModelOf(::LikedNewsViewModel)
+    viewModelOf(::SavedNewsViewModel)
 }
 
 val newsDetailModule = module {
     singleOf(::NewsDetailRepositoryImpl) { bind< NewsDetailRepository>() }
     viewModelOf(::NewsDetailViewModel)
-}
-
-val savedNewsModule = module {
-    viewModelOf(::SavedNewsViewModel)
 }

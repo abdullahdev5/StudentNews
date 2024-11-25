@@ -8,7 +8,4 @@ sealed class EventsDestination {
 
     @Serializable
     data class EVENTS_DETAIL_SCREEN(val eventId: String) : EventsDestination()
-
-    @Serializable
-    object BOOKED_EVENTS_SCREEN: EventsDestination()
 }

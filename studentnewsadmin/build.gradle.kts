@@ -74,7 +74,6 @@ dependencies {
     implementation(platform(libs.google.firebase.bom))
     implementation(libs.google.firebase.firestore.ktx)
     implementation(libs.google.firebase.storage.ktx)
-    implementation(libs.google.firebase.analytics.ktx)
     // Koin
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)

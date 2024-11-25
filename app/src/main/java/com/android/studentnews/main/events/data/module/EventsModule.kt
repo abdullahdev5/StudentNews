@@ -3,6 +3,7 @@ package com.android.studentnewsadmin.main.events.data.module
 import com.android.studentnews.main.events.data.repository.EventsRepositoryImpl
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
+import com.android.studentnews.main.settings.registrations.RegisteredEventsViewModel
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
 import org.koin.androidx.viewmodel.dsl.viewModelOf
 import org.koin.core.module.dsl.bind
@@ -16,5 +17,7 @@ val eventsModule = module {
     viewModelOf(::EventsViewModel)
 
     viewModelOf(::SavedEventsViewModel)
+
+    viewModelOf(::RegisteredEventsViewModel)
 
 }

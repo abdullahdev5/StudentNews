@@ -96,7 +96,7 @@ class NewsRepositoryImpl(
                 ?.document(news.newsId ?: "")
                 ?.set(news)
                 ?.addOnSuccessListener { document ->
-                    trySend(NewsState.Success(news.newsId ?: ""))
+                    trySend(NewsState.Success("News Saved"))
                 }
                 ?.addOnFailureListener { error ->
                     trySend(NewsState.Failed(error))
@@ -149,6 +149,40 @@ class NewsRepositoryImpl(
 
             awaitClose {
                 listener?.remove()
+            }
+        }
+    }
+
+    // Liked News
+    override fun getLikedNewsList(): Flow<NewsState<List<NewsModel>>> {
+        return callbackFlow {
+
+            trySend(NewsState.Loading)
+
+            newsColRef
+                ?.get()
+                ?.addOnSuccessListener { documents ->
+
+                    val likedNewsList = documents.filter {
+                        val userIdsFromLikes = it.toObject(NewsModel::class.java).likes?.map {
+                            it
+                        }
+                        if (userIdsFromLikes?.contains(auth.currentUser?.uid.toString())!!)
+                            return@filter true
+                        else return@filter false
+                    }
+                        .map {
+                            it.toObject(NewsModel::class.java)
+                        }
+                    trySend(NewsState.Success(likedNewsList))
+                }
+                ?.addOnFailureListener { error ->
+                    trySend(NewsState.Failed(error))
+                }
+
+
+            awaitClose {
+                close()
             }
         }
     }
