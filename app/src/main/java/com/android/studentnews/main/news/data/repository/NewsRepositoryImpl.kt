@@ -78,7 +78,7 @@ class NewsRepositoryImpl(
             .get()
             .await()
             .documents
-            .firstOrNull()
+            .random()
             ?.toObject(NewsModel::class.java)
 
         return news

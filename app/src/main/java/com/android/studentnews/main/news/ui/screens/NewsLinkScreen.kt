@@ -6,7 +6,6 @@ import android.annotation.SuppressLint
 import android.graphics.Bitmap
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -48,9 +47,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.domain.constants.FontSize
-import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
 import java.net.URL
@@ -61,8 +59,6 @@ fun NewsLinkScreen(
     link: String,
     navHostController: NavHostController,
 ) {
-
-    val context = LocalContext.current
 
     var websiteHost by rememberSaveable { mutableStateOf("") }
     var websiteUrl by rememberSaveable { mutableStateOf("") }
@@ -146,7 +142,7 @@ fun NewsLinkScreen(
         },
         modifier = Modifier
             .fillMaxSize(),
-        containerColor = if (isSystemInDarkTheme()) DarkGray else White
+        containerColor = if (isSystemInDarkTheme()) DarkColor else White
     ) { innerPadding ->
         Column(
             modifier = Modifier

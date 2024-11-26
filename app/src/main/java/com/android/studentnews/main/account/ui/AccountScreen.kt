@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.android.studentnews.main.account.ui
 
@@ -119,11 +119,13 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun SharedTransitionScope.AccountScreen(
+fun AccountScreen(
     navHostController: NavHostController,
     accountViewModel: AccountViewModel,
-    animatedVisibilityScope: AnimatedVisibilityScope
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
 ) {
 
     val scope = rememberCoroutineScope()
@@ -265,75 +267,77 @@ fun SharedTransitionScope.AccountScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box {
-
-                    Card(
-                        modifier = Modifier
-                            .width(170.dp)
-                            .height(170.dp)
-                            .clip(shape = CircleShape)
-                            .border(
-                                width = 1.dp,
-                                color = Gray,
-                                shape = CircleShape
-                            )
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "user_image/${currentUser?.uid}"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                clipInOverlayDuringTransition = OverlayClip(CircleShape)
-                            ),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (currentUser?.profilePic.isNullOrEmpty())
-                                Color(currentUser?.profilePicBgColor ?: 0)
-                            else
-                                Color.LightGray
-                        )
-                    ) {
-                        Box(
+                    with(sharedTransitionScope) {
+                        Card(
                             modifier = Modifier
-                                .fillMaxSize(),
-                        ) {
-                            if (galleryImageBitmap != null || cameraImageBitmap != null) {
-                                AsyncImage(
-                                    model = ImageRequest.Builder(context)
-                                        .data(
-                                            galleryImageBitmap?.let {
-                                                it
-                                            } ?: cameraImageBitmap
-                                        )
-                                        .crossfade(true)
-                                        .build(),
-                                    contentDescription = "User Image Preview",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
+                                .width(170.dp)
+                                .height(170.dp)
+                                .clip(shape = CircleShape)
+                                .border(
+                                    width = 1.dp,
+                                    color = Gray,
+                                    shape = CircleShape
                                 )
-                            }
-
-                            if (galleryImageBitmap == null && cameraImageBitmap == null) {
-                                if (currentUser?.profilePic.isNullOrEmpty()) {
-                                    Text(
-                                        text = currentUser?.registrationData?.name?.first()?.toString() ?: "",
-                                        color = White,
-                                        fontSize = (FontSize.LARGE + 5).sp,
-                                        modifier = Modifier
-                                            .align(alignment = Alignment.Center)
-                                            .shadow(
-                                                elevation = 20.dp,
-                                                shape = CircleShape,
-                                                ambientColor = if (isSystemInDarkTheme()) White else Black,
-                                                spotColor = if (isSystemInDarkTheme()) White else Black
-                                            )
-                                    )
-                                } else {
-                                    val imageRequest = ImageRequest.Builder(context)
-                                        .data(currentUser?.profilePic ?: "")
-                                        .crossfade(true)
-                                        .build()
+                                .sharedElement(
+                                    state = rememberSharedContentState(key = "user_image/${currentUser?.uid}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    clipInOverlayDuringTransition = OverlayClip(CircleShape)
+                                ),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (currentUser?.profilePic.isNullOrEmpty())
+                                    Color(currentUser?.profilePicBgColor ?: 0)
+                                else
+                                    Color.LightGray
+                            )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                            ) {
+                                if (galleryImageBitmap != null || cameraImageBitmap != null) {
                                     AsyncImage(
-                                        model = imageRequest,
-                                        contentDescription = "User Image",
+                                        model = ImageRequest.Builder(context)
+                                            .data(
+                                                galleryImageBitmap?.let {
+                                                    it
+                                                } ?: cameraImageBitmap
+                                            )
+                                            .crossfade(true)
+                                            .build(),
+                                        contentDescription = "User Image Preview",
                                         contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
                                     )
+                                }
+
+                                if (galleryImageBitmap == null && cameraImageBitmap == null) {
+                                    if (currentUser?.profilePic.isNullOrEmpty()) {
+                                        Text(
+                                            text = currentUser?.registrationData?.name?.first()
+                                                ?.toString() ?: "",
+                                            color = White,
+                                            fontSize = (FontSize.LARGE + 5).sp,
+                                            modifier = Modifier
+                                                .align(alignment = Alignment.Center)
+                                                .shadow(
+                                                    elevation = 20.dp,
+                                                    shape = CircleShape,
+                                                    ambientColor = if (isSystemInDarkTheme()) White else Black,
+                                                    spotColor = if (isSystemInDarkTheme()) White else Black
+                                                )
+                                        )
+                                    } else {
+                                        val imageRequest = ImageRequest.Builder(context)
+                                            .data(currentUser?.profilePic ?: "")
+                                            .crossfade(true)
+                                            .build()
+                                        AsyncImage(
+                                            model = imageRequest,
+                                            contentDescription = "User Image",
+                                            contentScale = ContentScale.Crop,
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -364,19 +368,21 @@ fun SharedTransitionScope.AccountScreen(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        text = currentUser?.registrationData?.name ?: "",
-                        style = TextStyle(
-                            fontSize = FontSize.LARGE.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        modifier = Modifier
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "user_name/${currentUser?.uid}"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                renderInOverlayDuringTransition = true
-                            )
-                    )
+                    with(sharedTransitionScope) {
+                        Text(
+                            text = currentUser?.registrationData?.name ?: "",
+                            style = TextStyle(
+                                fontSize = FontSize.LARGE.sp,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            modifier = Modifier
+                                .sharedElement(
+                                    state = rememberSharedContentState(key = "user_name/${currentUser?.uid}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    renderInOverlayDuringTransition = true
+                                )
+                        )
+                    }
 
                     IconButton(onClick = {
                         scope.launch {

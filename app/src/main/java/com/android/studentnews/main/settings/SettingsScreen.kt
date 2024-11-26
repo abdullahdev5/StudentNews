@@ -2,7 +2,6 @@
 
 package com.android.studentnews.main.settings
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,24 +16,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AppRegistration
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForwardIos
-import androidx.compose.material.icons.filled.Book
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.Event
-import androidx.compose.material.icons.filled.EventAvailable
-import androidx.compose.material.icons.filled.EventBusy
-import androidx.compose.material.icons.filled.EventNote
-import androidx.compose.material.icons.filled.EventSeat
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Note
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -46,11 +33,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.android.studentnews.ui.theme.Gray
 
 @Composable
 fun SettingsScreen(
@@ -95,6 +79,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .padding(top = 20.dp)
                 .verticalScroll(scrollState)
         ) {
 
@@ -137,7 +122,9 @@ fun SettingsScreen(
                             )
                         }
 
-                        HorizontalDivider(modifier = Modifier.fillMaxWidth())
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp)
+                        )
                     }
                 }
 
@@ -180,7 +167,9 @@ fun SettingsScreen(
                             )
                         }
 
-                        HorizontalDivider(modifier = Modifier.fillMaxWidth())
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp)
+                        )
                     }
                 }
 
@@ -223,7 +212,9 @@ fun SettingsScreen(
                             )
                         }
 
-                        HorizontalDivider(modifier = Modifier.fillMaxWidth())
+                        HorizontalDivider(
+                            modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp)
+                        )
                     }
                 }
 

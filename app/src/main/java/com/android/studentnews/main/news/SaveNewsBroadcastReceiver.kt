@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
+import com.android.studentnews.NotificationRelated
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.model.UrlList
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import kotlin.collections.map
+import kotlin.random.Random
 import kotlin.text.split
 import kotlin.text.toLong
 
@@ -31,7 +33,8 @@ class SaveNewsBroadcastReceiver : BroadcastReceiver(), KoinComponent {
 
         if (intent?.action == SAVE_NEWS_ACTION) {
 
-            notificationManager.cancel(1)
+            val notificationId = intent.getIntExtra("notification_id", 1)
+            notificationManager.cancel(notificationId)
 
             val title = intent.getStringExtra("title") ?: ""
             val description = intent.getStringExtra("description") ?: ""

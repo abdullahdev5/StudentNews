@@ -1,7 +1,4 @@
-@file:OptIn(
-    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
-    ExperimentalSharedTransitionApi::class, ExperimentalCoilApi::class
-)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.android.studentnews.news.ui
 
@@ -9,26 +6,16 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
-import androidx.browser.trusted.ScreenOrientation
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideIn
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOut
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -120,7 +107,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
-import androidx.core.os.ConfigurationCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.annotation.ExperimentalCoilApi
@@ -133,7 +119,6 @@ import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.NavigationBarItems
-import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
@@ -144,7 +129,7 @@ import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
-import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
@@ -155,14 +140,15 @@ import org.koin.androidx.compose.koinViewModel
 
 
 @SuppressLint(
-    "UnusedMaterial3ScaffoldPaddingParameter", "RememberReturnType",
-    "FrequentlyChangedStateReadInComposition"
+    "RememberReturnType", "FrequentlyChangedStateReadInComposition"
 )
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun SharedTransitionScope.NewsScreen(
+fun NewsScreen(
     navHostController: NavHostController,
     newsViewModel: NewsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
 ) {
 
     val scope = rememberCoroutineScope()
@@ -185,6 +171,7 @@ fun SharedTransitionScope.NewsScreen(
 
     var newsCategoryStatus by rememberSaveable { mutableStateOf("") }
     var isMoreDropDownMenuItemOpen by rememberSaveable { mutableStateOf(false) }
+    var isEventsTabClicked by rememberSaveable { mutableStateOf(false) }
 
     val newsList = newsViewModel.newsList.collectAsStateWithLifecycle()
     val categoriesList = newsViewModel.categoriesList.collectAsStateWithLifecycle()
@@ -197,13 +184,18 @@ fun SharedTransitionScope.NewsScreen(
     )
 
 
-    BackHandler(drawerState.isOpen || tabPagerState.currentPage != 0) {
+    BackHandler(
+        drawerState.isOpen || tabPagerState.currentPage != 0
+                || lazyListState.firstVisibleItemIndex != 0
+    ) {
         scope.launch {
             if (drawerState.isOpen) {
                 drawerState.close()
 
             } else if (tabPagerState.currentPage != 0) {
                 tabPagerState.animateScrollToPage(0)
+            } else if (lazyListState.firstVisibleItemIndex != 0) {
+                lazyListState.scrollToItem(0)
             }
         }
     }
@@ -218,7 +210,7 @@ fun SharedTransitionScope.NewsScreen(
             gesturesEnabled = true,
             drawerContent = {
                 ModalDrawerSheet(
-                    drawerContainerColor = if (isSystemInDarkTheme()) DarkGray else White,
+                    drawerContainerColor = if (isSystemInDarkTheme()) DarkColor else White,
                     modifier = Modifier
                         .widthIn(max = configuration.screenWidthDp.dp / 1.3f)
                 ) {
@@ -227,6 +219,7 @@ fun SharedTransitionScope.NewsScreen(
                         scrollState = drawerScrollState,
                         context = context,
                         animatedVisibilityScope = animatedVisibilityScope,
+                        sharedTransitionScope = sharedTransitionScope,
                         onAccountClick = {
                             navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
                         },
@@ -341,13 +334,6 @@ fun SharedTransitionScope.NewsScreen(
                                     selected = index == selectedNavBarIndex,
                                     onClick = {
                                         selectedNavBarIndex = index
-                                        if (selectedNavBarIndex == 0) {
-                                            if (lazyListState.firstVisibleItemIndex != 0) {
-                                                scope.launch {
-                                                    lazyListState.scrollToItem(0)
-                                                }
-                                            }
-                                        }
                                         if (selectedNavBarIndex == 1) {
                                             navHostController.navigate(MainDestination.SEARCH_SCREEN)
                                         }
@@ -418,7 +404,6 @@ fun SharedTransitionScope.NewsScreen(
 
                         }
 
-
                         Column {
 
                             TabRow(
@@ -428,8 +413,16 @@ fun SharedTransitionScope.NewsScreen(
                                 Tab(
                                     selected = tabPagerState.currentPage == 0,
                                     onClick = {
-                                        scope.launch {
-                                            tabPagerState.animateScrollToPage(0)
+                                        if (tabPagerState.currentPage == 0) {
+                                            if (lazyListState.firstVisibleItemIndex != 0) {
+                                                scope.launch {
+                                                    lazyListState.scrollToItem(0)
+                                                }
+                                            }
+                                        } else {
+                                            scope.launch {
+                                                tabPagerState.animateScrollToPage(0)
+                                            }
                                         }
                                     },
                                     icon = {
@@ -450,8 +443,16 @@ fun SharedTransitionScope.NewsScreen(
                                 Tab(
                                     selected = tabPagerState.currentPage == 1,
                                     onClick = {
-                                        scope.launch {
-                                            tabPagerState.animateScrollToPage(1)
+                                        if (tabPagerState.currentPage == 1) {
+                                            scope.launch {
+                                                isEventsTabClicked = true
+                                                delay(2000)
+                                                isEventsTabClicked = false
+                                            }
+                                        } else {
+                                            scope.launch {
+                                                tabPagerState.animateScrollToPage(1)
+                                            }
                                         }
                                     },
                                     icon = {
@@ -540,6 +541,7 @@ fun SharedTransitionScope.NewsScreen(
                                                 },
                                                 context = context,
                                                 animatedVisibilityScope = animatedVisibilityScope,
+                                                sharedTransitionScope = sharedTransitionScope,
                                                 onSave = { it ->
                                                     val news = NewsModel(
                                                         newsId = it.newsId,
@@ -580,7 +582,10 @@ fun SharedTransitionScope.NewsScreen(
                                                 pullToRefreshState.startRefresh()
                                                 delay(1000L)
                                                 if (tabPagerState.currentPage == 1) {
-                                                    eventsViewModel.getEventsList()
+                                                    eventsViewModel.selectedCategoryIndex?.let {
+                                                        eventsViewModel.selectedCategoryIndex = null
+                                                        eventsViewModel.getEventsList()
+                                                    }
                                                 }
                                             }
                                         } else {
@@ -588,10 +593,21 @@ fun SharedTransitionScope.NewsScreen(
                                         }
                                     }
 
+                                    LaunchedEffect(isEventsTabClicked) {
+                                        if (isEventsTabClicked) {
+                                            if (lazyListState.firstVisibleItemIndex != 0) {
+                                                eventsViewModel
+                                                    .lazyListState
+                                                    .animateScrollToItem(0)
+                                            }
+                                        }
+                                    }
+
                                     EventsScreen(
                                         navHostController = navHostController,
                                         eventsViewModel = eventsViewModel,
-                                        animatedVisibilityScope = animatedVisibilityScope
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        sharedTransitionScope = sharedTransitionScope
                                     )
                                 }
 
@@ -648,129 +664,133 @@ fun SharedTransitionScope.NewsScreen(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun SharedTransitionScope.NewsItem(
+fun NewsItem(
     item: NewsModel?,
     context: Context,
     onItemClick: (String) -> Unit,
     onSave: (NewsModel) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(
-                start = 20.dp,
-                end = 20.dp,
-                top = 10.dp,
-                bottom = 10.dp,
-            )
-            .sharedElement(
-                state = rememberSharedContentState(key = "container/${item?.newsId}"),
-                animatedVisibilityScope = animatedVisibilityScope,
-                renderInOverlayDuringTransition = true
-            ),
-        colors = CardDefaults.cardColors(
-            containerColor = Green.copy(0.1f) // LightGray.copy(alpha = 0.3f)
-        )
-    ) {
-
-        Row(
+    with(sharedTransitionScope) {
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(all = 10.dp)
-                .clickable {
-                    onItemClick.invoke(item?.newsId ?: "")
-                },
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(end = 5.dp)
-                    .weight(1f)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
-                ) {
-
-                    IconButton(
-                        onClick = {
-                            item?.let {
-                                onSave.invoke(it)
-                            }
-                        },
-                        modifier = Modifier
-                            .width(20.dp)
-                            .height(20.dp),
-                    ) {
-                        Icon(
-                            imageVector = Icons.Outlined.BookmarkBorder,
-                            contentDescription = "Icon for unSaved News"
-                        )
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .background(
-                                color = Black.copy(0.1f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                    ) {
-                        Text(
-                            text = item?.category ?: "",
-                            modifier = Modifier
-                                .padding(all = 2.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(3.dp))
-                Text(
-                    text = item?.title ?: "",
-                    style = TextStyle(
-                        fontSize = (FontSize.MEDIUM - 1).sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .sharedElement(
-                            state = rememberSharedContentState(key = "title/${item?.newsId}"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            renderInOverlayDuringTransition = true,
-                        )
+                .padding(
+                    start = 20.dp,
+                    end = 20.dp,
+                    top = 10.dp,
+                    bottom = 10.dp,
                 )
-                Text(
-                    text = item?.description ?: "",
-                    style = TextStyle(
-                        fontSize = FontSize.SMALL.sp,
-                        color = Gray,
-                    ),
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis,
+                .sharedElement(
+                    state = rememberSharedContentState(key = "container/${item?.newsId}"),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    renderInOverlayDuringTransition = true
+                ),
+            colors = CardDefaults.cardColors(
+                containerColor = Green.copy(0.1f) // LightGray.copy(alpha = 0.3f)
+            )
+        ) {
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(all = 10.dp)
+                    .clickable {
+                        onItemClick.invoke(item?.newsId ?: "")
+                    },
+            ) {
+                Column(
                     modifier = Modifier
-                        .padding(top = 10.dp)
+                        .padding(end = 5.dp)
+                        .weight(1f)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    ) {
+
+                        IconButton(
+                            onClick = {
+                                item?.let {
+                                    onSave.invoke(it)
+                                }
+                            },
+                            modifier = Modifier
+                                .width(20.dp)
+                                .height(20.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.BookmarkBorder,
+                                contentDescription = "Icon for unSaved News"
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .background(
+                                    color = Black.copy(0.1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                        ) {
+                            Text(
+                                text = item?.category ?: "",
+                                modifier = Modifier
+                                    .padding(all = 2.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = item?.title ?: "",
+                        style = TextStyle(
+                            fontSize = (FontSize.MEDIUM - 1).sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .sharedElement(
+                                state = rememberSharedContentState(key = "title/${item?.newsId}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                renderInOverlayDuringTransition = true,
+                            )
+                    )
+                    Text(
+                        text = item?.description ?: "",
+                        style = TextStyle(
+                            fontSize = FontSize.SMALL.sp,
+                            color = Gray,
+                        ),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .padding(top = 10.dp)
+                    )
+                }
+
+                val imageRequest = ImageRequest.Builder(context)
+                    .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))
+                    .crossfade(true)
+                    .build()
+
+                AsyncImage(
+                    model = imageRequest,
+                    contentDescription = "News Image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .width(90.dp)
+                        .heightIn(max = 100.dp)
+                        .clip(shape = RoundedCornerShape(10.dp))
+                        .sharedElement(
+                            state = rememberSharedContentState(key = "image/${item?.newsId ?: ""}"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
+                        )
                 )
             }
-
-            val imageRequest = ImageRequest.Builder(context)
-                .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))
-                .crossfade(true)
-                .build()
-
-            AsyncImage(
-                model = imageRequest,
-                contentDescription = "News Image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .width(90.dp)
-                    .heightIn(max = 100.dp)
-                    .clip(shape = RoundedCornerShape(10.dp))
-                    .sharedElement(
-                        state = rememberSharedContentState(key = "image/${item?.newsId ?: ""}"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
-                    )
-            )
         }
     }
 }
@@ -883,12 +903,14 @@ fun PagerIndicator(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun SharedTransitionScope.MainDrawerContent(
+fun MainDrawerContent(
     currentUser: UserModel?,
     scrollState: ScrollState,
     context: Context,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
     onAccountClick: () -> Unit,
     onSearchClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -912,81 +934,85 @@ fun SharedTransitionScope.MainDrawerContent(
 
                 val color = currentUser?.profilePicBgColor ?: 0
 
-                Card(
-                    modifier = Modifier
-                        .width(100.dp)
-                        .height(100.dp)
-                        .clip(shape = CircleShape)
-                        .sharedElement(
-                            state = rememberSharedContentState(key = "user_image/${currentUser?.uid}"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            clipInOverlayDuringTransition = OverlayClip(CircleShape),
-                            renderInOverlayDuringTransition = true
-                        ),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (currentUser?.profilePic.isNullOrEmpty())
-                            Color(color)
-                        else
-                            Color.LightGray
-                    )
-                ) {
-                    Box(
+                with(sharedTransitionScope) {
+                    Card(
                         modifier = Modifier
-                            .fillMaxSize()
-                            .pointerInput(true) {
-                                detectTapGestures(
-                                    onTap = {
-                                        onAccountClick.invoke()
-                                    }
-                                )
-                            },
+                            .width(100.dp)
+                            .height(100.dp)
+                            .clip(shape = CircleShape)
+                            .sharedElement(
+                                state = rememberSharedContentState(key = "user_image/${currentUser?.uid}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                clipInOverlayDuringTransition = OverlayClip(CircleShape),
+                                renderInOverlayDuringTransition = true
+                            ),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (currentUser?.profilePic.isNullOrEmpty())
+                                Color(color)
+                            else
+                                Color.LightGray
+                        )
                     ) {
-                        if (currentUser?.profilePic.isNullOrEmpty()) {
-                            Text(
-                                text = currentUser?.registrationData?.name?.first().toString()
-                                    ?: "",
-                                color = White,
-                                fontSize = FontSize.LARGE.sp,
-                                modifier = Modifier
-                                    .align(alignment = Alignment.Center)
-                                    .shadow(
-                                        elevation = 20.dp,
-                                        shape = CircleShape,
-                                        ambientColor = if (isSystemInDarkTheme()) White else Black,
-                                        spotColor = if (isSystemInDarkTheme()) White else Black
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .pointerInput(true) {
+                                    detectTapGestures(
+                                        onTap = {
+                                            onAccountClick.invoke()
+                                        }
                                     )
-                            )
-                        } else {
+                                },
+                        ) {
+                            if (currentUser?.profilePic.isNullOrEmpty()) {
+                                Text(
+                                    text = currentUser?.registrationData?.name?.first().toString()
+                                        ?: "",
+                                    color = White,
+                                    fontSize = FontSize.LARGE.sp,
+                                    modifier = Modifier
+                                        .align(alignment = Alignment.Center)
+                                        .shadow(
+                                            elevation = 20.dp,
+                                            shape = CircleShape,
+                                            ambientColor = if (isSystemInDarkTheme()) White else Black,
+                                            spotColor = if (isSystemInDarkTheme()) White else Black
+                                        )
+                                )
+                            } else {
 
-                            val imageRequest = ImageRequest.Builder(context)
-                                .data(currentUser?.profilePic ?: "")
-                                .crossfade(true)
-                                .build()
+                                val imageRequest = ImageRequest.Builder(context)
+                                    .data(currentUser?.profilePic ?: "")
+                                    .crossfade(true)
+                                    .build()
 
-                            AsyncImage(
-                                model = imageRequest,
-                                contentDescription = "User Image",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                            )
+                                AsyncImage(
+                                    model = imageRequest,
+                                    contentDescription = "User Image",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                )
+                            }
                         }
                     }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = currentUser?.registrationData?.name ?: "",
-                    style = TextStyle(
-                        fontSize = FontSize.MEDIUM.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier
-                        .sharedElement(
-                            state = rememberSharedContentState(key = "user_name/${currentUser?.uid}"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            renderInOverlayDuringTransition = true,
-                        )
-                )
+                with(sharedTransitionScope) {
+                    Text(
+                        text = currentUser?.registrationData?.name ?: "",
+                        style = TextStyle(
+                            fontSize = FontSize.MEDIUM.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier
+                            .sharedElement(
+                                state = rememberSharedContentState(key = "user_name/${currentUser?.uid}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                renderInOverlayDuringTransition = true,
+                            )
+                    )
+                }
             }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = {
@@ -1116,7 +1142,7 @@ fun MoreDropDownMenu(
             focusable = false,
         ),
         modifier = Modifier
-            .background(color = if (isSystemInDarkTheme()) DarkGray else White)
+            .background(color = if (isSystemInDarkTheme()) DarkColor else White)
     ) {
         // Settings Item
         DropdownMenuItem(

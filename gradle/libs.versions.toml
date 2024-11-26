@@ -56,7 +56,6 @@ google-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", ve
 google-firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx" }
 google-firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
 google-firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx" }
-google-firebase-analytics-ktx = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 # Compose Navigation
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }

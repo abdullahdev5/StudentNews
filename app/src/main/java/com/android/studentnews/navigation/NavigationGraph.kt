@@ -113,7 +113,8 @@ fun NavigationGraph(
                         NewsScreen(
                             navHostController = navHostController,
                             newsViewModel = newsViewModel,
-                            animatedVisibilityScope = this
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout
                         )
                     }
 
@@ -131,7 +132,8 @@ fun NavigationGraph(
                             newsId = arguments.newsId,
                             navHostController = navHostController,
                             newsDetailViewModel = newsDetailViewModel,
-                            animatedVisibilityScope = this
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout
                         )
                     }
 
@@ -168,7 +170,8 @@ fun NavigationGraph(
                         EventsScreen(
                             navHostController = navHostController,
                             eventsViewModel = eventsViewModel,
-                            animatedVisibilityScope = this
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout
                         )
                     }
 
@@ -181,7 +184,8 @@ fun NavigationGraph(
                             eventId = arguments.eventId,
                             navHostController = navHostController,
                             eventsViewModel = eventsViewModel,
-                            animatedVisibilityScope = this
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout
                         )
                     }
 
@@ -234,7 +238,8 @@ fun NavigationGraph(
 
                             SavedScreen(
                                 navHostController = navHostController,
-                                animatedVisibilityScope = this
+                                animatedVisibilityScope = this,
+                                sharedTransitionScope = this@SharedTransitionLayout
                             )
                         }
 
@@ -257,7 +262,8 @@ fun NavigationGraph(
                             SavedNewsScreen(
                                 navHostController = navHostController,
                                 savedNewsViewModel = savedNewsViewModel,
-                                animatedVisibilityScope = this
+                                animatedVisibilityScope = this,
+                                sharedTransitionScope = this@SharedTransitionLayout
                             )
                         }
 
@@ -266,7 +272,8 @@ fun NavigationGraph(
                             SavedEventsScreen(
                                 navHostController = navHostController,
                                 savedEventsViewModel = savedEventsViewModel,
-                                animatedVisibilityScope = this
+                                animatedVisibilityScope = this,
+                                sharedTransitionScope = this@SharedTransitionLayout
                             )
                         }
                     }
@@ -290,7 +297,8 @@ fun NavigationGraph(
                         RegisteredEventsScreen(
                             navHostController = navHostController,
                             registeredEventsViewModel = registeredEventsViewModel,
-                            animatedVisibilityScope = this
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout
                         )
                     }
 
@@ -313,7 +321,8 @@ fun NavigationGraph(
                         LikedNewsScreen(
                             navHostController = navHostController,
                             likedNewsViewModel = likedNewsViewModel,
-                            animatedVisibilityScope = this
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout
                         )
                     }
 
@@ -324,7 +333,8 @@ fun NavigationGraph(
                     AccountScreen(
                         navHostController = navHostController,
                         accountViewModel = accountViewModel,
-                        animatedVisibilityScope = this
+                        animatedVisibilityScope = this,
+                        sharedTransitionScope = this@SharedTransitionLayout
                     )
                 }
 
@@ -347,7 +357,8 @@ fun NavigationGraph(
                     SearchScreen(
                         navHostController = navHostController,
                         searchViewModel = searchViewModel,
-                        animatedVisibilityScope = this
+                        animatedVisibilityScope = this,
+                        sharedTransitionScope = this@SharedTransitionLayout
                     )
                 }
 

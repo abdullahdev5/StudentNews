@@ -1,8 +1,9 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.android.studentnews.main.events.ui.screens
 
 import android.icu.util.Calendar
+import android.view.MotionEvent
 import android.widget.CalendarView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -10,6 +11,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -66,6 +68,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -118,13 +121,15 @@ import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @UnstableApi
 @Composable
-fun SharedTransitionScope.EventsDetailScreen(
+fun EventsDetailScreen(
     eventId: String,
     navHostController: NavHostController,
     eventsViewModel: EventsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope
 ) {
     LaunchedEffect(Unit) {
         eventsViewModel.getEventById(eventId)
@@ -148,8 +153,6 @@ fun SharedTransitionScope.EventsDetailScreen(
         } ?: emptyList()
     }
 
-    var status by rememberSaveable { mutableStateOf("") } // Status, Like Available or Not
-
     var isSaved by remember(savedEventById) {
         mutableStateOf(
             savedEventById?.eventId == eventId
@@ -157,42 +160,15 @@ fun SharedTransitionScope.EventsDetailScreen(
     }
 
 
-    var isStartingDateExpanded by rememberSaveable { mutableStateOf(false) }
-    var isEndingDateExpanded by rememberSaveable { mutableStateOf(false) }
+    var isStartingDateExpanded by rememberSaveable { mutableStateOf(true) }
+
     var isStartingTimeExpanded by rememberSaveable { mutableStateOf(false) }
+
+    var isEndingDateExpanded by rememberSaveable { mutableStateOf(true) }
+
     var isEndingTimeExpanded by rememberSaveable { mutableStateOf(false) }
 
     var isBookingSheetVisible by rememberSaveable { mutableStateOf(false) }
-
-
-    LaunchedEffect(eventById) {
-        eventById?.let {
-            it.endingDate?.let { endingDate ->
-                val calendar = Calendar.getInstance()
-                calendar.timeInMillis = System.currentTimeMillis()
-
-                val endingDay = formatDateToDay(endingDate)
-                val endingMonthInt = formatDateToMonthInt(endingDate)
-
-                val currentDay = calendar.get(Calendar.DAY_OF_MONTH)
-                val currentMonthInt = calendar.get(Calendar.MONTH)
-
-                if (endingDay < currentDay) {
-                    if (endingMonthInt == currentMonthInt) {
-                        status = "Not Available"
-                    } else {
-                        status = "Available"
-                    }
-                } else {
-                    if (endingMonthInt == currentMonthInt) {
-                        status = "Not Available"
-                    } else {
-                        status = "Available"
-                    }
-                }
-            }
-        }
-    }
 
 
     Scaffold(
@@ -302,139 +278,141 @@ fun SharedTransitionScope.EventsDetailScreen(
                 .verticalScroll(scrollState)
         ) {
 
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.Black
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(all = 20.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .sharedElement(
-                        state = rememberSharedContentState(key = "image/$eventId"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
+            with(sharedTransitionScope) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Black
                     ),
-            ) {
-                HorizontalPager(
-                    state = pagerState,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(300.dp)
-                ) { page ->
+                        .padding(all = 20.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .sharedElement(
+                            state = rememberSharedContentState(key = "image/$eventId"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
+                        ),
+                ) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                    ) { page ->
 
-                    val item = eventById?.urlList?.get(page)
+                        val item = eventById?.urlList?.get(page)
 
-                    Box {
+                        Box {
 
-                        if (item?.contentType.toString().startsWith("image/")) {
-                            val imageRequest = ImageRequest.Builder(context)
-                                .data(item?.url ?: "")
-                                .crossfade(true)
-                                .build()
-
-                            SubcomposeAsyncImage(
-                                model = imageRequest,
-                                contentDescription = "Events Images",
-                                contentScale = ContentScale.Fit,
-                                loading = {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                    ) {
-                                        CircularProgressIndicator(color = Green)
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxSize()
-                            )
-                        }
-
-                        if (item?.contentType.toString().startsWith("video/")) {
-                            val mediaItem = MediaItem.Builder()
-                                .setUri(item?.url ?: "")
-                                .build()
-
-                            val exoplayer = remember(context, mediaItem) {
-                                ExoPlayer.Builder(context)
+                            if (item?.contentType.toString().startsWith("image/")) {
+                                val imageRequest = ImageRequest.Builder(context)
+                                    .data(item?.url ?: "")
+                                    .crossfade(true)
                                     .build()
-                                    .apply {
-                                        setMediaItem(mediaItem)
-                                        prepare()
-                                    }
+
+                                SubcomposeAsyncImage(
+                                    model = imageRequest,
+                                    contentDescription = "Events Images",
+                                    contentScale = ContentScale.Fit,
+                                    loading = {
+                                        Box(
+                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                        ) {
+                                            CircularProgressIndicator(color = Green)
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                )
                             }
 
-                            var isPlaying by remember { mutableStateOf(false) }
+                            if (item?.contentType.toString().startsWith("video/")) {
+                                val mediaItem = MediaItem.Builder()
+                                    .setUri(item?.url ?: "")
+                                    .build()
 
-                            DisposableEffect(
-                                Box {
-                                    AndroidView(
-                                        factory = { context ->
-                                            PlayerView(context)
-                                                .apply {
-                                                    player = exoplayer
-                                                    useController = true
-                                                    imageDisplayMode =
-                                                        PlayerView.IMAGE_DISPLAY_MODE_FILL
-                                                    hideController()
-                                                    setShowFastForwardButton(false)
-                                                    setShowRewindButton(false)
-                                                    setShowNextButton(false)
-                                                    setShowPreviousButton(false)
-                                                }
-                                        },
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                    )
-                                    // Video Play Icon
-                                    if (!isPlaying) {
-                                        IconButton(
-                                            onClick = {
-                                                exoplayer.play()
+                                val exoplayer = remember(context, mediaItem) {
+                                    ExoPlayer.Builder(context)
+                                        .build()
+                                        .apply {
+                                            setMediaItem(mediaItem)
+                                            prepare()
+                                        }
+                                }
+
+                                var isPlaying by remember { mutableStateOf(false) }
+
+                                DisposableEffect(
+                                    Box {
+                                        AndroidView(
+                                            factory = { context ->
+                                                PlayerView(context)
+                                                    .apply {
+                                                        player = exoplayer
+                                                        useController = true
+                                                        imageDisplayMode =
+                                                            PlayerView.IMAGE_DISPLAY_MODE_FILL
+                                                        hideController()
+                                                        setShowFastForwardButton(false)
+                                                        setShowRewindButton(false)
+                                                        setShowNextButton(false)
+                                                        setShowPreviousButton(false)
+                                                    }
                                             },
                                             modifier = Modifier
-                                                .background(
-                                                    color = White,
-                                                    shape = CircleShape
+                                                .fillMaxSize()
+                                        )
+                                        // Video Play Icon
+                                        if (!isPlaying) {
+                                            IconButton(
+                                                onClick = {
+                                                    exoplayer.play()
+                                                },
+                                                modifier = Modifier
+                                                    .background(
+                                                        color = White,
+                                                        shape = CircleShape
+                                                    )
+                                                    .align(Alignment.Center)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.PlayArrow,
+                                                    contentDescription = "Icon for Playing the Video",
+                                                    tint = Black
                                                 )
-                                                .align(Alignment.Center)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.PlayArrow,
-                                                contentDescription = "Icon for Playing the Video",
-                                                tint = Black
-                                            )
+                                            }
+                                        }
+                                    }
+                                ) {
+                                    onDispose {
+                                        exoplayer.release()
+                                        isPlaying = false
+                                    }
+                                }
+
+                                val listener = remember {
+                                    object : Player.Listener {
+                                        override fun onIsPlayingChanged(mIsPlaying: Boolean) {
+                                            if (mIsPlaying) {
+                                                isPlaying = true
+                                            }
                                         }
                                     }
                                 }
-                            ) {
-                                onDispose {
-                                    exoplayer.release()
-                                    isPlaying = false
-                                }
+
+                                exoplayer.addListener(listener)
                             }
 
-                            val listener = remember {
-                                object : Player.Listener {
-                                    override fun onIsPlayingChanged(mIsPlaying: Boolean) {
-                                        if (mIsPlaying) {
-                                            isPlaying = true
-                                        }
-                                    }
-                                }
-                            }
+                            UrlListPagerIndicator(
+                                state = pagerState,
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = 10.dp, end = 10.dp)
+                            )
 
-                            exoplayer.addListener(listener)
                         }
-
-                        UrlListPagerIndicator(
-                            state = pagerState,
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(top = 10.dp, end = 10.dp)
-                        )
-
                     }
                 }
             }
@@ -453,23 +431,25 @@ fun SharedTransitionScope.EventsDetailScreen(
                     wordBreak = LineBreak.WordBreak.Phrase
                 )
 
-                // Title
-                Text(
-                    text = eventById?.title ?: "",
-                    style = TextStyle(
-                        fontSize = FontSize.LARGE.sp,
-                        fontWeight = FontWeight.Bold,
-                        lineBreak = customLineBreak,
-                        hyphens = Hyphens.Auto,
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(all = 20.dp)
-                        .sharedElement(
-                            state = rememberSharedContentState(key = "title/$eventId"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                        )
-                )
+                with(sharedTransitionScope) {
+                    // Title
+                    Text(
+                        text = eventById?.title ?: "",
+                        style = TextStyle(
+                            fontSize = FontSize.LARGE.sp,
+                            fontWeight = FontWeight.Bold,
+                            lineBreak = customLineBreak,
+                            hyphens = Hyphens.Auto,
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp)
+                            .sharedElement(
+                                state = rememberSharedContentState(key = "title/$eventId"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                    )
+                }
 
                 SelectionContainer {
                     Text(
@@ -511,17 +491,19 @@ fun SharedTransitionScope.EventsDetailScreen(
                     modifier = Modifier
                         .padding(all = 20.dp)
                 ) {
-                    Text(
-                        text = "Status",
-                        style = TextStyle(
-                            fontSize = FontSize.MEDIUM.sp,
-                            fontWeight = FontWeight.Bold
+                    eventById?.isAvailable?.let { isAvailable ->
+                        Text(
+                            text = "Status",
+                            style = TextStyle(
+                                fontSize = FontSize.MEDIUM.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         )
-                    )
-                    Text(
-                        text = status,
-                        fontSize = FontSize.SMALL.sp
-                    )
+                        Text(
+                            text = if (isAvailable) "Available" else "Not Available",
+                            fontSize = FontSize.SMALL.sp
+                        )
+                    }
                 }
 
                 Column {
@@ -707,21 +689,70 @@ fun DateContainer(
         AnimatedVisibility(
             visible = isExpanded,
             modifier = Modifier
-                .pointerInput(true) {
-                    detectTapGestures(
-                        onTap = {
-
-                        }
+                .padding(all = 5.dp)
+                .align(Alignment.CenterHorizontally),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                // Month Name
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Gray,
+                    )
+                ) {
+                    Text(
+                        text = monthName,
+                        color = White,
+                        modifier = Modifier
+                            .padding(
+                                start = 20.dp,
+                                end = 20.dp,
+                                top = 10.dp,
+                                bottom = 10.dp
+                            )
                     )
                 }
-        ) {
-            AndroidView(
-                factory = { context ->
-                    CalendarView(context).apply {
-                        this.setDate(dateMillis, true, true)
-                    }
-                },
-            )
+
+                // Day
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Gray,
+                    )
+                ) {
+                    Text(
+                        text = day.toString(),
+                        color = White,
+                        modifier = Modifier
+                            .padding(
+                                start = 20.dp,
+                                end = 20.dp,
+                                top = 10.dp,
+                                bottom = 10.dp
+                            )
+                    )
+                }
+
+                // Year
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Green,
+                    )
+                ) {
+                    Text(
+                        text = year.toString(),
+                        color = White,
+                        modifier = Modifier
+                            .padding(
+                                start = 20.dp,
+                                end = 20.dp,
+                                top = 10.dp,
+                                bottom = 10.dp
+                            )
+                    )
+                }
+            }
         }
     }
 

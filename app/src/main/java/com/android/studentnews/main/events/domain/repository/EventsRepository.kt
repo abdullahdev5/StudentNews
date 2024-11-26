@@ -35,4 +35,6 @@ interface EventsRepository {
 
     fun getSavedEventsList(): Flow<EventsState<List<EventsModel?>>>
 
+    fun getEventsListByAvailableStatus(availableStatus: Boolean): Flow<EventsState<List<EventsModel>>>
+
 }

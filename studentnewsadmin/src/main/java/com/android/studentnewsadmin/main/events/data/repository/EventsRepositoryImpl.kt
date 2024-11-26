@@ -18,6 +18,7 @@ import com.android.studentnewsadmin.main.events.data.worker.ENDING_DATE
 import com.android.studentnewsadmin.main.events.data.worker.ENDING_TIME_HOUR
 import com.android.studentnewsadmin.main.events.data.worker.ENDING_TIME_MINUTES
 import com.android.studentnewsadmin.main.events.data.worker.ENDING_TIME_STATUS
+import com.android.studentnewsadmin.main.events.data.worker.IS_AVAILABLE
 import com.android.studentnewsadmin.main.events.data.worker.STARTING_DATE
 import com.android.studentnewsadmin.main.events.data.worker.STARTING_TIME_HOUR
 import com.android.studentnewsadmin.main.events.data.worker.STARTING_TIME_MINUTES
@@ -33,6 +34,7 @@ import com.android.studentnewsadmin.main.news.domain.model.UrlList
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.toObject
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
@@ -69,6 +71,7 @@ class EventsRepositoryImpl(
         endingTimeMinutes: Int,
         endingTimeStatus: String,
         uriList: List<Uri>,
+        isAvailable: Boolean,
         context: Context,
     ): Flow<EventsState<String>> {
         return callbackFlow {
@@ -123,7 +126,8 @@ class EventsRepositoryImpl(
                                         endingTimeMinutes = endingTimeMinutes,
                                         endingTimeStatus = endingTimeStatus,
                                         timestamp = Timestamp.now(),
-                                        urlList = urlList
+                                        urlList = urlList,
+                                        isAvailable = isAvailable
                                     )
 
                                     eventsColRef
@@ -159,6 +163,55 @@ class EventsRepositoryImpl(
         }
     }
 
+    override fun onEventEdit(
+        eventId: String,
+        title: String,
+        description: String,
+        address: String,
+        startingDate: Long,
+        startingTimeHour: Int,
+        startingTimeMinutes: Int,
+        startingTimeStatus: String,
+        endingDate: Long,
+        endingTimeHour: Int,
+        endingTimeMinutes: Int,
+        endingTimeStatus: String,
+        isAvailable: Boolean,
+    ): Flow<EventsState<String>> {
+        return callbackFlow {
+
+            trySend(EventsState.Loading)
+
+            eventsColRef
+                ?.document(eventId)
+                ?.update(
+                    TITLE, title,
+                    DESCRIPTION, description,
+                    ADDRESS, address,
+                    STARTING_DATE, startingDate,
+                    STARTING_TIME_HOUR, startingTimeHour,
+                    STARTING_TIME_MINUTES, startingTimeMinutes,
+                    STARTING_TIME_STATUS, startingTimeStatus,
+                    ENDING_DATE, endingDate,
+                    ENDING_TIME_HOUR, endingTimeHour,
+                    ENDING_TIME_MINUTES, endingTimeMinutes,
+                    ENDING_TIME_STATUS, endingTimeStatus,
+                    IS_AVAILABLE, isAvailable
+                )
+                ?.addOnSuccessListener {
+                    trySend(EventsState.Success("Event Updated Successfully"))
+                }
+                ?.addOnFailureListener { error ->
+                    trySend(EventsState.Failed(error))
+                }
+
+
+            awaitClose {
+                close()
+            }
+        }
+    }
+
 
     override fun getEventsList(): Flow<EventsState<List<EventsModel>>> {
         return callbackFlow {
@@ -166,6 +219,7 @@ class EventsRepositoryImpl(
             trySend(EventsState.Loading)
 
             eventsColRef
+                ?.orderBy("timestamp", Query.Direction.DESCENDING)
                 ?.addSnapshotListener { value, error ->
                     if (error != null) {
                         trySend(EventsState.Failed(error))
@@ -233,6 +287,7 @@ class EventsRepositoryImpl(
         endingTimeMinutes: Int,
         endingTimeStatus: String,
         stringArray: Array<String>,
+        isAvailable: Boolean,
     ) {
 
         val inputData = Data.Builder()
@@ -248,6 +303,7 @@ class EventsRepositoryImpl(
             .putInt(ENDING_TIME_MINUTES, endingTimeMinutes)
             .putString(ENDING_TIME_STATUS, endingTimeStatus)
             .putStringArray(URI_LIST, stringArray)
+            .putBoolean(IS_AVAILABLE, isAvailable)
             .build()
 
         val workRequest = OneTimeWorkRequest.Builder(

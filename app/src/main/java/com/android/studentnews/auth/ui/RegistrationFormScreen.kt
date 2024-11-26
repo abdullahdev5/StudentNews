@@ -66,7 +66,7 @@ import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
 import com.android.studentnews.ui.theme.Black
-import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.Red
@@ -594,7 +594,7 @@ fun DegreeDropDownMenu(
                 onDismiss.invoke()
             },
             modifier = Modifier
-                .background(color = if (isSystemInDarkTheme()) DarkGray else White)
+                .background(color = if (isSystemInDarkTheme()) DarkColor else White)
         ) {
             degreeList.forEachIndexed { index, text ->
                 DropdownMenuItem(
@@ -649,7 +649,7 @@ fun DegreeTitleDropDownMenu(
                 onDismiss.invoke()
             },
             modifier = Modifier
-                .background(color = if (isSystemInDarkTheme()) DarkGray else White)
+                .background(color = if (isSystemInDarkTheme()) DarkColor else White)
         ) {
             degreeTitleList.forEachIndexed { index, text ->
                 DropdownMenuItem(
@@ -704,7 +704,7 @@ fun CityDropDownMenu(
                 onDismiss.invoke()
             },
             modifier = Modifier
-                .background(color = if (isSystemInDarkTheme()) DarkGray else White)
+                .background(color = if (isSystemInDarkTheme()) DarkColor else White)
         ) {
             cityList.forEachIndexed { index, text ->
                 DropdownMenuItem(

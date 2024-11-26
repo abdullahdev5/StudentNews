@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.android.studentnews.main.settings.saved.ui.screens
 
@@ -6,7 +6,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,7 +17,6 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Newspaper
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,15 +35,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
-import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.Black
+import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun SharedTransitionScope.SavedScreen(
+fun SavedScreen(
     navHostController: NavHostController,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
 ) {
 
     val context = LocalContext.current
@@ -115,7 +116,9 @@ fun SharedTransitionScope.SavedScreen(
                         scope.launch {
                             pagerState.animateScrollToPage(0)
                         }
-                    }
+                    },
+                    selectedContentColor = Green,
+                    unselectedContentColor = if (isSystemInDarkTheme()) White else Black
                 )
 
                 Tab(
@@ -133,7 +136,9 @@ fun SharedTransitionScope.SavedScreen(
                         scope.launch {
                             pagerState.animateScrollToPage(1)
                         }
-                    }
+                    },
+                    selectedContentColor = Green,
+                    unselectedContentColor = if (isSystemInDarkTheme()) White else Black
                 )
             }
 
@@ -151,7 +156,8 @@ fun SharedTransitionScope.SavedScreen(
                         SavedNewsScreen(
                             navHostController = navHostController,
                             savedNewsViewModel = savedNewsViewModel,
-                            animatedVisibilityScope = animatedVisibilityScope
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            sharedTransitionScope = sharedTransitionScope
                         )
                     }
 
@@ -161,7 +167,8 @@ fun SharedTransitionScope.SavedScreen(
                         SavedEventsScreen(
                             navHostController = navHostController,
                             savedEventsViewModel = savedEventsViewModel,
-                            animatedVisibilityScope = animatedVisibilityScope
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            sharedTransitionScope = sharedTransitionScope
                         )
                     }
 

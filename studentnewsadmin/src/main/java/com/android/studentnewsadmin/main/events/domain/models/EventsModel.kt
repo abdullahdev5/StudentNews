@@ -18,7 +18,9 @@ data class EventsModel(
     val endingTimeStatus: String? = "", // ending time status
     val timestamp: Timestamp? = null, // timestamp
     val urlList: List<UrlList>? = emptyList(), // url List
-    val bookings: List<EventsBookingModel>? = emptyList() // bookings
+    val bookings: List<EventsBookingModel>? = emptyList(), // bookings
+    @field:JvmField
+    val isAvailable: Boolean? = true // Available
 ) {
     constructor() : this(
         title = "",
@@ -36,5 +38,6 @@ data class EventsModel(
         timestamp = null,
         urlList = emptyList(),
         bookings = emptyList(),
+        isAvailable = true
     )
 }

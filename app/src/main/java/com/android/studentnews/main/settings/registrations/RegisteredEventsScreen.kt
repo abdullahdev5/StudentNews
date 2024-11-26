@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.android.studentnews.main.settings.registrations
 
@@ -34,11 +34,13 @@ import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.EventsItem
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun SharedTransitionScope.RegisteredEventsScreen(
+fun RegisteredEventsScreen(
     navHostController: NavHostController,
     registeredEventsViewModel: RegisteredEventsViewModel,
-    animatedVisibilityScope: AnimatedVisibilityScope
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
 ) {
 
     LaunchedEffect(Unit) {
@@ -92,6 +94,7 @@ fun SharedTransitionScope.RegisteredEventsScreen(
                         item = item,
                         context = context,
                         animatedVisibilityScope = animatedVisibilityScope,
+                        sharedTransitionScope = sharedTransitionScope,
                         onItemClick = { thisEventId ->
                             navHostController
                                 .navigate(

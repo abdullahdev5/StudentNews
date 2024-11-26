@@ -1,7 +1,10 @@
 package com.android.studentnewsadmin.main.events.ui.viewModels
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnewsadmin.core.domain.constants.Status
@@ -29,6 +32,9 @@ class EventsViewModel(
     var eventsDeleteStatus = mutableStateOf("")
         private set
     var eventsDeleteErrorMsg = mutableStateOf("")
+        private set
+
+    var editEventStatus by mutableStateOf("")
         private set
 
 
@@ -95,7 +101,8 @@ class EventsViewModel(
         endingTimeHour: Int,
         endingTimeMinutes: Int,
         endingTimeStatus: String,
-        stringArray: Array<String>
+        stringArray: Array<String>,
+        isAvailable: Boolean,
     ) = eventsRepository.onUploadEventWorkerStart(
         title = title,
         description = description,
@@ -108,7 +115,61 @@ class EventsViewModel(
         endingTimeHour = endingTimeHour,
         endingTimeMinutes = endingTimeMinutes,
         endingTimeStatus = endingTimeStatus,
-        stringArray = stringArray
+        stringArray = stringArray,
+        iaAvailable = isAvailable
     )
+
+
+    fun onEventEdit(
+        eventId: String,
+        title: String,
+        description: String,
+        address: String,
+        startingDate: Long,
+        startingTimeHour: Int,
+        startingTimeMinutes: Int,
+        startingTimeStatus: String,
+        endingDate: Long,
+        endingTimeHour: Int,
+        endingTimeMinutes: Int,
+        endingTimeStatus: String,
+        isAvailable: Boolean,
+        context: Context
+    ) {
+        viewModelScope.launch {
+            eventsRepository
+                .onEventEdit(
+                    eventId = eventId,
+                    title = title,
+                    description = description,
+                    address = address,
+                    startingDate = startingDate,
+                    startingTimeHour = startingTimeHour,
+                    startingTimeMinutes = startingTimeMinutes,
+                    startingTimeStatus = startingTimeStatus,
+                    endingDate = endingDate,
+                    endingTimeHour = endingTimeHour,
+                    endingTimeMinutes = endingTimeMinutes,
+                    endingTimeStatus = endingTimeStatus,
+                    isAvailable = isAvailable
+                )
+                .collectLatest { result ->
+                    when (result) {
+                        is EventsState.Loading -> {
+                            editEventStatus = Status.Loading
+                        }
+                        is EventsState.Failed -> {
+                            editEventStatus = Status.Failed
+                            Toast.makeText(context, result.message.localizedMessage ?: "", Toast.LENGTH_SHORT).show()
+                        }
+                        is EventsState.Success -> {
+                            editEventStatus = Status.Success
+                            Toast.makeText(context, result.data, Toast.LENGTH_SHORT).show()
+                        }
+                        else -> {}
+                    }
+                }
+        }
+    }
 
 }

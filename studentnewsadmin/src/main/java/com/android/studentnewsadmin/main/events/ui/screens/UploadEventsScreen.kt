@@ -142,6 +142,7 @@ fun UploadEVentsScreen(
     var description by rememberSaveable { mutableStateOf("") }
     var address by rememberSaveable { mutableStateOf("") }
     val uriList = remember { mutableStateListOf<Uri?>() }
+    var isAvailable by remember { mutableStateOf(true) }
 
     // Starting Date and Time
     var startingDate by rememberSaveable { mutableLongStateOf(0L) }
@@ -213,7 +214,8 @@ fun UploadEVentsScreen(
                                 endingTimeHour = endingTimeHour,
                                 endingTimeMinutes = endingTimeMinutes,
                                 endingTimeStatus = endingTimeStatus,
-                                stringArray = stringArray
+                                stringArray = stringArray,
+                                isAvailable = isAvailable
                             )
                         delay(2000)
                         eventWorkStarts = false
@@ -484,6 +486,32 @@ fun UploadEVentsScreen(
             )
 
             Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(all = 20.dp)
+            ) {
+                Column {
+                    Text(
+                        text = "Status",
+                        color = Color.Gray
+                    )
+                    Text(
+                        text = if (isAvailable) "Available" else "Not Available"
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(onClick = {
+                    isAvailable = !isAvailable
+                }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Edit,
+                        contentDescription = "Icon for Changing Status"
+                    )
+                }
+            }
 
             // Starting
 

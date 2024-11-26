@@ -3,10 +3,13 @@
 package com.android.studentnews.main.events.ui.screens
 
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,6 +34,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,41 +61,130 @@ import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.core.domain.common.formatDateToString
 import com.android.studentnews.core.domain.common.formatTimeToString
+import com.android.studentnews.news.ui.viewModel.NewsViewModel
+import com.android.studentnews.ui.theme.Black
+import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.Gray
+import com.android.studentnews.ui.theme.LightGray
+import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 
+enum class EventsCategoryList(
+    val category: String,
+    val index: Int,
+) {
+    AVAILABLE("Available", 0),
+    NOT_AVAILABLE("Not Available", 1)
+}
+
 @Composable
-fun SharedTransitionScope.EventsScreen(
+fun EventsScreen(
     navHostController: NavHostController,
     eventsViewModel: EventsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope
 ) {
 
     val context = LocalContext.current
 
     val eventsList by eventsViewModel.eventsList.collectAsState()
 
+    var categoryList = listOf(
+        EventsCategoryList.AVAILABLE,
+        EventsCategoryList.NOT_AVAILABLE,
+    )
+
+
     if (eventsList.size != 0) {
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize(),
-        ) {
+        Column {
 
-            items(eventsList.size) { index ->
-                val item = eventsList[index]
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp, start = 10.dp, bottom = 10.dp)
+            ) {
+                AnimatedVisibility(eventsViewModel.selectedCategoryIndex != null) {
+                    Text("sortedBy:-")
+                }
+                // Category
+                categoryList
+                    .sortedByDescending {
+                        eventsViewModel.selectedCategoryIndex != null
+                                && eventsViewModel.selectedCategoryIndex == it.index
+                    }
+                    .forEach { item ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSystemInDarkTheme()) {
+                                    if (
+                                        eventsViewModel.selectedCategoryIndex != null
+                                        && eventsViewModel.selectedCategoryIndex == item.index
+                                    ) White else DarkGray
+                                } else {
+                                    if (
+                                        eventsViewModel.selectedCategoryIndex != null
+                                        && eventsViewModel.selectedCategoryIndex == item.index
+                                    ) Black else LightGray
+                                },
+                                contentColor = if (isSystemInDarkTheme()) {
+                                    if (
+                                        eventsViewModel.selectedCategoryIndex != null
+                                        && eventsViewModel.selectedCategoryIndex == item.index
+                                    ) Black else White
+                                } else {
+                                    if (
+                                        eventsViewModel.selectedCategoryIndex != null
+                                        && eventsViewModel.selectedCategoryIndex == item.index
+                                    ) White else Black
+                                }
+                            ),
+                            modifier = Modifier
+                                .padding(start = 5.dp, end = 5.dp)
+                                .clickable {
+                                    eventsViewModel.selectedCategoryIndex = item.index
+                                    if (eventsViewModel.selectedCategoryIndex == 0) {
+                                        eventsViewModel.getEventsListByAvailableStatus(true)
+                                    } else if (eventsViewModel.selectedCategoryIndex == 1) {
+                                        eventsViewModel.getEventsListByAvailableStatus(false)
+                                    }
+                                }
+                        ) {
+                            Text(
+                                text = item.category,
+                                modifier = Modifier
+                                    .padding(all = 5.dp)
+                            )
+                        }
+                    }
 
-                EventsItem(
-                    item = item,
-                    context = context,
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    onItemClick = { clickedEventId ->
-                        navHostController.navigate(
-                            EventsDestination.EVENTS_DETAIL_SCREEN(clickedEventId)
-                        )
-                    },
-                )
             }
 
+
+            LazyColumn(
+                state = eventsViewModel.lazyListState,
+                modifier = Modifier
+                    .fillMaxSize(),
+            ) {
+
+                items(eventsList.size) { index ->
+                    val item = eventsList[index]
+
+                    EventsItem(
+                        item = item,
+                        context = context,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        sharedTransitionScope = sharedTransitionScope,
+                        onItemClick = { clickedEventId ->
+                            navHostController.navigate(
+                                EventsDestination.EVENTS_DETAIL_SCREEN(clickedEventId)
+                            )
+                        },
+                    )
+                }
+
+            }
         }
     } else {
         Box(
@@ -112,11 +207,12 @@ fun SharedTransitionScope.EventsScreen(
 }
 
 @Composable
-fun SharedTransitionScope.EventsItem(
+fun EventsItem(
     item: EventsModel?,
     context: Context,
     onItemClick: (String) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope
 ) {
     Card(
         modifier = Modifier
@@ -144,40 +240,44 @@ fun SharedTransitionScope.EventsItem(
                 .crossfade(true)
                 .build()
 
-            AsyncImage(
-                model = imageRequest,
-                contentDescription = "News Image",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .width(90.dp)
-                    .heightIn(max = 100.dp)
-                    .clip(shape = RoundedCornerShape(10.dp))
-                    .sharedElement(
-                        state = rememberSharedContentState(key = "image/${item?.eventId ?: ""}"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
-                    )
-            )
+            with(sharedTransitionScope) {
+                AsyncImage(
+                    model = imageRequest,
+                    contentDescription = "News Image",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .width(90.dp)
+                        .heightIn(max = 100.dp)
+                        .clip(shape = RoundedCornerShape(10.dp))
+                        .sharedElement(
+                            state = rememberSharedContentState(key = "image/${item?.eventId ?: ""}"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
+                        )
+                )
+            }
 
 
             Column(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text(
-                    text = item?.title ?: "",
-                    style = TextStyle(
-                        fontSize = (FontSize.MEDIUM - 1).sp,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .sharedElement(
-                            state = rememberSharedContentState(key = "title/${item?.eventId ?: ""}"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            renderInOverlayDuringTransition = true,
+                with(sharedTransitionScope) {
+                    Text(
+                        text = item?.title ?: "",
+                        style = TextStyle(
+                            fontSize = (FontSize.MEDIUM - 1).sp,
+                            fontWeight = FontWeight.Bold,
                         ),
-                )
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .sharedElement(
+                                state = rememberSharedContentState(key = "title/${item?.eventId ?: ""}"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                                renderInOverlayDuringTransition = true,
+                            ),
+                    )
+                }
 
                 // Date
                 Row(

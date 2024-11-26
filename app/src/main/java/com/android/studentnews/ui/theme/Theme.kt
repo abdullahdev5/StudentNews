@@ -1,6 +1,5 @@
 package com.android.studentnews.ui.theme
 
-import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -16,8 +15,8 @@ private val DarkColorScheme = darkColorScheme(
     primary = Green,
     secondary = PurpleGrey80,
     tertiary = Pink80,
-    background = DarkGray,
-    surface = DarkGray
+    background = DarkColor,
+    surface = DarkColor
 )
 
 private val LightColorScheme = lightColorScheme(

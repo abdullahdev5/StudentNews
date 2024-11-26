@@ -26,7 +26,24 @@ interface EventsRepository {
         endingTimeMinutes: Int,
         endingTimeStatus: String,
         uriList: List<Uri>,
+        isAvailable: Boolean,
         context: Context
+    ): Flow<EventsState<String>>
+
+    fun onEventEdit(
+        eventId: String,
+        title: String,
+        description: String,
+        address: String,
+        startingDate: Long,
+        startingTimeHour: Int,
+        startingTimeMinutes: Int,
+        startingTimeStatus: String,
+        endingDate: Long,
+        endingTimeHour: Int,
+        endingTimeMinutes: Int,
+        endingTimeStatus: String,
+        isAvailable: Boolean,
     ): Flow<EventsState<String>>
 
 
@@ -48,6 +65,7 @@ interface EventsRepository {
         endingTimeMinutes: Int,
         endingTimeStatus: String,
         stringArray: Array<String>,
+        iaAvailable: Boolean,
     )
 
 }

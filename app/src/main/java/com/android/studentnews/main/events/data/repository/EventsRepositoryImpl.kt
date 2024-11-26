@@ -233,4 +233,28 @@ class EventsRepositoryImpl(
         }
     }
 
+    override fun getEventsListByAvailableStatus(availableStatus: Boolean): Flow<EventsState<List<EventsModel>>> {
+        return callbackFlow {
+
+            trySend(EventsState.Loading)
+
+            eventsColRef
+                ?.whereEqualTo("isAvailable", availableStatus)
+                ?.get()
+                ?.addOnSuccessListener { documents ->
+                    val eventsListByAvailableStatus = documents.map {
+                        it.toObject(EventsModel::class.java)
+                    }
+                    trySend(EventsState.Success(eventsListByAvailableStatus))
+                }
+                ?.addOnFailureListener { error ->
+                    trySend(EventsState.Failed(error))
+                }
+
+            awaitClose {
+                close()
+            }
+        }
+    }
+
 }

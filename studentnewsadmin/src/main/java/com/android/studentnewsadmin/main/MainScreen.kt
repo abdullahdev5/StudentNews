@@ -259,7 +259,8 @@ fun MainScreen(
                     .nestedScroll(scrollBehaviour.nestedScrollConnection)
             ) { innerPadding ->
                 Column(
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = Modifier
+                        .padding(innerPadding)
                 ) {
                     TabRow(
                         selectedTabIndex = selectedIndex,

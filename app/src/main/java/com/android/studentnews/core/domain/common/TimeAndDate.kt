@@ -19,8 +19,6 @@ fun formatDateToDay(dateMillis: Long): Int {
     val calendar = Calendar.getInstance()
     calendar.timeInMillis = dateMillis
     val day = calendar.get(Calendar.DAY_OF_MONTH)
-    val monthName = SimpleDateFormat("MMMM", Locale.getDefault()).format(calendar.time)
-    val year = calendar.get(Calendar.YEAR)
     return day
 }
 
@@ -29,6 +27,13 @@ fun formatDateToMonthName(dateMillis: Long): String {
     calendar.timeInMillis = dateMillis
     val monthName = SimpleDateFormat("MMMM", Locale.getDefault()).format(calendar.time)
     return monthName
+}
+
+fun formatDateToMonthInt(dateMillis: Long): Int {
+    val calendar = Calendar.getInstance()
+    calendar.timeInMillis = dateMillis
+    val monthInt = calendar.get(Calendar.MONTH)
+    return monthInt
 }
 
 fun formatDateToYear(dateMillis: Long): Int {

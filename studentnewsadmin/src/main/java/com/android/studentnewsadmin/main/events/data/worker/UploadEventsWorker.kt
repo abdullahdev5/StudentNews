@@ -23,15 +23,16 @@ import com.android.studentnewsadmin.main.news.data.worker.URI_LIST
 import kotlinx.coroutines.flow.first
 
 
-const val ADDRESS = "Address"
-const val STARTING_DATE = "starting_date"
-const val STARTING_TIME_HOUR = "starting_time_hour"
-const val STARTING_TIME_MINUTES = "starting_time_minute"
-const val STARTING_TIME_STATUS = "starting_time_status"
-const val ENDING_DATE = "ending_date"
-const val ENDING_TIME_HOUR = "ending_time_hour"
-const val ENDING_TIME_MINUTES = "ending_time_minute"
-const val ENDING_TIME_STATUS = "ending_time_status"
+const val ADDRESS = "address"
+const val STARTING_DATE = "startingDate"
+const val STARTING_TIME_HOUR = "startingTimeHour"
+const val STARTING_TIME_MINUTES = "startingTimeMinutes"
+const val STARTING_TIME_STATUS = "startingTimeStatus"
+const val ENDING_DATE = "endingDate"
+const val ENDING_TIME_HOUR = "endingTimeHour"
+const val ENDING_TIME_MINUTES = "endingTimeMinutes"
+const val ENDING_TIME_STATUS = "endingTimeStatus"
+const val IS_AVAILABLE = "isAvailable"
 
 
 class UploadEventsWorker(
@@ -57,6 +58,7 @@ class UploadEventsWorker(
             val endingTimeMinutes = inputData.getInt(ENDING_TIME_MINUTES, 10)
             val endingTimeStatus = inputData.getString(ENDING_TIME_STATUS) ?: ""
             val stringArray = inputData.getStringArray(URI_LIST)
+            val isAvailable = inputData.getBoolean(IS_AVAILABLE, true)
 
             val uriList = stringArray?.map { Uri.parse(it) } ?: emptyList()
 
@@ -77,6 +79,7 @@ class UploadEventsWorker(
                     endingTimeMinutes = endingTimeMinutes,
                     endingTimeStatus = endingTimeStatus,
                     uriList = uriList,
+                    isAvailable = isAvailable,
                     context = context
                 ).first()
 

@@ -1,5 +1,7 @@
 package com.android.studentnews.main.events.ui.viewModels
 
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -8,7 +10,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.auth.domain.repository.AuthRepository
-import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
@@ -49,7 +50,6 @@ class EventsViewModel(
     var eventBookingStatus by mutableStateOf("")
         private set
 
-
     private val _bookedEventsList = MutableStateFlow<List<EventsModel?>>(emptyList())
     val bookedEventsList = _bookedEventsList.asStateFlow()
 
@@ -58,6 +58,10 @@ class EventsViewModel(
 
     private val _savedEventById = MutableStateFlow<EventsModel?>(null)
     val savedEventById = _savedEventById.asStateFlow()
+
+    var selectedCategoryIndex by mutableStateOf<Int?>(null)
+
+    val lazyListState = LazyListState()
 
 
     init {
@@ -113,6 +117,30 @@ class EventsViewModel(
         }
     }
 
+    fun getEventsListByAvailableStatus(availableStatus: Boolean) {
+        viewModelScope.launch {
+            eventsListStatus = Status.Loading
+            delay(500L)
+            eventsRepository
+                .getEventsListByAvailableStatus(availableStatus)
+                .collectLatest { result ->
+                    when (result) {
+                        is EventsState.Success -> {
+                            _eventsList.value = result.data
+                            eventsListStatus = Status.SUCCESS
+                        }
+
+                        is EventsState.Failed -> {
+                            eventsListStatus = Status.FAILED
+                            eventsListErrorMsg = result.error.localizedMessage ?: ""
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
+
     fun onEventBook(
         eventId: String,
         eventsBookingModel: EventsBookingModel,
@@ -155,7 +183,7 @@ class EventsViewModel(
     fun getBookedEventsList() {
         viewModelScope.launch {
             eventsRepository
-                .getBookedEventsList()
+                .getRegisteredEventsList()
                 .collectLatest { result ->
                     when (result) {
                         is EventsState.Loading -> {

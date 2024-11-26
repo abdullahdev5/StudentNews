@@ -27,6 +27,7 @@ import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import kotlin.apply
 import kotlin.jvm.java
+import kotlin.random.Random
 import kotlin.run
 
 const val MY_URI = "https://www.google.com"
@@ -70,6 +71,10 @@ class NewsWorker(
             PendingIntent.FLAG_MUTABLE or
                     PendingIntent.FLAG_CANCEL_CURRENT
 
+        val notificationId = Random.nextInt()
+
+        val clickedIntentRequestCode = Random.nextInt()
+        val savedIntentRequestCode = Random.nextInt()
 
         val clickedIntent = Intent(
             Intent.ACTION_VIEW,
@@ -81,13 +86,13 @@ class NewsWorker(
         val clickedPendingIntent: PendingIntent =
             TaskStackBuilder.create(context).run {
                 addNextIntentWithParentStack(clickedIntent)
-                getPendingIntent(CLICKED_INTENT_REQUEST_CODE, flag) as PendingIntent
+                getPendingIntent(clickedIntentRequestCode, flag) as PendingIntent
             }
 
         val serializedUrlList = news?.urlList?.fastJoinToString(",") {
             "${it.url};${it.contentType};${it.sizeBytes};${it.lastPathSegment}"
         }
-        val title = news?.title ?: "empty"
+        val title = news?.title ?: ""
         val description = news?.description
         val newsId = news?.newsId ?: ""
         val category = news?.category
@@ -113,12 +118,13 @@ class NewsWorker(
                     putExtra("link", link)
                     putExtra("link_title", linkTitle)
                     putExtra("url_list", serializedUrlList)
+                    putExtra("notification_id", notificationId)
                 }
 
                 val savedPendingIntent: PendingIntent =
                     PendingIntent.getBroadcast(
                         context,
-                        SAVED_INTENT_REQUEST_CODE,
+                        savedIntentRequestCode,
                         saveIntent,
                         savedFlag
                     )
@@ -126,7 +132,7 @@ class NewsWorker(
 
                 val notification =
                     NotificationCompat.Builder(context, NotificationRelated.NEWS_CHANNEL_ID)
-                        .setSmallIcon(R.drawable.ic_launcher_foreground)
+                        .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle(title)
                         .setContentText(description)
                         .setLargeIcon(bitmap)
@@ -164,7 +170,7 @@ class NewsWorker(
                     // TODO: Consider calling
                 }
                 notificationManager.notify(
-                    NotificationRelated.NEWS_NOTIFICATION_ID,
+                    notificationId,
                     notification.build()
                 )
 

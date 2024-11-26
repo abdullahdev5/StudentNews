@@ -21,10 +21,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -57,8 +59,10 @@ import com.android.studentnewsadmin.core.domain.common.formatTimeToString
 import com.android.studentnewsadmin.core.domain.constants.FontSize
 import com.android.studentnewsadmin.core.domain.constants.Status
 import com.android.studentnewsadmin.core.ui.common.LoadingDialog
+import com.android.studentnewsadmin.main.events.domain.models.EditEventModel
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.android.studentnewsadmin.main.events.ui.viewModels.EventsViewModel
+import com.android.studentnewsadmin.main.navigation.Destination
 import kotlin.math.roundToInt
 
 @Composable
@@ -92,6 +96,7 @@ fun EventsScreen(
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(bottom = 50.dp)
         ) {
 
             item {
@@ -119,6 +124,43 @@ fun EventsScreen(
                     item = item,
                     onEventDelete = { eventId ->
                         eventsViewModel.onEventDelete(eventId)
+                    },
+                    onEditClick = { thisEventItem ->
+
+//                        if (
+//                            !thisEventItem.eventId.isNullOrEmpty() && !thisEventItem.title.isNullOrEmpty()
+//                            && !thisEventItem.description.isNullOrEmpty() && !thisEventItem.address.isNullOrEmpty()
+//                            && thisEventItem.startingDate != 0L && thisEventItem.startingTimeHour != 0
+//                            && !thisEventItem.startingTimeStatus.isNullOrEmpty() && thisEventItem.endingDate != 0L
+//                            && thisEventItem.endingTimeHour != 0 && !thisEventItem.endingTimeStatus.isNullOrEmpty()
+//                        ) {
+                        val eventRelatedData = EditEventModel(
+                            title = thisEventItem.title!!,
+                            description = thisEventItem.description!!,
+                            address = thisEventItem.address!!,
+                            startingDate = thisEventItem.startingDate!!,
+                            startingTimeHour = thisEventItem.startingTimeHour!!,
+                            startingTimeMinutes = thisEventItem.startingTimeMinutes!!,
+                            startingTimeStatus = thisEventItem.startingTimeStatus!!,
+                            endingDate = thisEventItem.endingDate!!,
+                            endingTimeHour = thisEventItem.endingTimeHour!!,
+                            endingTimeMinutes = thisEventItem.endingTimeMinutes!!,
+                            endingTimeStatus = thisEventItem.endingTimeStatus!!,
+                            isAvailable = thisEventItem.isAvailable!!
+                        )
+
+                        if (eventRelatedData != null) {
+                            navHostController
+                                .navigate(
+                                    Destination.EDIT_EVENT_SCREEN(
+                                        thisEventItem.eventId!!,
+                                        eventRelatedData = eventRelatedData
+                                    )
+                                )
+                        }
+
+//                        }
+
                     }
                 )
             }
@@ -165,7 +207,8 @@ fun EventsScreen(
 @Composable
 fun EventsItem(
     item: EventsModel,
-    onEventDelete: (String) -> Unit
+    onEventDelete: (String) -> Unit,
+    onEditClick: (EventsModel) -> Unit,
 ) {
 
     var offsetx by remember { mutableStateOf(0f) }
@@ -302,9 +345,26 @@ fun EventsItem(
                         } ${item.endingTimeStatus}"
                     )
 
-                    Text(
-                        text = "Address:- ${if (!item.address.isNullOrEmpty()) item.address else "No Address Available"}"
-                    )
+                    Row {
+                        Text(
+                            text = "Address:- ${if (!item.address.isNullOrEmpty()) item.address else "No Address Available"}",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .weight(1f)
+                        )
+
+                        IconButton(onClick = {
+                            item?.let {
+                                onEditClick.invoke(it)
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = "Icon for Edit Event"
+                            )
+                        }
+                    }
                 }
             }
         }

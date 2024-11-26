@@ -1,15 +1,12 @@
 package com.android.studentnews.core.ui.common
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import com.android.studentnews.ui.theme.DarkGray
-import com.android.studentnews.ui.theme.Green
+import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 
@@ -36,6 +33,6 @@ fun ErrorDialog(
         text = text,
         confirmButton = confirmButton,
         dismissButton = dismissButton,
-        containerColor = if (isSystemInDarkTheme()) DarkGray else White,
+        containerColor = if (isSystemInDarkTheme()) DarkColor else White,
     )
 }

@@ -9,7 +9,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.android.studentnews.ui.theme.Black
-import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.Red
@@ -18,7 +18,7 @@ import com.android.studentnews.ui.theme.White
 @Composable
 fun OutlinedTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedContainerColor = Color.Unspecified,
-    unfocusedContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+    unfocusedContainerColor = if (isSystemInDarkTheme()) DarkColor else LightGray,
     focusedTextColor = if (isSystemInDarkTheme()) White else Black,
     unfocusedTextColor = if (isSystemInDarkTheme()) White else Black,
     cursorColor = if (isSystemInDarkTheme()) White else Black,

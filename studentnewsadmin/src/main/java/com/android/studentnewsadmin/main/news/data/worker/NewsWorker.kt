@@ -33,10 +33,10 @@ import kotlin.math.roundToInt
 
 const val TITLE = "title"
 const val DESCRIPTION = "description"
-const val URI_LIST = "uri_list"
+const val URI_LIST = "urlList"
 const val CATEGORY = "category"
 const val LINK = "link"
-const val LINK_TITLE = "link_title"
+const val LINK_TITLE = "linkTitle"
 const val SUCCESS_MSG = "success_msg"
 
 

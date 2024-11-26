@@ -4,7 +4,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.White
 
@@ -40,7 +39,7 @@ fun ImagePickerDialog(
                     .fillMaxWidth()
                     .padding(all = 20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isSystemInDarkTheme()) DarkGray else White
+                    containerColor = if (isSystemInDarkTheme()) DarkColor else White
                 )
             ) {
                 Column(

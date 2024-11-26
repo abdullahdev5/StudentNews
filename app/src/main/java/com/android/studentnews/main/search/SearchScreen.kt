@@ -1,4 +1,5 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class,
+@file:OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class,
     ExperimentalSharedTransitionApi::class
 )
 
@@ -17,7 +18,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -72,10 +72,9 @@ import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.news.domain.model.NewsModel
-import com.android.studentnews.news.domain.resource.NewsState
 import com.android.studentnews.news.ui.NewsItem
-import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
+import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.LightGray
@@ -85,10 +84,11 @@ import kotlinx.coroutines.launch
 
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
-fun SharedTransitionScope.SearchScreen(
+fun SearchScreen(
     navHostController: NavHostController,
     searchViewModel: SearchViewModel,
-    animatedVisibilityScope: AnimatedVisibilityScope
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
 ) {
 
     val context = LocalContext.current
@@ -216,7 +216,7 @@ fun SharedTransitionScope.SearchScreen(
                                             containerColor = if (selectedCategoryIndex == index) {
                                                 if (isSystemInDarkTheme()) White else Black
                                             } else {
-                                                if (isSystemInDarkTheme()) DarkGray.copy(0.3f) else LightGray.copy(
+                                                if (isSystemInDarkTheme()) DarkGray else LightGray.copy(
                                                     0.3f
                                                 )
                                             },
@@ -299,42 +299,29 @@ fun SharedTransitionScope.SearchScreen(
                                     )
                                 },
                                 animatedVisibilityScope = animatedVisibilityScope,
+                                sharedTransitionScope = sharedTransitionScope,
                                 onSave = { it ->
-                                    if (isInternetAvailable(context)) {
+                                    val news = NewsModel(
+                                        newsId = it.newsId,
+                                        title = it.title,
+                                        description = it.description,
+                                        category = it.category,
+                                        timestamp = Timestamp.now(),
+                                        link = it.link,
+                                        linkTitle = it.linkTitle,
+                                        urlList = it.urlList,
+                                        shareCount = it.shareCount ?: 0,
+                                        likes = it.likes
+                                    )
 
-                                        val news = NewsModel(
-                                            newsId = it.newsId,
-                                            title = it.title,
-                                            description = it.description,
-                                            category = it.category,
-                                            timestamp = Timestamp.now(),
-                                            link = it.link,
-                                            linkTitle = it.linkTitle,
-                                            urlList = it.urlList,
-                                            shareCount = it.shareCount ?: 0,
-                                            likes = it.likes
-                                        )
-
-                                        searchViewModel.onNewsSave(
-                                            news = news,
-                                            onSeeAction = { thisNewsId ->
-                                                navHostController.navigate(
-                                                    NewsDestination.NEWS_DETAIL_SCREEN(thisNewsId)
-                                                )
-                                            }
-                                        )
-
-                                    } else {
-                                        scope.launch {
-                                            SnackBarController
-                                                .sendEvent(
-                                                    SnackBarEvents(
-                                                        message = "No Internet Connection!",
-                                                        duration = SnackbarDuration.Long
-                                                    )
-                                                )
+                                    searchViewModel.onNewsSave(
+                                        news = news,
+                                        onSeeAction = { thisNewsId ->
+                                            navHostController.navigate(
+                                                NewsDestination.NEWS_DETAIL_SCREEN(thisNewsId)
+                                            )
                                         }
-                                    }
+                                    )
                                 }
                             )
                         }
@@ -342,7 +329,8 @@ fun SharedTransitionScope.SearchScreen(
                 }
 
                 if (searchViewModel.searchingStatus.value == Status.FAILED
-                    || searchNewsList.isEmpty()) {
+                    || searchNewsList.isEmpty()
+                ) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize(),

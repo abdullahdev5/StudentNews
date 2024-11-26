@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class)
-
 package com.android.studentnews.main.settings.saved.ui.screens
 
 import android.content.Context
@@ -29,11 +27,8 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,7 +49,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -70,20 +64,21 @@ import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Black
-import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
-import com.google.firebase.Timestamp
 import kotlin.math.roundToInt
 import kotlin.text.dropLast
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun SharedTransitionScope.SavedEventsScreen(
+fun SavedEventsScreen(
     navHostController: NavHostController,
     savedEventsViewModel: SavedEventsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
 ) {
 
     val context = LocalContext.current
@@ -112,6 +107,7 @@ fun SharedTransitionScope.SavedEventsScreen(
                         context = context,
                         density = density,
                         animatedVisibilityScope = animatedVisibilityScope,
+                        sharedTransitionScope = sharedTransitionScope,
                         onItemClick = { thisNewsId ->
                             navHostController.navigate(
                                 EventsDestination.EVENTS_DETAIL_SCREEN(thisNewsId)
@@ -143,14 +139,16 @@ fun SharedTransitionScope.SavedEventsScreen(
 
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun SharedTransitionScope.SavedEventsItem(
+fun SavedEventsItem(
     item: EventsModel?,
     context: Context,
     density: Density,
     onItemClick: (String) -> Unit,
     onEventRemoveFromSaveList: (EventsModel) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
+    sharedTransitionScope: SharedTransitionScope,
 ) {
 
     var offsetX by remember { mutableStateOf(0) }
@@ -234,7 +232,7 @@ fun SharedTransitionScope.SavedEventsItem(
                             }
                         )
                     }
-                    .background(color = if (isSystemInDarkTheme()) DarkGray else White)
+                    .background(color = if (isSystemInDarkTheme()) DarkColor else White)
                     .onGloballyPositioned { coordinates ->
                         itemHeight = with(density) { coordinates.size.height.toDp() }
                     },
@@ -250,40 +248,48 @@ fun SharedTransitionScope.SavedEventsItem(
                         .crossfade(true)
                         .build()
 
-                    AsyncImage(
-                        model = imageRequest,
-                        contentDescription = "News Image",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .width(90.dp)
-                            .heightIn(max = 100.dp)
-                            .clip(shape = RoundedCornerShape(10.dp))
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "image/${item?.eventId ?: ""}"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
-                            )
-                    )
+                    with(sharedTransitionScope) {
+                        AsyncImage(
+                            model = imageRequest,
+                            contentDescription = "News Image",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .width(90.dp)
+                                .heightIn(max = 100.dp)
+                                .clip(shape = RoundedCornerShape(10.dp))
+                                .sharedElement(
+                                    state = rememberSharedContentState(key = "image/${item?.eventId ?: ""}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    clipInOverlayDuringTransition = OverlayClip(
+                                        RoundedCornerShape(
+                                            10.dp
+                                        )
+                                    )
+                                )
+                        )
+                    }
 
 
                     Column(
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(
-                            text = item?.title ?: "",
-                            style = TextStyle(
-                                fontSize = (FontSize.MEDIUM - 1).sp,
-                                fontWeight = FontWeight.Bold,
-                            ),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .sharedElement(
-                                    state = rememberSharedContentState(key = "title/${item?.eventId ?: ""}"),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                    renderInOverlayDuringTransition = true,
+                        with(sharedTransitionScope) {
+                            Text(
+                                text = item?.title ?: "",
+                                style = TextStyle(
+                                    fontSize = (FontSize.MEDIUM - 1).sp,
+                                    fontWeight = FontWeight.Bold,
                                 ),
-                        )
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .sharedElement(
+                                        state = rememberSharedContentState(key = "title/${item?.eventId ?: ""}"),
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        renderInOverlayDuringTransition = true,
+                                    ),
+                            )
+                        }
 
                         // Date
                         Row(
