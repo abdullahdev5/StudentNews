@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 sealed class NewsDestination {
     @Serializable
-    object MAIN_SCREEN: NewsDestination()
+    data object NEWS_SCREEN: NewsDestination()
 
     @Serializable
     data class NEWS_DETAIL_SCREEN(
@@ -15,4 +15,7 @@ sealed class NewsDestination {
     data class NEWS_LINK_SCREEN(
         val link: String,
     ): NewsDestination()
+
+    @Serializable
+    data object LIKED_NEWS_SCREEN: NewsDestination()
 }

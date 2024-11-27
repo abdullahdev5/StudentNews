@@ -1,4 +1,4 @@
-package com.android.studentnews.main.settings.registrations
+package com.android.studentnews.main.settings.registered_events
 
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
@@ -16,14 +16,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.io.Closeable
 
 class RegisteredEventsViewModel(
     private val eventsRepository: EventsRepository,
 ): ViewModel() {
 
     private val _registeredEventsList = MutableStateFlow<List<EventsModel?>>(emptyList())
-    val registeredEVentsList = _registeredEventsList.asStateFlow()
+    val registeredEventsList = _registeredEventsList.asStateFlow()
 
     var registeredEventsListStatus by mutableStateOf("")
         private set

@@ -136,15 +136,6 @@ class NewsWorker(
                         .setContentTitle(title)
                         .setContentText(description)
                         .setLargeIcon(bitmap)
-                        .setStyle(
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                NotificationCompat.BigPictureStyle()
-                                    .bigPicture(bitmap)
-                            } else {
-                                NotificationCompat.BigPictureStyle()
-                                    .bigPicture(bitmap)
-                            }
-                        )
                         .setPriority(NotificationCompat.PRIORITY_HIGH)
                         .setAutoCancel(true)
                         .setContentIntent(clickedPendingIntent)

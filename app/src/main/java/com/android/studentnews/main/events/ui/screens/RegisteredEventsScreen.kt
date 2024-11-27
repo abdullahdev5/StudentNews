@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.android.studentnews.main.settings.registrations
+package com.android.studentnews.main.settings.registered_events
 
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBackIos
 import androidx.compose.material.icons.outlined.Book
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -32,7 +30,6 @@ import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.EventsItem
-import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -49,14 +46,14 @@ fun RegisteredEventsScreen(
 
     val context = LocalContext.current
 
-    val bookedEventsList by registeredEventsViewModel.registeredEVentsList.collectAsStateWithLifecycle()
+    val registeredEventsList by registeredEventsViewModel.registeredEventsList.collectAsStateWithLifecycle()
 
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(text = "Registrations")
+                    Text(text = "Registered Events")
                 },
                 navigationIcon = {
                     IconButton(onClick = {
@@ -71,7 +68,7 @@ fun RegisteredEventsScreen(
                 actions = {
                     Icon(
                         imageVector = Icons.Outlined.Book,
-                        contentDescription = "Icon for Registrations"
+                        contentDescription = "Icon for Registered Events"
                     )
                 }
             )
@@ -80,15 +77,15 @@ fun RegisteredEventsScreen(
             .fillMaxSize()
     ) { innerPadding ->
 
-        if (bookedEventsList.size != 0) {
+        if (registeredEventsList.size != 0) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
 
-                items(bookedEventsList.size) { index ->
-                    val item = bookedEventsList[index]
+                items(registeredEventsList.size) { index ->
+                    val item = registeredEventsList[index]
 
                     EventsItem(
                         item = item,

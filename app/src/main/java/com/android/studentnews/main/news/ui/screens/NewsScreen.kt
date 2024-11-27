@@ -5,6 +5,7 @@ package com.android.studentnews.news.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
+import android.widget.PopupMenu
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -15,6 +16,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -44,9 +46,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Logout
@@ -63,6 +68,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,6 +78,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailDefaults
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
@@ -85,6 +95,7 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -106,6 +117,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -119,11 +131,13 @@ import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.NavigationBarItems
+import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
+import com.android.studentnews.main.settings.saved.domain.destination.SavedDestination
 import com.android.studentnews.navigation.SubGraph
 import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
@@ -183,6 +197,14 @@ fun NewsScreen(
         }
     )
 
+    var selectedNavBarIndex by remember { mutableIntStateOf(0) }
+
+    val navBarList = listOf(
+        NavigationBarItems.Home,
+        NavigationBarItems.Search,
+        NavigationBarItems.Account,
+    )
+
 
     BackHandler(
         drawerState.isOpen || tabPagerState.currentPage != 0
@@ -225,6 +247,15 @@ fun NewsScreen(
                         },
                         onSearchClick = {
                             navHostController.navigate(MainDestination.SEARCH_SCREEN)
+                        },
+                        onSavedClick = {
+                            navHostController.navigate(SubGraph.SAVED)
+                        },
+                        onLikedClick = {
+                            navHostController.navigate(NewsDestination.LIKED_NEWS_SCREEN)
+                        },
+                        onRegisteredEventsClick = {
+                            navHostController.navigate(EventsDestination.REGISTERED_EVENTS_SCREEN)
                         },
                         onSettingsClick = {
                             navHostController.navigate(SubGraph.SETTINGS)
@@ -272,8 +303,16 @@ fun NewsScreen(
                             if (isMoreDropDownMenuItemOpen) {
                                 MoreDropDownMenu(
                                     expanded = isMoreDropDownMenuItemOpen,
-                                    onSettingsClick = {
-                                        navHostController.navigate(SubGraph.SETTINGS)
+                                    onSavedClick = {
+                                        navHostController.navigate(SubGraph.SAVED)
+                                    },
+                                    onLikedClick = {
+                                        navHostController
+                                            .navigate(NewsDestination.LIKED_NEWS_SCREEN)
+                                    },
+                                    onRegisteredEventsClick = {
+                                        navHostController
+                                            .navigate(EventsDestination.REGISTERED_EVENTS_SCREEN)
                                     },
                                     onDismiss = {
                                         isMoreDropDownMenuItemOpen = false
@@ -301,13 +340,6 @@ fun NewsScreen(
                     )
                 },
                 bottomBar = {
-                    var selectedNavBarIndex by remember { mutableStateOf(0) }
-
-                    val navBarList = listOf(
-                        NavigationBarItems.Home,
-                        NavigationBarItems.Search,
-                        NavigationBarItems.Account,
-                    )
 
                     Column(
                         modifier = Modifier
@@ -315,7 +347,6 @@ fun NewsScreen(
                             .navigationBarsPadding()
                             .height(50.dp),
                     ) {
-
                         HorizontalDivider(color = Gray)
 
                         BottomAppBar(
@@ -384,7 +415,7 @@ fun NewsScreen(
                                     )
                                 ),
                                 modifier = Modifier
-                                    .height(if (!isLandScape) 270.dp else 0.dp)
+                                    .height(if (!isLandScape) 270.dp else 80.dp)
                             ) { pagerIndex ->
                                 val item = categoriesList.value[pagerIndex]
                                 CategoriesListPagerItem(
@@ -662,6 +693,7 @@ fun NewsScreen(
 
         }
     }
+
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -913,6 +945,9 @@ fun MainDrawerContent(
     sharedTransitionScope: SharedTransitionScope,
     onAccountClick: () -> Unit,
     onSearchClick: () -> Unit,
+    onSavedClick: () -> Unit,
+    onLikedClick: () -> Unit,
+    onRegisteredEventsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSignOutClick: () -> Unit,
     onDismiss: () -> Unit,
@@ -1033,6 +1068,18 @@ fun MainDrawerContent(
                 onDismiss.invoke()
                 onSearchClick.invoke()
             },
+            onSavedClick = {
+                onDismiss.invoke()
+                onSavedClick.invoke()
+            },
+            onLikedClick = {
+                onDismiss.invoke()
+                onLikedClick.invoke()
+            },
+            onRegisteredEventsClick = {
+                onDismiss.invoke()
+                onRegisteredEventsClick.invoke()
+            },
             onSettingsClick = {
                 onSettingsClick.invoke()
                 onDismiss.invoke()
@@ -1049,6 +1096,9 @@ fun MainDrawerContent(
 fun MainDrawerItems(
     onAccountClick: () -> Unit,
     onSearchClick: () -> Unit,
+    onSavedClick: () -> Unit,
+    onLikedClick: () -> Unit,
+    onRegisteredEventsClick: () -> Unit,
     onSettingsClick: () -> Unit,
     onSignOutClick: () -> Unit,
 ) {
@@ -1084,6 +1134,63 @@ fun MainDrawerItems(
         },
         selected = false,
         onClick = onSearchClick,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+        ),
+        shape = RectangleShape,
+    )
+
+    // Saved Item
+    NavigationDrawerItem(
+        label = {
+            Text(text = "Saved")
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Default.BookmarkBorder,
+                contentDescription = "icon of Saved"
+            )
+        },
+        selected = false,
+        onClick = onSavedClick,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+        ),
+        shape = RectangleShape,
+    )
+
+    // Liked Item
+    NavigationDrawerItem(
+        label = {
+            Text(text = "Liked")
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Default.FavoriteBorder,
+                contentDescription = "icon of Liked"
+            )
+        },
+        selected = false,
+        onClick = onLikedClick,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+        ),
+        shape = RectangleShape,
+    )
+
+    // Registered Events Item
+    NavigationDrawerItem(
+        label = {
+            Text(text = "Registered Events")
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Outlined.Book,
+                contentDescription = "icon of Registered Events"
+            )
+        },
+        selected = false,
+        onClick = onRegisteredEventsClick,
         colors = NavigationDrawerItemDefaults.colors(
             unselectedContainerColor = Color.Transparent,
         ),
@@ -1132,7 +1239,9 @@ fun MainDrawerItems(
 @Composable
 fun MoreDropDownMenu(
     expanded: Boolean,
-    onSettingsClick: () -> Unit,
+    onSavedClick: () -> Unit,
+    onLikedClick: () -> Unit,
+    onRegisteredEventsClick: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     DropdownMenu(
@@ -1142,15 +1251,41 @@ fun MoreDropDownMenu(
             focusable = false,
         ),
         modifier = Modifier
+            .padding(ExposedDropdownMenuDefaults.ItemContentPadding)
             .background(color = if (isSystemInDarkTheme()) DarkColor else White)
+            .border(
+                width = 1.dp,
+                color = if (isSystemInDarkTheme()) White else Black,
+            )
     ) {
-        // Settings Item
+        // Saved Item
         DropdownMenuItem(
             text = {
-                Text(text = "Settings")
+                Text(text = "Saved")
             },
             onClick = {
-                onSettingsClick.invoke()
+                onSavedClick.invoke()
+                onDismiss.invoke()
+            }
+        )
+        // Liked Item
+        DropdownMenuItem(
+            text = {
+                Text(text = "Liked")
+            },
+            onClick = {
+                onLikedClick.invoke()
+                onDismiss.invoke()
+            }
+        )
+
+        // Registered Events Item
+        DropdownMenuItem(
+            text = {
+                Text(text = "Registered Events")
+            },
+            onClick = {
+                onRegisteredEventsClick.invoke()
                 onDismiss.invoke()
             }
         )

@@ -2,21 +2,18 @@
 
 package com.android.studentnews.main.events.ui.screens
 
-import android.icu.util.Calendar
-import android.view.MotionEvent
-import android.widget.CalendarView
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -68,7 +65,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -77,6 +73,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -88,6 +86,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.RegistrationDropDownMenuLists
@@ -97,7 +96,6 @@ import com.android.studentnews.auth.ui.DegreeDropDownMenu
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.common.formatDateToDay
-import com.android.studentnews.core.domain.common.formatDateToMonthInt
 import com.android.studentnews.core.domain.common.formatDateToMonthName
 import com.android.studentnews.core.domain.common.formatDateToYear
 import com.android.studentnews.core.domain.common.formatTimeToHour
@@ -115,6 +113,7 @@ import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
+import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
@@ -139,7 +138,7 @@ fun EventsDetailScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val bookingSheetState = rememberModalBottomSheetState()
+    val registerEventSheetState = rememberModalBottomSheetState()
 
     val eventById by eventsViewModel.eventById.collectAsStateWithLifecycle()
     val currentUser by eventsViewModel.currentUser.collectAsStateWithLifecycle()
@@ -162,19 +161,48 @@ fun EventsDetailScreen(
 
     var isStartingDateExpanded by rememberSaveable { mutableStateOf(true) }
 
-    var isStartingTimeExpanded by rememberSaveable { mutableStateOf(false) }
+    var isStartingTimeExpanded by rememberSaveable { mutableStateOf(true) }
 
     var isEndingDateExpanded by rememberSaveable { mutableStateOf(true) }
 
-    var isEndingTimeExpanded by rememberSaveable { mutableStateOf(false) }
+    var isEndingTimeExpanded by rememberSaveable { mutableStateOf(true) }
 
-    var isBookingSheetVisible by rememberSaveable { mutableStateOf(false) }
+    var isRegisterEventSheetVisible by rememberSaveable { mutableStateOf(false) }
 
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {},
+                title = {
+                    AnimatedVisibility(scrollState.value > 550) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            val imageRequest = ImageRequest.Builder(context)
+                                .data(getUrlOfImageNotVideo(eventById?.urlList ?: emptyList()))
+                                .crossfade(true)
+                                .build()
+
+                            AsyncImage(
+                                model = imageRequest,
+                                contentDescription = "Event Image",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .width(40.dp)
+                                    .height(30.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                            )
+
+                            Text(
+                                text = eventById?.title ?: "",
+                                fontSize = FontSize.MEDIUM.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = {
                         navHostController.navigateUp()
@@ -233,15 +261,15 @@ fun EventsDetailScreen(
                 }
             )
         },
-        floatingActionButton = {
+        bottomBar = {
             Button(
                 onClick = {
                     if (!userIdsListFromBookings.contains(currentUser?.uid)) {
                         scope.launch {
-                            bookingSheetState.show()
+                            registerEventSheetState.show()
                         }.invokeOnCompletion {
-                            if (bookingSheetState.isVisible) {
-                                isBookingSheetVisible = true
+                            if (registerEventSheetState.isVisible) {
+                                isRegisterEventSheetVisible = true
                             }
                         }
                     } else {
@@ -258,8 +286,14 @@ fun EventsDetailScreen(
                 enabled = !userIdsListFromBookings.contains(currentUser?.uid),
                 colors = ButtonColors(
                     containerColor = Green,
-                    contentColor = White
-                )
+                    contentColor = White,
+                    disableContainerColor = Gray,
+                    disableContentColor = White
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(all = 10.dp)
+                    .background(color = Color.Transparent)
             ) {
                 if (userIdsListFromBookings.contains(currentUser?.uid)) {
                     Text(text = "Already Registered")
@@ -274,7 +308,11 @@ fun EventsDetailScreen(
 
         Column(
             modifier = Modifier
-                .padding(innerPadding)
+                .padding(
+                    top = innerPadding.calculateTopPadding(),
+                    start = innerPadding.calculateStartPadding(LayoutDirection.Ltr),
+                    end = innerPadding.calculateStartPadding(LayoutDirection.Rtl),
+                )
                 .verticalScroll(scrollState)
         ) {
 
@@ -579,20 +617,20 @@ fun EventsDetailScreen(
         }
 
 
-        if (isBookingSheetVisible) {
-            EventBookingSheet(
-                sheetState = bookingSheetState,
+        if (isRegisterEventSheetVisible) {
+            EventRegisterSheet(
+                sheetState = registerEventSheetState,
                 currentUser = currentUser,
                 onDismiss = {
                     scope.launch {
-                        bookingSheetState.hide()
+                        registerEventSheetState.hide()
                     }.invokeOnCompletion {
-                        if (!bookingSheetState.isVisible) {
-                            isBookingSheetVisible = false
+                        if (!registerEventSheetState.isVisible) {
+                            isRegisterEventSheetVisible = false
                         }
                     }
                 },
-                onBook = { userName, userDegree, userPhoneNumber, userCity, userAddress ->
+                onRegister = { userName, userDegree, userPhoneNumber, userCity, userAddress ->
 
                     val bookingEvent = EventsBookingModel(
                         userId = currentUser?.uid,
@@ -901,10 +939,10 @@ fun TimeContainer(
 }
 
 @Composable
-fun EventBookingSheet(
+fun EventRegisterSheet(
     sheetState: SheetState,
     currentUser: UserModel?,
-    onBook: (String, String, String, String, String) -> Unit,
+    onRegister: (String, String, String, String, String) -> Unit,
     onDismiss: () -> Unit,
 ) {
 
@@ -947,7 +985,7 @@ fun EventBookingSheet(
         ) {
 
             Text(
-                text = "Book Event",
+                text = "Register Event",
                 style = TextStyle(
                     fontSize = FontSize.LARGE.sp,
                     fontWeight = FontWeight.Bold
@@ -1178,7 +1216,7 @@ fun EventBookingSheet(
                 // userName, userDegree, userPhoneNumber, userCity, userAddress
                 TextButton(
                     onClick = {
-                        onBook.invoke(
+                        onRegister.invoke(
                             userName,
                             userDegree,
                             (userCountryCode + userNumber),
@@ -1192,7 +1230,7 @@ fun EventBookingSheet(
                             && userNumber.length >= 10 && userNumber.isDigitsOnly()
                             && userCity.isNotEmpty() && userAddress.isNotEmpty()
                 ) {
-                    Text(text = "Book")
+                    Text(text = "Register")
                 }
             }
 

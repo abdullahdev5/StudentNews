@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -36,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,6 +71,9 @@ import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import kotlin.text.dropLast
 
@@ -84,12 +89,10 @@ fun SavedEventsScreen(
     val context = LocalContext.current
     val density = LocalDensity.current
 
-
     val savedEventsList by savedEventsViewModel.savedEventsList.collectAsStateWithLifecycle()
 
 
     Surface(
-        color = if (isSystemInDarkTheme()) Color.Unspecified else White,
         modifier = Modifier
             .fillMaxSize(),
     ) {
@@ -99,7 +102,12 @@ fun SavedEventsScreen(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                items(savedEventsList.size) { index ->
+                items(
+                    count = savedEventsList.size,
+                    key = { index ->
+                        savedEventsList[index]?.eventId ?: ""
+                    }
+                ) { index ->
                     val item = savedEventsList[index]
 
                     SavedEventsItem(
@@ -151,7 +159,8 @@ fun SavedEventsItem(
     sharedTransitionScope: SharedTransitionScope,
 ) {
 
-    var offsetX by remember { mutableStateOf(0) }
+    var offsetX = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
     var isDragging by remember { mutableStateOf(false) }
     var maxWidth = 250.dp
     var itemHeight by remember { mutableStateOf(80.dp) }
@@ -172,7 +181,7 @@ fun SavedEventsItem(
                         .background(color = Black)
                 ) {
                     AnimatedContent(
-                        targetState = offsetX.dp > maxWidth,
+                        targetState = (offsetX.value).dp > maxWidth,
                         label = "start_align",
                         modifier = Modifier
                             .align(Alignment.CenterStart),
@@ -186,7 +195,7 @@ fun SavedEventsItem(
                     }
 
                     AnimatedContent(
-                        targetState = (-offsetX).dp > maxWidth,
+                        targetState = (-offsetX.value).dp > maxWidth,
                         label = "end_align",
                         modifier = Modifier
                             .align(Alignment.CenterEnd),
@@ -208,27 +217,31 @@ fun SavedEventsItem(
                     .clickable {
                         onItemClick(item?.eventId ?: "")
                     }
-                    .offset { androidx.compose.ui.unit.IntOffset(offsetX, 0) }
+                    .offset { androidx.compose.ui.unit.IntOffset((offsetX.value).roundToInt(), 0) }
                     .pointerInput(true) {
                         detectHorizontalDragGestures(
                             onDragStart = {
                                 isDragging = true
                             },
                             onDragEnd = {
-                                if (offsetX.dp > maxWidth || (-offsetX.dp) > maxWidth) {
+                                if ((offsetX.value).dp > maxWidth || (-offsetX.value).dp > maxWidth) {
                                     item?.let { thisItem ->
                                         onEventRemoveFromSaveList.invoke(thisItem)
                                     }
                                 } else {
                                     isDragging = false
-                                    offsetX = 0
+                                    scope.launch {
+                                        offsetX.animateTo(0f)
+                                    }
                                 }
                             },
                             onHorizontalDrag = { change, dragAmount ->
                                 change.consume()
                                 val newOffsetX = dragAmount
-                                offsetX += newOffsetX.roundToInt()
-                                println("OffsetX: $offsetX")
+                                val incrementedOffsetX = (offsetX.value) + newOffsetX
+                                scope.launch {
+                                    offsetX.snapTo(incrementedOffsetX)
+                                }
                             }
                         )
                     }
@@ -353,9 +366,6 @@ fun SavedEventsItem(
             }
         }
 
-        HorizontalDivider(
-            color = Gray,
-            modifier = Modifier.fillMaxWidth()
-        )
+        HorizontalDivider(modifier = Modifier.fillMaxWidth())
     }
 }

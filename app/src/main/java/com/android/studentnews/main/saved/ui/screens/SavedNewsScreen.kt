@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
@@ -36,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +70,7 @@ import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
+import kotlinx.coroutines.launch
 import kotlin.let
 import kotlin.math.roundToInt
 
@@ -88,7 +91,6 @@ fun SavedNewsScreen(
 
 
     Surface(
-        color = if (isSystemInDarkTheme()) Color.Unspecified else White,
         modifier = Modifier
             .fillMaxSize(),
     ) {
@@ -149,7 +151,8 @@ fun SavedNewsItem(
     sharedTransitionScope: SharedTransitionScope
 ) {
 
-    var offsetX by remember { mutableStateOf(0) }
+    var offsetX = remember { Animatable(0f) }
+    var scope = rememberCoroutineScope()
     var isDragging by remember { mutableStateOf(false) }
     var maxWidth = 250.dp
     var itemHeight by remember { mutableStateOf(0.dp) }
@@ -170,7 +173,7 @@ fun SavedNewsItem(
                         .background(color = Black)
                 ) {
                     AnimatedContent(
-                        targetState = offsetX.dp > maxWidth,
+                        targetState = (offsetX.value).dp > maxWidth,
                         label = "start_align",
                         modifier = Modifier
                             .align(Alignment.CenterStart),
@@ -184,7 +187,7 @@ fun SavedNewsItem(
                     }
 
                     AnimatedContent(
-                        targetState = (-offsetX).dp > maxWidth,
+                        targetState = (-offsetX.value).dp > maxWidth,
                         label = "end_align",
                         modifier = Modifier
                             .align(Alignment.CenterEnd),
@@ -210,26 +213,31 @@ fun SavedNewsItem(
                             state = rememberSharedContentState(key = "container/${item?.newsId}"),
                             animatedVisibilityScope = animatedVisibilityScope,
                         )
-                        .offset { androidx.compose.ui.unit.IntOffset(offsetX, 0) }
+                        .offset { androidx.compose.ui.unit.IntOffset((offsetX.value).roundToInt(), 0) }
                         .pointerInput(true) {
                             detectHorizontalDragGestures(
                                 onDragStart = {
                                     isDragging = true
                                 },
                                 onDragEnd = {
-                                    if (offsetX.dp > maxWidth || (-offsetX).dp > maxWidth) {
+                                    if ((offsetX.value).dp > maxWidth || (-offsetX.value).dp > maxWidth) {
                                         item?.let { thisItem ->
                                             onRemoveFromSavedList.invoke(thisItem)
                                         }
                                     } else {
                                         isDragging = false
-                                        offsetX = 0
+                                        scope.launch {
+                                            offsetX.animateTo(0f)
+                                        }
                                     }
                                 },
                                 onHorizontalDrag = { change, dragAmount ->
                                     change.consume()
                                     val newOffsetX = dragAmount
-                                    offsetX += newOffsetX.roundToInt()
+                                    val incrementedOffsetX = (offsetX.value) + newOffsetX
+                                    scope.launch {
+                                        offsetX.snapTo(incrementedOffsetX)
+                                    }
                                 }
                             )
                         }
@@ -318,10 +326,7 @@ fun SavedNewsItem(
                 }
             }
         }
-        HorizontalDivider(
-            color = Gray,
-            modifier = Modifier.fillMaxWidth()
-        )
+        HorizontalDivider(modifier = Modifier.fillMaxWidth())
     }
 
 }

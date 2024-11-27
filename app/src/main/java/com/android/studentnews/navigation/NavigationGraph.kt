@@ -23,7 +23,7 @@ import com.android.studentnews.auth.ui.viewModel.AuthViewModel
 import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.domain.destination.EventsDestination
-import com.android.studentnews.main.settings.registrations.RegisteredEventsScreen
+import com.android.studentnews.main.settings.registered_events.RegisteredEventsScreen
 import com.android.studentnews.main.events.ui.screens.EventsDetailScreen
 import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.settings.saved.ui.screens.SavedEventsScreen
@@ -41,7 +41,7 @@ import com.android.studentnews.main.settings.SettingsDestination
 import com.android.studentnews.main.settings.SettingsScreen
 import com.android.studentnews.main.settings.liked.LikedNewsScreen
 import com.android.studentnews.main.settings.liked.LikedNewsViewModel
-import com.android.studentnews.main.settings.registrations.RegisteredEventsViewModel
+import com.android.studentnews.main.settings.registered_events.RegisteredEventsViewModel
 import com.android.studentnews.main.settings.saved.domain.destination.SavedDestination
 import com.android.studentnews.main.settings.saved.ui.screens.SavedScreen
 import com.android.studentnews.news.domain.destination.MainDestination
@@ -105,9 +105,9 @@ fun NavigationGraph(
                 startDestination = SubGraph.NEWS,
             ) {
                 navigation<SubGraph.NEWS>(
-                    startDestination = NewsDestination.MAIN_SCREEN
+                    startDestination = NewsDestination.NEWS_SCREEN
                 ) {
-                    composable<NewsDestination.MAIN_SCREEN>() {
+                    composable<NewsDestination.NEWS_SCREEN>() {
                         val newsViewModel = koinViewModel<NewsViewModel>()
 
                         NewsScreen(
@@ -191,6 +191,117 @@ fun NavigationGraph(
 
                 }
 
+                // Saved Graph
+                navigation<SubGraph.SAVED>(
+                    startDestination = SavedDestination.SAVED_SCREEN
+
+                ) {
+
+                    composable<SavedDestination.SAVED_SCREEN>(
+                        enterTransition = {
+                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        },
+                        exitTransition = {
+                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        },
+                        popEnterTransition = {
+                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        },
+                        popExitTransition = {
+                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        }
+                    ) {
+
+                        SavedScreen(
+                            navHostController = navHostController,
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout
+                        )
+                    }
+
+                    composable<SavedDestination.SAVED_NEWS_SCREEN>(
+                        enterTransition = {
+                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        },
+                        exitTransition = {
+                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        },
+                        popEnterTransition = {
+                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        },
+                        popExitTransition = {
+                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        }
+                    ) {
+                        val savedNewsViewModel = koinViewModel<SavedNewsViewModel>()
+
+                        SavedNewsScreen(
+                            navHostController = navHostController,
+                            savedNewsViewModel = savedNewsViewModel,
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout
+                        )
+                    }
+
+                    composable<SavedDestination.SAVED_EVENTS_SCREEN>() {
+                        val savedEventsViewModel = koinViewModel<SavedEventsViewModel>()
+                        SavedEventsScreen(
+                            navHostController = navHostController,
+                            savedEventsViewModel = savedEventsViewModel,
+                            animatedVisibilityScope = this,
+                            sharedTransitionScope = this@SharedTransitionLayout
+                        )
+                    }
+                }
+
+                // Liked News Screen
+                composable<NewsDestination.LIKED_NEWS_SCREEN>(
+                    enterTransition = {
+                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                    },
+                    exitTransition = {
+                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                    },
+                    popEnterTransition = {
+                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                    },
+                    popExitTransition = {
+                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                    }
+                ) {
+                    val likedNewsViewModel = koinViewModel<LikedNewsViewModel>()
+                    LikedNewsScreen(
+                        navHostController = navHostController,
+                        likedNewsViewModel = likedNewsViewModel,
+                        animatedVisibilityScope = this,
+                        sharedTransitionScope = this@SharedTransitionLayout
+                    )
+                }
+
+                // Registered Events Screen
+                composable<EventsDestination.REGISTERED_EVENTS_SCREEN>(
+                    enterTransition = {
+                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                    },
+                    exitTransition = {
+                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                    },
+                    popEnterTransition = {
+                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                    },
+                    popExitTransition = {
+                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                    }
+                ) {
+                    val registeredEventsViewModel = koinViewModel<RegisteredEventsViewModel>()
+                    RegisteredEventsScreen(
+                        navHostController = navHostController,
+                        registeredEventsViewModel = registeredEventsViewModel,
+                        animatedVisibilityScope = this,
+                        sharedTransitionScope = this@SharedTransitionLayout
+                    )
+                }
+
                 navigation<SubGraph.SETTINGS>(
                     startDestination = SettingsDestination.SETTINGS_SCREEN
                 ) {
@@ -212,117 +323,6 @@ fun NavigationGraph(
                     ) {
                         SettingsScreen(
                             navHostController = navHostController,
-                        )
-                    }
-
-                    // Saved Sub Graph of Settings
-                    navigation<SubGraph.SETTINGS_SAVED>(
-                        startDestination = SettingsDestination.SAVED_SCREEN
-
-                    ) {
-
-                        composable<SettingsDestination.SAVED_SCREEN>(
-                            enterTransition = {
-                                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                            },
-                            exitTransition = {
-                                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                            },
-                            popEnterTransition = {
-                                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                            },
-                            popExitTransition = {
-                                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                            }
-                        ) {
-
-                            SavedScreen(
-                                navHostController = navHostController,
-                                animatedVisibilityScope = this,
-                                sharedTransitionScope = this@SharedTransitionLayout
-                            )
-                        }
-
-                        composable<SavedDestination.SAVED_NEWS_SCREEN>(
-                            enterTransition = {
-                                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                            },
-                            exitTransition = {
-                                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                            },
-                            popEnterTransition = {
-                                slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                            },
-                            popExitTransition = {
-                                slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                            }
-                        ) {
-                            val savedNewsViewModel = koinViewModel<SavedNewsViewModel>()
-
-                            SavedNewsScreen(
-                                navHostController = navHostController,
-                                savedNewsViewModel = savedNewsViewModel,
-                                animatedVisibilityScope = this,
-                                sharedTransitionScope = this@SharedTransitionLayout
-                            )
-                        }
-
-                        composable<SavedDestination.SAVED_EVENTS_SCREEN>() {
-                            val savedEventsViewModel = koinViewModel<SavedEventsViewModel>()
-                            SavedEventsScreen(
-                                navHostController = navHostController,
-                                savedEventsViewModel = savedEventsViewModel,
-                                animatedVisibilityScope = this,
-                                sharedTransitionScope = this@SharedTransitionLayout
-                            )
-                        }
-                    }
-
-                    // Registrations Screen
-                    composable<SettingsDestination.REGISTRATIONS_SCREEN>(
-                        enterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                        },
-                        exitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                        },
-                        popEnterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                        },
-                        popExitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                        }
-                    ) {
-                        val registeredEventsViewModel = koinViewModel<RegisteredEventsViewModel>()
-                        RegisteredEventsScreen(
-                            navHostController = navHostController,
-                            registeredEventsViewModel = registeredEventsViewModel,
-                            animatedVisibilityScope = this,
-                            sharedTransitionScope = this@SharedTransitionLayout
-                        )
-                    }
-
-                    // Liked Screen
-                    composable<SettingsDestination.LIKED_SCREEN>(
-                        enterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                        },
-                        exitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                        },
-                        popEnterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                        },
-                        popExitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                        }
-                    ) {
-                        val likedNewsViewModel = koinViewModel<LikedNewsViewModel>()
-                        LikedNewsScreen(
-                            navHostController = navHostController,
-                            likedNewsViewModel = likedNewsViewModel,
-                            animatedVisibilityScope = this,
-                            sharedTransitionScope = this@SharedTransitionLayout
                         )
                     }
 

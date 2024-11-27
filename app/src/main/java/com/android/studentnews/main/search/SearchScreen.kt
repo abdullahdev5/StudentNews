@@ -48,6 +48,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -71,6 +72,7 @@ import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.news.domain.destination.NewsDestination
+import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.NewsItem
 import com.android.studentnews.ui.theme.Black
@@ -209,49 +211,54 @@ fun SearchScreen(
                                     .horizontalScroll(rememberScrollState())
                             ) {
                                 // Category List
-                                categoryList.forEachIndexed { index, item ->
-
-                                    Card(
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = if (selectedCategoryIndex == index) {
-                                                if (isSystemInDarkTheme()) White else Black
-                                            } else {
-                                                if (isSystemInDarkTheme()) DarkGray else LightGray.copy(
-                                                    0.3f
-                                                )
-                                            },
-                                            contentColor = if (selectedCategoryIndex == index) {
-                                                if (isSystemInDarkTheme()) Black else White
-                                            } else Color.Unspecified
-                                        ),
-                                        modifier = Modifier
-                                            .padding(all = 5.dp)
-                                            .clickable {
-                                                selectedCategoryIndex = index
-                                                searchViewModel.getNewsListByCategory(
-                                                    item.name ?: "",
-                                                )
-                                                currentSelectedCategory = item.name
-                                                query = ""
-                                                focusManager.clearFocus()
-                                            }
-                                    ) {
-                                        Box(
-                                            contentAlignment = Alignment.Center,
+                                categoryList
+                                    .forEachIndexed { index, item ->
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = if (selectedCategoryIndex == index) {
+                                                    if (isSystemInDarkTheme()) White else Black
+                                                } else {
+                                                    if (isSystemInDarkTheme()) DarkGray else LightGray.copy(
+                                                        0.3f
+                                                    )
+                                                },
+                                                contentColor = if (selectedCategoryIndex == index) {
+                                                    if (isSystemInDarkTheme()) Black else White
+                                                } else Color.Unspecified
+                                            ),
                                             modifier = Modifier
+                                                .padding(all = 5.dp)
+                                                .clickable {
+                                                    selectedCategoryIndex = index
+                                                    currentSelectedCategory = item.name
+                                                    focusManager.clearFocus()
+                                                    if (query.isNotEmpty()) {
+                                                        searchViewModel.onSearch(
+                                                            query,
+                                                            currentSelectedCategory
+                                                        )
+                                                    } else {
+                                                        searchViewModel
+                                                            .getNewsListByCategory(currentSelectedCategory!!)
+                                                    }
+                                                }
                                         ) {
-                                            Text(
-                                                text = item.name ?: "",
-                                                style = TextStyle(
-                                                    fontSize = FontSize.MEDIUM.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                ),
+                                            Box(
+                                                contentAlignment = Alignment.Center,
                                                 modifier = Modifier
-                                                    .padding(all = 5.dp)
-                                            )
+                                            ) {
+                                                Text(
+                                                    text = item.name ?: "",
+                                                    style = TextStyle(
+                                                        fontSize = FontSize.MEDIUM.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                    ),
+                                                    modifier = Modifier
+                                                        .padding(all = 5.dp)
+                                                )
+                                            }
                                         }
                                     }
-                                }
                             }
                         },
                         scrollBehavior = scrollBehavior,
