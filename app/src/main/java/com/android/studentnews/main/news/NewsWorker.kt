@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.BitmapDrawable
-import android.os.Build
 import androidx.compose.ui.util.fastJoinToString
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -22,6 +21,7 @@ import coil.request.ImageRequest
 import com.android.studentnews.MainActivity
 import com.android.studentnews.NotificationRelated
 import com.android.studentnews.R
+import com.android.studentnews.main.MyBroadcastReceiver
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -30,7 +30,7 @@ import kotlin.jvm.java
 import kotlin.random.Random
 import kotlin.run
 
-const val MY_URI = "https://www.google.com"
+const val NEWS_URI = "https://www.news.com"
 const val SAVE_NEWS_ACTION = "SAVE_NEWS_ACTION"
 const val CLICKED_INTENT_REQUEST_CODE = 0
 const val SAVED_INTENT_REQUEST_CODE = 1
@@ -78,7 +78,7 @@ class NewsWorker(
 
         val clickedIntent = Intent(
             Intent.ACTION_VIEW,
-            "$MY_URI/newsId=${news?.newsId ?: ""}".toUri(),
+            "$NEWS_URI/newsId=${news?.newsId ?: ""}".toUri(),
             context,
             MainActivity::class.java
         )
@@ -99,6 +99,8 @@ class NewsWorker(
         val link = news?.link
         val linkTitle = news?.linkTitle
         val imageUrl = getUrlOfImageNotVideo(news?.urlList ?: emptyList())
+        val likes = ArrayList(news?.likes ?: emptyList())
+
 
         val request = ImageRequest.Builder(context)
             .data(imageUrl)
@@ -108,7 +110,7 @@ class NewsWorker(
 
                 val saveIntent = Intent(
                     context,
-                    SaveNewsBroadcastReceiver::class.java,
+                    MyBroadcastReceiver::class.java,
                 ).apply {
                     action = SAVE_NEWS_ACTION
                     putExtra("title", title)
@@ -118,6 +120,7 @@ class NewsWorker(
                     putExtra("link", link)
                     putExtra("link_title", linkTitle)
                     putExtra("url_list", serializedUrlList)
+                    putStringArrayListExtra("likes", likes)
                     putExtra("notification_id", notificationId)
                 }
 

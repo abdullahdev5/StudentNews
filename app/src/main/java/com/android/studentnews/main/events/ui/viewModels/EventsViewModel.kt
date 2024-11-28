@@ -67,6 +67,8 @@ class EventsViewModel(
     init {
         getEventsList()
         getCurrentUser()
+        startEventsWorker()
+//        cancelEventsWorker()
     }
 
 
@@ -264,6 +266,7 @@ class EventsViewModel(
                         is EventsState.Success -> {
                             _savedEventById.value = result.data
                         }
+
                         else -> {}
                     }
                 }
@@ -286,5 +289,9 @@ class EventsViewModel(
                 }
         }
     }
+
+    fun startEventsWorker() = eventsRepository.startEventWorker()
+
+    fun cancelEventsWorker() = eventsRepository.cancelEventsWorker()
 
 }

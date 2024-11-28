@@ -51,12 +51,23 @@ class StudentsNewsApp : Application(), KoinComponent, ImageLoaderFactory {
             )
         }
 
-        val channel = NotificationChannel(
+        // News
+        val newsChannel = NotificationChannel(
             NotificationRelated.NEWS_CHANNEL_ID,
             NotificationRelated.NEWS_CHANNEL_NAME,
             NotificationManager.IMPORTANCE_HIGH
         )
-        notificationManager.createNotificationChannel(channel)
+
+        // Events
+        val eventsChannel = NotificationChannel(
+            NotificationRelated.EVENTS_CHANNEL_ID,
+            NotificationRelated.EVENTS_CHANNEL_NAME,
+            NotificationManager.IMPORTANCE_HIGH
+        )
+        // News
+        notificationManager.createNotificationChannel(newsChannel)
+        // Events
+        notificationManager.createNotificationChannel(eventsChannel)
     }
 
     override fun newImageLoader(): ImageLoader {
@@ -84,8 +95,14 @@ class StudentsNewsApp : Application(), KoinComponent, ImageLoaderFactory {
 
 class NotificationRelated {
     companion object {
+        // News
         const val NEWS_CHANNEL_NAME = "News Channel"
         const val NEWS_CHANNEL_ID = "news_channel"
         const val NEWS_NOTIFICATION_ID = 1
+
+        // Events
+        const val EVENTS_CHANNEL_NAME = "Events Channel"
+        const val EVENTS_CHANNEL_ID = "events_channel"
+        const val EVENTS_NOTIFICATION_ID = 2
     }
 }

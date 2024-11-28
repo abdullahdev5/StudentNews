@@ -641,7 +641,7 @@ fun EventsDetailScreen(
                         userAddress = userAddress,
                         userProfilePic = currentUser?.profilePic,
                         userProfilePicBgColor = currentUser?.profilePicBgColor,
-                        timestamp = Timestamp.now()
+//                        timestamp = Timestamp.now()
                     )
 
                     eventsViewModel.onEventBook(

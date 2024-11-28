@@ -143,6 +143,7 @@ fun EventsScreen(
                             modifier = Modifier
                                 .padding(start = 5.dp, end = 5.dp)
                                 .clickable {
+                                    eventsViewModel.cancelEventsWorker()
                                     eventsViewModel.selectedCategoryIndex = item.index
                                     if (eventsViewModel.selectedCategoryIndex == 0) {
                                         eventsViewModel.getEventsListByAvailableStatus(true)

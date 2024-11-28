@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.runtime.Composable
+import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -13,7 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
-import com.android.studentnews.main.news.MY_URI
+import com.android.studentnews.main.news.NEWS_URI
 import com.android.studentnews.auth.domain.RegistrationDataNavType
 import com.android.studentnews.auth.domain.destination.AuthDestination
 import com.android.studentnews.auth.domain.models.RegistrationData
@@ -22,6 +23,7 @@ import com.android.studentnews.auth.ui.RegistrationFormScreen
 import com.android.studentnews.auth.ui.viewModel.AuthViewModel
 import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
+import com.android.studentnews.main.events.EVENTS_URI
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.settings.registered_events.RegisteredEventsScreen
 import com.android.studentnews.main.events.ui.screens.EventsDetailScreen
@@ -121,7 +123,7 @@ fun NavigationGraph(
                     composable<NewsDestination.NEWS_DETAIL_SCREEN>(
                         deepLinks = listOf(
                             navDeepLink {
-                                uriPattern = "$MY_URI/newsId={newsId}"
+                                uriPattern = "$NEWS_URI/newsId={newsId}"
                             }
                         ),
                     ) {
@@ -175,7 +177,13 @@ fun NavigationGraph(
                         )
                     }
 
-                    composable<EventsDestination.EVENTS_DETAIL_SCREEN> {
+                    composable<EventsDestination.EVENTS_DETAIL_SCREEN>(
+                        deepLinks = listOf(
+                            navDeepLink {
+                                uriPattern = "$EVENTS_URI/eventId={eventId}"
+                            }
+                        )
+                    ) {
 
                         val arguments = it.toRoute<EventsDestination.EVENTS_DETAIL_SCREEN>()
                         val eventsViewModel = koinViewModel<EventsViewModel>()

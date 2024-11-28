@@ -39,7 +39,7 @@
 
 
         <receiver
-            android:name=".main.news.SaveNewsBroadcastReceiver"
+            android:name=".main.MyBroadcastReceiver"
             android:exported="false" />
 
         <provider

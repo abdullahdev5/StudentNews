@@ -40,11 +40,11 @@
 
     </application>
 
-<!--    <queries>
+    <!--<queries>
         &lt;!&ndash; which package we want to send the data &ndash;&gt;
         <package android:name="com.android.studentnews" />
         <intent>
-            <action android:name="com.android.studentnewsadmin.ACTION_NEWS_ADDED" />
+            <action android:name="ACTION_EVENT_UPLOAD" />
             <data android:mimeType="text/plain" />
         </intent>
     </queries>-->

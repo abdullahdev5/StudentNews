@@ -11,7 +11,7 @@ data class EventsBookingModel(
     val userAddress: String? = "",
     val userProfilePic: String? = "",
     val userProfilePicBgColor: Int? = 0,
-    val timestamp: Timestamp? = null
+//    val timestamp: Timestamp? = null
 ) {
     constructor() : this(
         userId = "",
@@ -22,6 +22,6 @@ data class EventsBookingModel(
         userAddress = "",
         userProfilePic = "",
         userProfilePicBgColor = 0,
-        timestamp = null
+//        timestamp = null
     )
 }

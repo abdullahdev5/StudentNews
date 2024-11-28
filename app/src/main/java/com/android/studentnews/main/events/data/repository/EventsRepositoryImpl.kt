@@ -1,29 +1,35 @@
 package com.android.studentnews.main.events.data.repository
 
-import androidx.compose.ui.util.fastJoinToString
+import androidx.work.BackoffPolicy
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequest
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.constants.FirestoreNodes
+import com.android.studentnews.main.events.EventsWorker
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.getField
-import com.google.firebase.firestore.toObject
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import okhttp3.internal.filterList
+import kotlinx.coroutines.tasks.await
+import java.time.Duration
 
 class EventsRepositoryImpl(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
+    private val workManager: WorkManager,
 ) : EventsRepository {
 
 
@@ -255,6 +261,71 @@ class EventsRepositoryImpl(
                 close()
             }
         }
+    }
+
+
+    override suspend fun getEventsUpdate(): Flow<EventsState<EventsModel?>> {
+
+        return callbackFlow {
+            eventsColRef
+                ?.orderBy("timestamp", Query.Direction.DESCENDING)
+                ?.addSnapshotListener { value, error ->
+                    if (error != null) {
+                        throw error
+                    }
+
+                    if (value != null) {
+                        for (document in value.documentChanges) {
+                            if (document.type == DocumentChange.Type.MODIFIED) {
+                                val event = document.document.toObject(EventsModel::class.java)
+                                trySend(EventsState.Success(event))
+                            }
+                        }
+                    }
+                }
+
+            awaitClose {
+                close()
+            }
+        }
+    }
+
+    override suspend fun getCurrentUserName(): String {
+
+        val currentUserName = userDocRef
+            ?.get()
+            ?.await()
+            ?.toObject(UserModel::class.java)
+            ?.registrationData
+            ?.name
+
+        return currentUserName ?: ""
+    }
+
+
+    override fun startEventWorker() {
+
+        val workRequest = PeriodicWorkRequest.Builder(
+            EventsWorker::class.java,
+            repeatInterval = Duration.ofDays(1),
+        )
+            .setBackoffCriteria(
+                backoffPolicy = BackoffPolicy.LINEAR,
+                duration = Duration.ofHours(4)
+            )
+            .build()
+
+        workManager
+            .enqueueUniquePeriodicWork(
+                "events_work",
+                ExistingPeriodicWorkPolicy.KEEP,
+                workRequest
+            )
+    }
+
+    override fun cancelEventsWorker() {
+        workManager
+            .cancelUniqueWork("events_work")
     }
 
 }
