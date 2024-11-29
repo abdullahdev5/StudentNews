@@ -22,6 +22,9 @@ import com.android.studentnews.MainActivity
 import com.android.studentnews.NotificationRelated
 import com.android.studentnews.R
 import com.android.studentnews.main.MyBroadcastReceiver
+import com.android.studentnews.main.events.DESCRIPTION
+import com.android.studentnews.main.events.TITLE
+import com.android.studentnews.main.events.URL_LIST
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -32,8 +35,12 @@ import kotlin.run
 
 const val NEWS_URI = "https://www.news.com"
 const val SAVE_NEWS_ACTION = "SAVE_NEWS_ACTION"
-const val CLICKED_INTENT_REQUEST_CODE = 0
-const val SAVED_INTENT_REQUEST_CODE = 1
+const val NEWS_ID = "newsId"
+const val CATEGORY = "category"
+const val LINK = "link"
+const val LINK_TITLE = "linkTitle"
+const val LIKES = "likes"
+const val NOTIFICATION_ID = "notification_id"
 
 
 class NewsWorker(
@@ -113,15 +120,15 @@ class NewsWorker(
                     MyBroadcastReceiver::class.java,
                 ).apply {
                     action = SAVE_NEWS_ACTION
-                    putExtra("title", title)
-                    putExtra("description", description)
-                    putExtra("newsId", newsId)
-                    putExtra("category", category)
-                    putExtra("link", link)
-                    putExtra("link_title", linkTitle)
-                    putExtra("url_list", serializedUrlList)
-                    putStringArrayListExtra("likes", likes)
-                    putExtra("notification_id", notificationId)
+                    putExtra(TITLE, title)
+                    putExtra(DESCRIPTION, description)
+                    putExtra(NEWS_ID, newsId)
+                    putExtra(CATEGORY, category)
+                    putExtra(LINK, link)
+                    putExtra(LINK_TITLE, linkTitle)
+                    putExtra(URL_LIST, serializedUrlList)
+                    putStringArrayListExtra(LIKES, likes)
+                    putExtra(NOTIFICATION_ID, notificationId)
                 }
 
                 val savedPendingIntent: PendingIntent =

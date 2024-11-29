@@ -13,6 +13,11 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -24,6 +29,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -72,6 +78,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBarItem
@@ -83,6 +90,7 @@ import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -127,6 +135,9 @@ import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
+import com.android.studentnews.core.data.snackbar_controller.SnackBarController
+import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
+import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
@@ -194,7 +205,8 @@ fun NewsScreen(
     val categoryPagerState = rememberPagerState(
         pageCount = {
             categoriesList.value.size
-        }
+        },
+        initialPage = 0
     )
 
     var selectedNavBarIndex by remember { mutableIntStateOf(0) }
@@ -293,7 +305,7 @@ fun NewsScreen(
                         },
                         actions = {
                             IconButton(onClick = {
-                                isMoreDropDownMenuItemOpen = true
+                                isMoreDropDownMenuItemOpen = !isMoreDropDownMenuItemOpen
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
@@ -341,43 +353,50 @@ fun NewsScreen(
                 },
                 bottomBar = {
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .height(50.dp),
+                    AnimatedVisibility(
+                        visible = lazyListState.lastScrolledBackward
+                                || lazyListState.firstVisibleItemIndex == 0,
+                        enter = fadeIn(),
+                        exit = fadeOut()
                     ) {
-                        HorizontalDivider(color = Gray)
-
-                        BottomAppBar(
-                            containerColor = Color.Transparent,
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .navigationBarsPadding()
+                                .height(50.dp),
                         ) {
-                            navBarList.forEachIndexed { index, item ->
-                                NavigationBarItem(
-                                    icon = {
-                                        Icon(
-                                            imageVector = if (selectedNavBarIndex == index) item.selectedIcon else item.unselectedIcon,
-                                            contentDescription = null
+                            HorizontalDivider(color = Gray)
+
+                            BottomAppBar(
+                                containerColor = Color.Transparent,
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                            ) {
+                                navBarList.forEachIndexed { index, item ->
+                                    NavigationBarItem(
+                                        icon = {
+                                            Icon(
+                                                imageVector = if (selectedNavBarIndex == index) item.selectedIcon else item.unselectedIcon,
+                                                contentDescription = null
+                                            )
+                                        },
+                                        selected = index == selectedNavBarIndex,
+                                        onClick = {
+                                            selectedNavBarIndex = index
+                                            if (selectedNavBarIndex == 1) {
+                                                navHostController.navigate(MainDestination.SEARCH_SCREEN)
+                                            }
+                                            if (selectedNavBarIndex == 2) {
+                                                navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
+                                            }
+                                        },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            indicatorColor = Color.Transparent,
+                                            selectedIconColor = if (isSystemInDarkTheme()) White else Black,
+                                            unselectedIconColor = if (isSystemInDarkTheme()) White else Black
                                         )
-                                    },
-                                    selected = index == selectedNavBarIndex,
-                                    onClick = {
-                                        selectedNavBarIndex = index
-                                        if (selectedNavBarIndex == 1) {
-                                            navHostController.navigate(MainDestination.SEARCH_SCREEN)
-                                        }
-                                        if (selectedNavBarIndex == 2) {
-                                            navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
-                                        }
-                                    },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        indicatorColor = Color.Transparent,
-                                        selectedIconColor = if (isSystemInDarkTheme()) White else Black,
-                                        unselectedIconColor = if (isSystemInDarkTheme()) White else Black
                                     )
-                                )
+                                }
                             }
                         }
                     }
@@ -502,7 +521,11 @@ fun NewsScreen(
                                 )
                             }
 
-                            AnimatedVisibility(tabPagerState.currentPage == 0) {
+                            AnimatedVisibility(
+                                tabPagerState.currentPage == 0
+                                        && (lazyListState.lastScrolledBackward
+                                        || lazyListState.firstVisibleItemScrollOffset == 0)
+                            ) {
                                 Text(
                                     text = if (newsCategoryStatus.isNotEmpty())
                                         newsCategoryStatus else "For You",
@@ -1249,14 +1272,16 @@ fun MoreDropDownMenu(
         onDismissRequest = onDismiss,
         properties = PopupProperties(
             focusable = false,
+            dismissOnClickOutside = true,
+            dismissOnBackPress = true
         ),
         modifier = Modifier
-            .padding(ExposedDropdownMenuDefaults.ItemContentPadding)
             .background(color = if (isSystemInDarkTheme()) DarkColor else White)
             .border(
                 width = 1.dp,
                 color = if (isSystemInDarkTheme()) White else Black,
-            )
+                shape = RoundedCornerShape(5.dp)
+            ),
     ) {
         // Saved Item
         DropdownMenuItem(
@@ -1266,7 +1291,14 @@ fun MoreDropDownMenu(
             onClick = {
                 onSavedClick.invoke()
                 onDismiss.invoke()
-            }
+            },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.BookmarkBorder,
+                    contentDescription = "Icon fro Saved"
+                )
+            },
+            contentPadding = PaddingValues(10.dp),
         )
         // Liked Item
         DropdownMenuItem(
@@ -1276,7 +1308,14 @@ fun MoreDropDownMenu(
             onClick = {
                 onLikedClick.invoke()
                 onDismiss.invoke()
-            }
+            },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Default.FavoriteBorder,
+                    contentDescription = "Icon fro Liked"
+                )
+            },
+            contentPadding = PaddingValues(10.dp)
         )
 
         // Registered Events Item
@@ -1287,7 +1326,14 @@ fun MoreDropDownMenu(
             onClick = {
                 onRegisteredEventsClick.invoke()
                 onDismiss.invoke()
-            }
+            },
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Outlined.Book,
+                    contentDescription = "Icon fro Registered Events"
+                )
+            },
+            contentPadding = PaddingValues(5.dp)
         )
     }
 }

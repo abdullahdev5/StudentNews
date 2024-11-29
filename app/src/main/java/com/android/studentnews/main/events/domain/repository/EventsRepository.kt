@@ -20,7 +20,7 @@ interface EventsRepository {
 
     fun getEventById(eventId: String): Flow<EventsState<EventsModel?>>
 
-    fun onEventBook(
+    fun onEventRegister(
         eventId: String,
         eventsBookingModel: EventsBookingModel
     ): Flow<EventsState<String>>

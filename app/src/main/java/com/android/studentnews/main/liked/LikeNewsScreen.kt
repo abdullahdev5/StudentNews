@@ -16,21 +16,27 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.android.studentnews.core.data.snackbar_controller.SnackBarController
+import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
+import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.NewsItem
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -42,6 +48,7 @@ fun LikedNewsScreen(
 ) {
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val likedNewsList by likedNewsViewModel.likedNewsList.collectAsStateWithLifecycle()
 

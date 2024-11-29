@@ -46,6 +46,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -78,6 +79,9 @@ import androidx.media3.ui.PlayerView
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import com.android.studentnews.core.data.snackbar_controller.SnackBarController
+import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
+import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.main.news.domain.destination.NewsDestination
@@ -91,6 +95,7 @@ import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @UnstableApi
@@ -104,6 +109,7 @@ fun NewsDetailScreen(
 ) {
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
     val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
@@ -476,7 +482,6 @@ fun NewsDetailScreen(
                                 isSaved = !isSaved
 
                                 newsById?.let {
-
                                     val news = NewsModel(
                                         newsId = it.newsId,
                                         title = it.title,
@@ -526,6 +531,7 @@ fun NewsDetailScreen(
                             // Like Icon
                             IconButton(
                                 onClick = {
+
                                     isLiked = !isLiked
 
                                     if (isLiked) {

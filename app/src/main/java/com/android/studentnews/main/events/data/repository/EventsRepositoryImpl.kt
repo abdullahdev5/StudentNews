@@ -91,7 +91,7 @@ class EventsRepositoryImpl(
         }
     }
 
-    override fun onEventBook(
+    override fun onEventRegister(
         eventId: String,
         eventsBookingModel: EventsBookingModel,
     ): Flow<EventsState<String>> {
@@ -102,7 +102,7 @@ class EventsRepositoryImpl(
                 ?.document(eventId)
                 ?.update("bookings", FieldValue.arrayUnion(eventsBookingModel))
                 ?.addOnSuccessListener {
-                    trySend(EventsState.Success("Event Booked Successfully"))
+                    trySend(EventsState.Success("Event Registered Successfully"))
                 }
                 ?.addOnFailureListener { error ->
                     trySend(EventsState.Failed(error))

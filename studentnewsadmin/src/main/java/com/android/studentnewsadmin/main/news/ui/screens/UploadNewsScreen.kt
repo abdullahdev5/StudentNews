@@ -118,7 +118,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun UploadNewsScreen(
     navHostController: NavHostController,
-    newsViewModel: NewsViewModel
+    newsViewModel: NewsViewModel,
 ) {
 
     val scope = rememberCoroutineScope()
@@ -233,34 +233,26 @@ fun UploadNewsScreen(
         bottomBar = {
             Button(
                 onClick = {
-                    if (isInternetAvailable(context)) {
-                        scope.launch {
-                            newsAddingStatus = Status.Loading
-                            val stringArray =
-                                uriList.map { it.toString() }.toTypedArray()
-                            newsViewModel
-                                .startNewsAddingWorker(
-                                    title = title,
-                                    description = description,
-                                    stringArray = stringArray,
-                                    category = category,
-                                    link = link,
-                                    linkTitle = linkTitle
-                                )
-                            delay(2000L)
-                            newsAddingStatus = Status.Success
-                            navHostController.navigate(Destination.MAIN_SCREEN) {
-                                popUpTo(Destination.UPLOAD_NEWS_SCREEN) {
-                                    inclusive = true
-                                }
+                    scope.launch {
+                        newsAddingStatus = Status.Loading
+                        val stringArray =
+                            uriList.map { it.toString() }.toTypedArray()
+                        newsViewModel
+                            .startNewsAddingWorker(
+                                title = title,
+                                description = description,
+                                stringArray = stringArray,
+                                category = category,
+                                link = link,
+                                linkTitle = linkTitle
+                            )
+                        delay(2000L)
+                        newsAddingStatus = Status.Success
+                        navHostController.navigate(Destination.MAIN_SCREEN) {
+                            popUpTo(Destination.UPLOAD_NEWS_SCREEN) {
+                                inclusive = true
                             }
                         }
-                    } else {
-                        Toast.makeText(
-                            context,
-                            "No Internet Connection!",
-                            Toast.LENGTH_SHORT
-                        ).show()
                     }
                 },
                 enabled = title.isNotEmpty() && description.isNotEmpty()
@@ -790,7 +782,7 @@ fun LinkBottomSheet(
     linkTitle: String,
     context: Context,
     onSave: (String, String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
 
     val focusRequester = remember { FocusRequester() }

@@ -239,7 +239,9 @@ fun SearchScreen(
                                                         )
                                                     } else {
                                                         searchViewModel
-                                                            .getNewsListByCategory(currentSelectedCategory!!)
+                                                            .getNewsListByCategory(
+                                                                currentSelectedCategory!!
+                                                            )
                                                     }
                                                 }
                                         ) {

@@ -1,7 +1,6 @@
 package com.android.studentnews.main.events.ui.viewModels
 
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -143,13 +142,13 @@ class EventsViewModel(
         }
     }
 
-    fun onEventBook(
+    fun onEventRegister(
         eventId: String,
         eventsBookingModel: EventsBookingModel,
     ) {
         viewModelScope.launch {
             eventsRepository
-                .onEventBook(eventId, eventsBookingModel)
+                .onEventRegister(eventId, eventsBookingModel)
                 .collectLatest { result ->
                     when (result) {
                         is EventsState.Success -> {

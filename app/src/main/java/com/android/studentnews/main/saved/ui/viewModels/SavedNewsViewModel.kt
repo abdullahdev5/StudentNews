@@ -1,5 +1,6 @@
 package com.android.studentnews.main.settings.saved.ui.viewModels
 
+import android.net.ipsec.ike.exceptions.IkeInternalException
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
@@ -28,6 +29,9 @@ class SavedNewsViewModel(
     var savedNewsStatus by mutableStateOf("")
         private set
 
+    var newsRemoveFromSaveStatus by mutableStateOf("")
+        private set
+
 
     init {
         getSavedNewsList()
@@ -36,11 +40,13 @@ class SavedNewsViewModel(
 
     fun onNewsRemoveFromSave(news: NewsModel) {
         viewModelScope.launch {
+            newsRemoveFromSaveStatus = Status.Loading
             newsRepository
                 .onNewsRemoveFromSave(news)
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Success -> {
+                            newsRemoveFromSaveStatus = Status.SUCCESS
                             SnackBarController
                                 .sendEvent(
                                     SnackBarEvents(
@@ -57,6 +63,7 @@ class SavedNewsViewModel(
                         }
 
                         is NewsState.Failed -> {
+                            newsRemoveFromSaveStatus = Status.FAILED
                             SnackBarController
                                 .sendEvent(
                                     SnackBarEvents(

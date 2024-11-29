@@ -67,7 +67,9 @@ import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsView
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
+import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
+import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
@@ -181,24 +183,14 @@ fun SavedEventsItem(
                         .background(color = Black)
                 ) {
                     AnimatedContent(
-                        targetState = (offsetX.value).dp > maxWidth,
-                        label = "start_align",
+                        targetState = (offsetX.value).dp > maxWidth
+                                || (-offsetX.value).dp > maxWidth,
+                        label = "delete_from_save",
                         modifier = Modifier
-                            .align(Alignment.CenterStart),
-                    ) { targetState ->
-                        Icon(
-                            imageVector = if (targetState)
-                                Icons.Default.Delete else Icons.Outlined.Delete,
-                            contentDescription = "Icon for Remove Item from Saved List",
-                            tint = if (targetState) Red else White,
-                        )
-                    }
-
-                    AnimatedContent(
-                        targetState = (-offsetX.value).dp > maxWidth,
-                        label = "end_align",
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd),
+                            .align(
+                                if ((offsetX.value.toString()).startsWith("-"))
+                                    Alignment.CenterEnd else Alignment.CenterStart
+                            ),
                     ) { targetState ->
                         Icon(
                             imageVector = if (targetState)
@@ -226,7 +218,15 @@ fun SavedEventsItem(
                             onDragEnd = {
                                 if ((offsetX.value).dp > maxWidth || (-offsetX.value).dp > maxWidth) {
                                     item?.let { thisItem ->
-                                        onEventRemoveFromSaveList.invoke(thisItem)
+                                        scope.launch {
+                                            if ((offsetX.value.toString()).startsWith("-")) {
+                                                offsetX.animateTo(offsetX.value + -500f)
+                                            } else {
+                                                offsetX.animateTo(offsetX.value + 500f)
+                                            }
+                                            delay(100)
+                                            onEventRemoveFromSaveList.invoke(thisItem)
+                                        }
                                     }
                                 } else {
                                     isDragging = false
@@ -245,7 +245,13 @@ fun SavedEventsItem(
                             }
                         )
                     }
-                    .background(color = if (isSystemInDarkTheme()) DarkColor else White)
+                    .background(
+                        color = if (isDragging) {
+                            if (isSystemInDarkTheme()) DarkGray else LightGray
+                        } else {
+                            if (isSystemInDarkTheme()) DarkColor else White
+                        }
+                    )
                     .onGloballyPositioned { coordinates ->
                         itemHeight = with(density) { coordinates.size.height.toDp() }
                     },
@@ -360,6 +366,17 @@ fun SavedEventsItem(
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
+
+                        // Register or Not or Not
+                        var isRegistered = item?.bookings?.map {
+                            it.userName
+                        }?.contains("Abdullah") ?: false
+
+                        Row {
+                            Text(text = "isRegistered: ")
+                            Text(text = if (isRegistered) "Yes" else "No")
+                        }
+
                     }
                 }
 

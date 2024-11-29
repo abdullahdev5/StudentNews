@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,6 +49,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -65,6 +67,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -107,6 +110,7 @@ import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
 import com.android.studentnews.core.domain.common.formatTimeToString
+import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.core.ui.common.LoadingDialog
@@ -128,7 +132,7 @@ fun EventsDetailScreen(
     navHostController: NavHostController,
     eventsViewModel: EventsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
-    sharedTransitionScope: SharedTransitionScope
+    sharedTransitionScope: SharedTransitionScope,
 ) {
     LaunchedEffect(Unit) {
         eventsViewModel.getEventById(eventId)
@@ -218,7 +222,6 @@ fun EventsDetailScreen(
                         isSaved = !isSaved
 
                         eventById?.let {
-
                             val event = EventsModel(
                                 title = it.title,
                                 description = it.description,
@@ -644,7 +647,7 @@ fun EventsDetailScreen(
 //                        timestamp = Timestamp.now()
                     )
 
-                    eventsViewModel.onEventBook(
+                    eventsViewModel.onEventRegister(
                         eventId = eventId,
                         eventsBookingModel = bookingEvent,
                     )
@@ -706,14 +709,18 @@ fun DateContainer(
                     )
                 )
 
-                Text(
-                    text = "$day $monthName $year",
-                    style = TextStyle(
-                        fontSize = FontSize.SMALL.sp
-                    ),
+                AnimatedVisibility(
+                    visible = !isExpanded,
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                )
+                ) {
+                    Text(
+                        text = "$day $monthName $year",
+                        style = TextStyle(
+                            fontSize = FontSize.SMALL.sp
+                        )
+                    )
+                }
             }
 
             Box(
@@ -844,14 +851,18 @@ fun TimeContainer(
                         fontWeight = FontWeight.Bold
                     )
                 )
-                Text(
-                    text = time,
-                    style = TextStyle(
-                        fontSize = FontSize.SMALL.sp
-                    ),
+                AnimatedVisibility(
+                    visible = !isExpanded,
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                )
+                ) {
+                    Text(
+                        text = time,
+                        style = TextStyle(
+                            fontSize = FontSize.SMALL.sp
+                        )
+                    )
+                }
             }
 
             Box(
@@ -865,7 +876,7 @@ fun TimeContainer(
         AnimatedVisibility(
             visible = isExpanded,
             modifier = Modifier
-                .padding(all = 20.dp)
+                .padding(all = 5.dp)
                 .align(Alignment.CenterHorizontally),
         ) {
             Row(
@@ -977,6 +988,12 @@ fun EventRegisterSheet(
     ModalBottomSheet(
         sheetState = sheetState,
         onDismissRequest = onDismiss,
+        shape = RectangleShape,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = Green
+            )
+        }
     ) {
         Column(
             modifier = Modifier

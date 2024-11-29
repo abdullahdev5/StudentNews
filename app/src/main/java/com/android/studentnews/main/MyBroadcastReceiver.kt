@@ -23,6 +23,12 @@ import com.android.studentnews.main.events.TITLE
 import com.android.studentnews.main.events.URL_LIST
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.events.domain.repository.EventsRepository
+import com.android.studentnews.main.news.CATEGORY
+import com.android.studentnews.main.news.LIKES
+import com.android.studentnews.main.news.LINK
+import com.android.studentnews.main.news.LINK_TITLE
+import com.android.studentnews.main.news.NEWS_ID
+import com.android.studentnews.main.news.NOTIFICATION_ID
 import com.android.studentnews.main.news.SAVE_NEWS_ACTION
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.model.UrlList
@@ -45,27 +51,27 @@ import kotlin.text.toLong
 class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
 
 
-    private val notificationManager: NotificationManagerCompat by inject()
-    private val scope = CoroutineScope(Dispatchers.Default)
-
-
     override fun onReceive(context: Context?, intent: Intent?) {
 
         if (intent?.action == SAVE_NEWS_ACTION) {
 
+            val notificationManager: NotificationManagerCompat by inject()
             val newsRepository: NewsRepository by inject()
+            val scope = CoroutineScope(Dispatchers.Default)
 
-            val notificationId = intent.getIntExtra("notification_id", 1)
+
+
+            val notificationId = intent.getIntExtra(NOTIFICATION_ID, 1)
             notificationManager.cancel(notificationId)
 
-            val title = intent.getStringExtra("title") ?: ""
-            val description = intent.getStringExtra("description") ?: ""
-            val newsId = intent.getStringExtra("newsId") ?: ""
-            val category = intent.getStringExtra("category") ?: ""
-            val link = intent.getStringExtra("link") ?: ""
-            val linkTitle = intent.getStringExtra("link_title") ?: ""
-            val serializedUrlList = intent.getStringExtra("url_list")
-            val stringArray = intent.getStringArrayListExtra("likes")
+            val title = intent.getStringExtra(TITLE) ?: ""
+            val description = intent.getStringExtra(DESCRIPTION) ?: ""
+            val newsId = intent.getStringExtra(NEWS_ID) ?: ""
+            val category = intent.getStringExtra(CATEGORY) ?: ""
+            val link = intent.getStringExtra(LINK) ?: ""
+            val linkTitle = intent.getStringExtra(LINK_TITLE) ?: ""
+            val serializedUrlList = intent.getStringExtra(URL_LIST)
+            val stringArray = intent.getStringArrayListExtra(LIKES)
 
 
             val likes = stringArray?.map { it.toString() }
@@ -114,10 +120,13 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
 
         if (intent?.action == SAVED_EVENT_ACTION) {
 
+            val notificationManager: NotificationManagerCompat by inject()
             val eventsRepository: EventsRepository by inject()
+            val scope = CoroutineScope(Dispatchers.Default)
 
-//            val notificationId = intent.getIntExtra("notification_id", 1)
-//            notificationManager.cancel(notificationId)
+
+            val notificationId = intent.getIntExtra(NOTIFICATION_ID, 1)
+            notificationManager.cancel(notificationId)
 
             val title = intent.getStringExtra(TITLE) ?: ""
             val description = intent.getStringExtra(DESCRIPTION) ?: ""

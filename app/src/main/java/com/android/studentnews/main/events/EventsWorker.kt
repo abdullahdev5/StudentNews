@@ -28,6 +28,7 @@ import com.android.studentnews.core.domain.common.formatDateToYear
 import com.android.studentnews.core.domain.common.formatTimeToString
 import com.android.studentnews.main.MyBroadcastReceiver
 import com.android.studentnews.main.events.domain.repository.EventsRepository
+import com.android.studentnews.main.news.NOTIFICATION_ID
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
@@ -39,6 +40,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.fold
 import kotlinx.coroutines.flow.switchMap
 import kotlin.coroutines.CoroutineContext
+import kotlin.random.Random
 
 
 const val TITLE = "title"
@@ -60,8 +62,6 @@ const val IS_AVAILABLE = "isAvailable"
 
 const val SAVED_EVENT_ACTION = "SAVED_EVENT_ACTION"
 const val EVENTS_URI = "https://www.events.com/"
-const val CLICKED_REQUEST_CODE = 2
-const val SAVED_CLICKED_REQUEST_CODE = 3
 
 
 class EventsWorker(
@@ -103,6 +103,12 @@ class EventsWorker(
             .target(
                 onSuccess = { drawable ->
 
+                    val bitmap = drawable.toBitmap()
+
+                    val notificationId = Random.nextInt()
+                    val clickedIntentRequestId = Random.nextInt()
+                    val savedIntentRequestId = Random.nextInt()
+
                     val flag = PendingIntent.FLAG_MUTABLE
                     val savedFlag =
                         PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_CANCEL_CURRENT
@@ -143,24 +149,23 @@ class EventsWorker(
                         putExtra(URL_LIST, serializedUrlList)
                         putExtra(BOOKINGS, serializedBookingList)
                         putExtra(IS_AVAILABLE, event?.isAvailable ?: true)
+                        putExtra(NOTIFICATION_ID, notificationId)
                     }
 
                     val clickedPendingIntent = PendingIntent.getActivity(
                         context,
-                        CLICKED_REQUEST_CODE,
+                        clickedIntentRequestId,
                         clickedIntent,
                         flag
                     )
 
                     val savedPendingIntent = PendingIntent.getBroadcast(
                         context,
-                        SAVED_CLICKED_REQUEST_CODE,
+                        savedIntentRequestId,
                         savedClickedIntent,
                         savedFlag
                     )
 
-
-                    val bitmap = drawable.toBitmap()
 
                     // Starting
                     val startingDay = formatDateToDay(event?.startingDate ?: 0L)
@@ -233,7 +238,7 @@ class EventsWorker(
                         // for ActivityCompat#requestPermissions for more details.
                     }
                     notificationManager.notify(
-                        NotificationRelated.EVENTS_NOTIFICATION_ID,
+                        notificationId,
                         notification
                     )
 
