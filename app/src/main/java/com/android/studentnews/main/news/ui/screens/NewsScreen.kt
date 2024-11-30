@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -78,6 +79,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -94,6 +96,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -129,11 +132,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.createGraph
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
+import com.android.studentnews.auth.domain.destination.AuthDestination
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
@@ -415,9 +421,9 @@ fun NewsScreen(
                             .verticalScroll(scrollState)
                     ) {
 
-                        AnimatedVisibility(
+                        if(
                             lazyListState.firstVisibleItemIndex < 1 &&
-                                    tabPagerState.currentPage == 0,
+                                    tabPagerState.currentPage == 0
                         ) {
                             HorizontalPager(
                                 state = categoryPagerState,
@@ -434,7 +440,7 @@ fun NewsScreen(
                                     )
                                 ),
                                 modifier = Modifier
-                                    .height(if (!isLandScape) 270.dp else 80.dp)
+                                    .height(if (!isLandScape) 250.dp else 80.dp)
                             ) { pagerIndex ->
                                 val item = categoriesList.value[pagerIndex]
                                 CategoriesListPagerItem(
@@ -455,10 +461,10 @@ fun NewsScreen(
                         }
 
                         Column {
-
                             TabRow(
                                 selectedTabIndex = tabPagerState.currentPage,
                             ) {
+
                                 // News
                                 Tab(
                                     selected = tabPagerState.currentPage == 0,
@@ -1333,7 +1339,7 @@ fun MoreDropDownMenu(
                     contentDescription = "Icon fro Registered Events"
                 )
             },
-            contentPadding = PaddingValues(5.dp)
+            contentPadding = PaddingValues(10.dp)
         )
     }
 }

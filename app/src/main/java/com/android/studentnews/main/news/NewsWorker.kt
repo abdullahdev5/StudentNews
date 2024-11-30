@@ -90,15 +90,17 @@ class NewsWorker(
             MainActivity::class.java
         )
 
-        val clickedPendingIntent: PendingIntent =
-            TaskStackBuilder.create(context).run {
-                addNextIntentWithParentStack(clickedIntent)
-                getPendingIntent(clickedIntentRequestCode, flag) as PendingIntent
-            }
+        val clickedPendingIntent = PendingIntent.getActivity(
+            context,
+            clickedIntentRequestCode,
+            clickedIntent,
+            flag
+        )
 
         val serializedUrlList = news?.urlList?.fastJoinToString(",") {
             "${it.url};${it.contentType};${it.sizeBytes};${it.lastPathSegment}"
         }
+
         val title = news?.title ?: ""
         val description = news?.description
         val newsId = news?.newsId ?: ""
@@ -106,7 +108,7 @@ class NewsWorker(
         val link = news?.link
         val linkTitle = news?.linkTitle
         val imageUrl = getUrlOfImageNotVideo(news?.urlList ?: emptyList())
-        val likes = ArrayList(news?.likes ?: emptyList())
+        val likes = news?.likes?.map { it }?.toTypedArray() ?: emptyArray()
 
 
         val request = ImageRequest.Builder(context)
@@ -127,7 +129,7 @@ class NewsWorker(
                     putExtra(LINK, link)
                     putExtra(LINK_TITLE, linkTitle)
                     putExtra(URL_LIST, serializedUrlList)
-                    putStringArrayListExtra(LIKES, likes)
+                    putExtra(LIKES, likes)
                     putExtra(NOTIFICATION_ID, notificationId)
                 }
 

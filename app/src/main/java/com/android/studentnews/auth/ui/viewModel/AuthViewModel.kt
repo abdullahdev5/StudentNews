@@ -1,5 +1,8 @@
 package com.android.studentnews.auth.ui.viewModel
 
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import com.android.studentnews.auth.domain.models.RegistrationData
 import com.android.studentnews.auth.domain.repository.AuthRepository

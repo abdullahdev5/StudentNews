@@ -2,6 +2,7 @@
 
 package com.android.studentnews.main.events.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -118,6 +119,7 @@ import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
+import com.android.studentnews.navigation.SubGraph
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
@@ -129,6 +131,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun EventsDetailScreen(
     eventId: String,
+    isComeForRegistration: Boolean = false,
     navHostController: NavHostController,
     eventsViewModel: EventsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -142,7 +145,9 @@ fun EventsDetailScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val registerEventSheetState = rememberModalBottomSheetState()
+    val registerEventSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+    )
 
     val eventById by eventsViewModel.eventById.collectAsStateWithLifecycle()
     val currentUser by eventsViewModel.currentUser.collectAsStateWithLifecycle()
@@ -172,6 +177,20 @@ fun EventsDetailScreen(
     var isEndingTimeExpanded by rememberSaveable { mutableStateOf(true) }
 
     var isRegisterEventSheetVisible by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(currentUser) {
+        if (isComeForRegistration) {
+            currentUser?.let {
+                if (!userIdsListFromBookings.contains(currentUser?.uid.toString())) {
+                    scope.launch {
+                        registerEventSheetState.show()
+                    }.invokeOnCompletion {
+                        isRegisterEventSheetVisible = true
+                    }
+                }
+            }
+        }
+    }
 
 
     Scaffold(

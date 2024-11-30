@@ -7,7 +7,10 @@ sealed class EventsDestination {
     data object EVENTS_SCREEN : EventsDestination()
 
     @Serializable
-    data class EVENTS_DETAIL_SCREEN(val eventId: String) : EventsDestination()
+    data class EVENTS_DETAIL_SCREEN(
+        val eventId: String,
+        val isComeForRegistration: Boolean = false
+    ) : EventsDestination()
 
     @Serializable
     data object REGISTERED_EVENTS_SCREEN: EventsDestination()

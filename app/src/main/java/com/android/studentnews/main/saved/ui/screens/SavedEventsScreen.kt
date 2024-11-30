@@ -367,22 +367,16 @@ fun SavedEventsItem(
                             )
                         }
 
-                        // Register or Not or Not
-                        var isRegistered = item?.bookings?.map {
-                            it.userName
-                        }?.contains("Abdullah") ?: false
-
-                        Row {
-                            Text(text = "isRegistered: ")
-                            Text(text = if (isRegistered) "Yes" else "No")
-                        }
-
                     }
                 }
 
             }
         }
 
-        HorizontalDivider(modifier = Modifier.fillMaxWidth())
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp)
+        )
     }
 }

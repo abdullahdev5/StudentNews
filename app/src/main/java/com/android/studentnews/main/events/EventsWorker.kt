@@ -62,6 +62,7 @@ const val IS_AVAILABLE = "isAvailable"
 
 const val SAVED_EVENT_ACTION = "SAVED_EVENT_ACTION"
 const val EVENTS_URI = "https://www.events.com/"
+const val EVENTS_REGISTRATION_URI = "https://www.events_registration.com/"
 
 
 class EventsWorker(
@@ -108,6 +109,7 @@ class EventsWorker(
                     val notificationId = Random.nextInt()
                     val clickedIntentRequestId = Random.nextInt()
                     val savedIntentRequestId = Random.nextInt()
+                    val registrationIntentRequestId = Random.nextInt()
 
                     val flag = PendingIntent.FLAG_MUTABLE
                     val savedFlag =
@@ -152,6 +154,15 @@ class EventsWorker(
                         putExtra(NOTIFICATION_ID, notificationId)
                     }
 
+
+                    val registrationIntent = Intent(
+                        Intent.ACTION_VIEW,
+                        "$EVENTS_REGISTRATION_URI/eventId=${event?.eventId ?: ""}/isComeForRegistration=${true}".toUri(),
+                        context,
+                        MainActivity::class.java,
+                    )
+
+
                     val clickedPendingIntent = PendingIntent.getActivity(
                         context,
                         clickedIntentRequestId,
@@ -164,6 +175,13 @@ class EventsWorker(
                         savedIntentRequestId,
                         savedClickedIntent,
                         savedFlag
+                    )
+
+                    val registrationPendingIntent = PendingIntent.getActivity(
+                        context,
+                        registrationIntentRequestId,
+                        registrationIntent,
+                        flag
                     )
 
 
@@ -220,6 +238,20 @@ class EventsWorker(
                                         HtmlCompat.FROM_HTML_MODE_LEGACY
                                     ),
                                     savedPendingIntent
+                                )
+                            )
+                            .addAction(
+                                NotificationCompat.Action(
+                                    null,
+                                    HtmlCompat.fromHtml(
+                                        "<font color=\"" + ContextCompat.getColor(
+                                            context,
+                                            R.color.holo_green_light
+                                        )
+                                                + "\">" + "Register" + "</font>",
+                                        HtmlCompat.FROM_HTML_MODE_LEGACY
+                                    ),
+                                    registrationPendingIntent,
                                 )
                             )
                             .build()

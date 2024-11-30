@@ -5,10 +5,14 @@ package com.android.studentnews.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
+import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavigatorProvider
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
@@ -23,6 +27,7 @@ import com.android.studentnews.auth.ui.RegistrationFormScreen
 import com.android.studentnews.auth.ui.viewModel.AuthViewModel
 import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
+import com.android.studentnews.main.events.EVENTS_REGISTRATION_URI
 import com.android.studentnews.main.events.EVENTS_URI
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.settings.registered_events.RegisteredEventsScreen
@@ -49,6 +54,7 @@ import com.android.studentnews.main.settings.saved.ui.screens.SavedScreen
 import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.ui.NewsScreen
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
+import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import org.koin.androidx.compose.koinViewModel
 import kotlin.reflect.typeOf
 import kotlin.to
@@ -163,6 +169,7 @@ fun NavigationGraph(
                     }
                 }
 
+                // EVents Graph
                 navigation<SubGraph.EVENTS>(
                     startDestination = EventsDestination.EVENTS_SCREEN
                 ) {
@@ -173,7 +180,9 @@ fun NavigationGraph(
                             navHostController = navHostController,
                             eventsViewModel = eventsViewModel,
                             animatedVisibilityScope = this,
-                            sharedTransitionScope = this@SharedTransitionLayout
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            modifier = Modifier
+                                .statusBarsPadding()
                         )
                     }
 
@@ -181,6 +190,9 @@ fun NavigationGraph(
                         deepLinks = listOf(
                             navDeepLink {
                                 uriPattern = "$EVENTS_URI/eventId={eventId}"
+                            },
+                            navDeepLink {
+                                uriPattern = "$EVENTS_REGISTRATION_URI/eventId={eventId}/isComeForRegistration={isComeForRegistration}"
                             }
                         )
                     ) {
@@ -190,6 +202,7 @@ fun NavigationGraph(
 
                         EventsDetailScreen(
                             eventId = arguments.eventId,
+                            isComeForRegistration = arguments.isComeForRegistration,
                             navHostController = navHostController,
                             eventsViewModel = eventsViewModel,
                             animatedVisibilityScope = this,

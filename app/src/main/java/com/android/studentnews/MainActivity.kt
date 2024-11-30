@@ -1,10 +1,13 @@
 package com.android.studentnews
 
 import android.annotation.SuppressLint
+import android.app.TaskStackBuilder
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
@@ -12,6 +15,7 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.SnackbarVisuals
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -24,16 +28,18 @@ import androidx.navigation.compose.rememberNavController
 import com.android.studentnews.auth.ui.viewModel.AuthViewModel
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.ui.ObserverAsEvents
+import com.android.studentnews.main.events.EVENT_ID
+import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.navigation.NavigationGraph
 import com.android.studentnews.ui.theme.StudentNewsTheme
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.getViewModel
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 class MainActivity : ComponentActivity() {
 
-    // private val newsReceiver = NewsReceiver()
 
     @UnstableApi
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,6 +49,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             StudentNewsTheme {
+                val navHostController = rememberNavController()
+                val authViewModel = getViewModel<AuthViewModel>()
 
                 val snackBarHostState = remember { SnackbarHostState() }
                 val scope = rememberCoroutineScope()
@@ -74,8 +82,6 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier
                         .fillMaxSize(),
                 ) {
-                    val navHostController = rememberNavController()
-                    val authViewModel = getViewModel<AuthViewModel>()
 
                     NavigationGraph(
                         navHostController = navHostController,

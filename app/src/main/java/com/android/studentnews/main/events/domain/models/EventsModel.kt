@@ -3,6 +3,7 @@ package com.android.studentnewsadmin.main.events.domain.models
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.news.domain.model.UrlList
 import com.google.firebase.Timestamp
+import kotlinx.serialization.SerialName
 
 data class EventsModel(
     val title: String? = "", // title

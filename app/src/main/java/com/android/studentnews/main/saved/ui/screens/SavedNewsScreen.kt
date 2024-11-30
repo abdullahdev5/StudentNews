@@ -339,7 +339,11 @@ fun SavedNewsItem(
                 }
             }
         }
-        HorizontalDivider(modifier = Modifier.fillMaxWidth())
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 20.dp, end = 20.dp)
+        )
     }
 
 }

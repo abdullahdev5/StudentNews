@@ -3,7 +3,6 @@ package com.android.studentnews.main
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.media.MediaTimestamp
 import androidx.core.app.NotificationManagerCompat
 import com.android.studentnews.main.events.ADDRESS
 import com.android.studentnews.main.events.BOOKINGS
@@ -70,17 +69,19 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
             val category = intent.getStringExtra(CATEGORY) ?: ""
             val link = intent.getStringExtra(LINK) ?: ""
             val linkTitle = intent.getStringExtra(LINK_TITLE) ?: ""
-            val serializedUrlList = intent.getStringExtra(URL_LIST)
-            val stringArray = intent.getStringArrayListExtra(LIKES)
+            val serializedUrlListInString = intent.getStringExtra(URL_LIST)
+            val likesStringArray = intent.getStringArrayExtra(LIKES) ?: emptyArray()
 
 
-            val likes = stringArray?.map { it.toString() }
-            val urlList = serializedUrlList
+            val urlList = serializedUrlListInString
                 ?.split(",")
                 ?.map {
                     val parts = it.split(";")
                     UrlList(parts[0], parts[1], parts[2].toLong(), parts[3])
                 } ?: emptyList()
+
+            val likes = likesStringArray.mapNotNull { it }
+
 
             try {
 

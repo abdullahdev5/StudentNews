@@ -264,7 +264,22 @@ class EventsRepositoryImpl(
     }
 
 
-    override suspend fun getEventsUpdate(): Flow<EventsState<EventsModel?>> {
+    override fun getEventsUpdate(): Flow<EventsState<EventsModel?>> {
+
+//        val event = eventsColRef
+//            ?.whereEqualTo("isAvailable", true)
+//            ?.orderBy("timestamp", Query.Direction.DESCENDING)
+//            ?.get()
+//            ?.await()
+//            ?.documents
+//            ?.firstOrNull()
+//            ?.toObject(EventsModel::class.java)
+//
+//        if (event == null) {
+//            throw Exception()
+//        }
+//
+//        return event
 
         return callbackFlow {
             eventsColRef
@@ -307,11 +322,11 @@ class EventsRepositoryImpl(
 
         val workRequest = PeriodicWorkRequest.Builder(
             EventsWorker::class.java,
-            repeatInterval = Duration.ofDays(1),
+            repeatInterval = Duration.ofMinutes(15),
         )
             .setBackoffCriteria(
                 backoffPolicy = BackoffPolicy.LINEAR,
-                duration = Duration.ofHours(4)
+                duration = Duration.ofMinutes(10)
             )
             .build()
 
