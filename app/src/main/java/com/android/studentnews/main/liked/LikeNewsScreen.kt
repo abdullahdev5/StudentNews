@@ -101,33 +101,6 @@ fun LikedNewsScreen(
                                     NewsDestination.NEWS_DETAIL_SCREEN(thisNewsId)
                                 )
                         },
-                        onSave = { thisNewsItem ->
-
-                            val news = NewsModel(
-                                newsId = thisNewsItem.newsId,
-                                title = thisNewsItem.title,
-                                description = thisNewsItem.description,
-                                category = thisNewsItem.category,
-                                timestamp = Timestamp.now(),
-                                link = thisNewsItem.link,
-                                linkTitle = thisNewsItem.linkTitle,
-                                urlList = thisNewsItem.urlList,
-                                shareCount = thisNewsItem.shareCount ?: 0,
-                                likes = thisNewsItem.likes
-                            )
-
-                            likedNewsViewModel.onNewsSave(
-                                news,
-                                onSee = { thisNewsId ->
-                                    navHostController.navigate(
-                                        NewsDestination.NEWS_DETAIL_SCREEN(
-                                            thisNewsId
-                                        )
-                                    )
-                                },
-                            )
-
-                        }
                     )
                 }
             }

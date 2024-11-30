@@ -61,45 +61,4 @@ class LikedNewsViewModel(
         }
     }
 
-
-
-    fun onNewsSave(
-        news: NewsModel,
-        onSee: (String) -> Unit,
-    ) {
-        viewModelScope.launch {
-            newsRepository
-                .onNewsSave(news)
-                .collectLatest { result ->
-                    when (result) {
-                        is NewsState.Success -> {
-                            SnackBarController
-                                .sendEvent(
-                                    SnackBarEvents(
-                                        message = result.data,
-                                        duration = SnackbarDuration.Long,
-                                        action = SnackBarActions(
-                                            label = "See",
-                                            action = {
-                                                onSee.invoke(news.newsId ?: "")
-                                            }
-                                        )
-                                    )
-                                )
-                        }
-                        is NewsState.Failed -> {
-                            SnackBarController
-                                .sendEvent(
-                                    SnackBarEvents(
-                                        message = result.error.localizedMessage ?: "",
-                                        duration = SnackbarDuration.Long
-                                    )
-                                )
-                        }
-                        else -> {}
-                    }
-                }
-        }
-    }
-
 }

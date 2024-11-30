@@ -421,9 +421,9 @@ fun NewsScreen(
                             .verticalScroll(scrollState)
                     ) {
 
-                        if(
+                        if (
                             lazyListState.firstVisibleItemIndex < 1 &&
-                                    tabPagerState.currentPage == 0
+                            tabPagerState.currentPage == 0
                         ) {
                             HorizontalPager(
                                 state = categoryPagerState,
@@ -602,31 +602,6 @@ fun NewsScreen(
                                                 context = context,
                                                 animatedVisibilityScope = animatedVisibilityScope,
                                                 sharedTransitionScope = sharedTransitionScope,
-                                                onSave = { it ->
-                                                    val news = NewsModel(
-                                                        newsId = it.newsId,
-                                                        title = it.title,
-                                                        description = it.description,
-                                                        category = it.category,
-                                                        timestamp = Timestamp.now(),
-                                                        link = it.link,
-                                                        linkTitle = it.linkTitle,
-                                                        urlList = it.urlList,
-                                                        shareCount = it.shareCount ?: 0,
-                                                        likes = it.likes
-                                                    )
-
-                                                    newsViewModel.onNewsSave(
-                                                        news,
-                                                        onSeeAction = { thisNewsId ->
-                                                            navHostController.navigate(
-                                                                NewsDestination.NEWS_DETAIL_SCREEN(
-                                                                    thisNewsId
-                                                                )
-                                                            )
-                                                        },
-                                                    )
-                                                }
                                             )
                                         }
 
@@ -731,7 +706,6 @@ fun NewsItem(
     item: NewsModel?,
     context: Context,
     onItemClick: (String) -> Unit,
-    onSave: (NewsModel) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
 ) {
@@ -768,40 +742,18 @@ fun NewsItem(
                         .padding(end = 5.dp)
                         .weight(1f)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    Column(
+                        modifier = Modifier
+                            .background(
+                                color = Black.copy(0.1f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
                     ) {
-
-                        IconButton(
-                            onClick = {
-                                item?.let {
-                                    onSave.invoke(it)
-                                }
-                            },
+                        Text(
+                            text = item?.category ?: "",
                             modifier = Modifier
-                                .width(20.dp)
-                                .height(20.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.BookmarkBorder,
-                                contentDescription = "Icon for unSaved News"
-                            )
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .background(
-                                    color = Black.copy(0.1f),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                        ) {
-                            Text(
-                                text = item?.category ?: "",
-                                modifier = Modifier
-                                    .padding(all = 2.dp)
-                            )
-                        }
+                                .padding(all = 2.dp)
+                        )
                     }
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(

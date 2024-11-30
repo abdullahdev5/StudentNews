@@ -83,48 +83,6 @@ class NewsViewModel(
         }
     }
 
-    fun onNewsSave(
-        news: NewsModel,
-        onSeeAction: (String) -> Unit,
-    ) {
-        viewModelScope.launch {
-            newsRepository
-                .onNewsSave(news)
-                .collectLatest { result ->
-                    when (result) {
-                        is NewsState.Success -> {
-                            SnackBarController
-                                .sendEvent(
-                                    SnackBarEvents(
-                                        message = result.data,
-                                        duration = SnackbarDuration.Long,
-                                        action = SnackBarActions(
-                                            label = "See",
-                                            action = {
-                                                onSeeAction.invoke(news.newsId.toString())
-                                            }
-                                        )
-                                    )
-                                )
-                        }
-
-                        is NewsState.Failed -> {
-                            SnackBarController
-                                .sendEvent(
-                                    SnackBarEvents(
-                                        message = result.error.localizedMessage
-                                            ?: "",
-                                        duration = SnackbarDuration.Long,
-                                    )
-                                )
-                        }
-
-                        else -> {}
-                    }
-                }
-        }
-    }
-
 
     // Category
     fun getNewsListByCategory(category: String) {

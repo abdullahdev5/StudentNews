@@ -309,29 +309,6 @@ fun SearchScreen(
                                 },
                                 animatedVisibilityScope = animatedVisibilityScope,
                                 sharedTransitionScope = sharedTransitionScope,
-                                onSave = { it ->
-                                    val news = NewsModel(
-                                        newsId = it.newsId,
-                                        title = it.title,
-                                        description = it.description,
-                                        category = it.category,
-                                        timestamp = Timestamp.now(),
-                                        link = it.link,
-                                        linkTitle = it.linkTitle,
-                                        urlList = it.urlList,
-                                        shareCount = it.shareCount ?: 0,
-                                        likes = it.likes
-                                    )
-
-                                    searchViewModel.onNewsSave(
-                                        news = news,
-                                        onSeeAction = { thisNewsId ->
-                                            navHostController.navigate(
-                                                NewsDestination.NEWS_DETAIL_SCREEN(thisNewsId)
-                                            )
-                                        }
-                                    )
-                                }
                             )
                         }
                     }
