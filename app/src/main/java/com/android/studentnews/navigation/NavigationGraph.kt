@@ -117,10 +117,12 @@ fun NavigationGraph(
                 ) {
                     composable<NewsDestination.NEWS_SCREEN>() {
                         val newsViewModel = koinViewModel<NewsViewModel>()
+                        val eventsViewModel = koinViewModel<EventsViewModel>()
 
                         NewsScreen(
                             navHostController = navHostController,
                             newsViewModel = newsViewModel,
+                            eventsViewModel = eventsViewModel,
                             animatedVisibilityScope = this,
                             sharedTransitionScope = this@SharedTransitionLayout
                         )
@@ -167,32 +169,18 @@ fun NavigationGraph(
                             navHostController = navHostController
                         )
                     }
-                }
 
-                // EVents Graph
-                navigation<SubGraph.EVENTS>(
-                    startDestination = EventsDestination.EVENTS_SCREEN
-                ) {
-                    composable<EventsDestination.EVENTS_SCREEN> {
-                        val eventsViewModel = koinViewModel<EventsViewModel>()
 
-                        EventsScreen(
-                            navHostController = navHostController,
-                            eventsViewModel = eventsViewModel,
-                            animatedVisibilityScope = this,
-                            sharedTransitionScope = this@SharedTransitionLayout,
-                            modifier = Modifier
-                                .statusBarsPadding()
-                        )
-                    }
-
+                    // Events Detail Screen
                     composable<EventsDestination.EVENTS_DETAIL_SCREEN>(
                         deepLinks = listOf(
                             navDeepLink {
                                 uriPattern = "$EVENTS_URI/eventId={eventId}"
                             },
                             navDeepLink {
-                                uriPattern = "$EVENTS_REGISTRATION_URI/eventId={eventId}/isComeForRegistration={isComeForRegistration}"
+                                uriPattern = "$EVENTS_REGISTRATION_URI/eventId={eventId}" +
+                                        "/isComeForRegistration={isComeForRegistration}" +
+                                        "/notificationId={notificationId}"
                             }
                         )
                     ) {
@@ -203,6 +191,7 @@ fun NavigationGraph(
                         EventsDetailScreen(
                             eventId = arguments.eventId,
                             isComeForRegistration = arguments.isComeForRegistration,
+                            notificationId = arguments.notificationId,
                             navHostController = navHostController,
                             eventsViewModel = eventsViewModel,
                             animatedVisibilityScope = this,
@@ -211,6 +200,52 @@ fun NavigationGraph(
                     }
 
                 }
+
+                // EVents Graph
+//                navigation<SubGraph.EVENTS>(
+//                    startDestination = EventsDestination.EVENTS_SCREEN
+//                ) {
+//                    composable<EventsDestination.EVENTS_SCREEN> {
+//                        val eventsViewModel = koinViewModel<EventsViewModel>()
+//
+//                        EventsScreen(
+//                            navHostController = navHostController,
+//                            eventsViewModel = eventsViewModel,
+//                            animatedVisibilityScope = this,
+//                            sharedTransitionScope = this@SharedTransitionLayout,
+//                            modifier = Modifier
+//                                .statusBarsPadding()
+//                        )
+//                    }
+//
+//                    composable<EventsDestination.EVENTS_DETAIL_SCREEN>(
+//                        deepLinks = listOf(
+//                            navDeepLink {
+//                                uriPattern = "$EVENTS_URI/eventId={eventId}"
+//                            },
+//                            navDeepLink {
+//                                uriPattern = "$EVENTS_REGISTRATION_URI/eventId={eventId}" +
+//                                        "/isComeForRegistration={isComeForRegistration}" +
+//                                        "/notificationId={notificationId}"
+//                            }
+//                        )
+//                    ) {
+//
+//                        val arguments = it.toRoute<EventsDestination.EVENTS_DETAIL_SCREEN>()
+//                        val eventsViewModel = koinViewModel<EventsViewModel>()
+//
+//                        EventsDetailScreen(
+//                            eventId = arguments.eventId,
+//                            isComeForRegistration = arguments.isComeForRegistration,
+//                            notificationId = arguments.notificationId,
+//                            navHostController = navHostController,
+//                            eventsViewModel = eventsViewModel,
+//                            animatedVisibilityScope = this,
+//                            sharedTransitionScope = this@SharedTransitionLayout
+//                        )
+//                    }
+//
+//                }
 
                 // Saved Graph
                 navigation<SubGraph.SAVED>(

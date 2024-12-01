@@ -5,7 +5,6 @@ package com.android.studentnews.news.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
-import android.widget.PopupMenu
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -13,18 +12,13 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideIn
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,7 +34,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -59,7 +52,6 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Book
-import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Newspaper
@@ -75,28 +67,19 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuItemColors
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailDefaults
-import androidx.compose.material3.NavigationRailItem
-import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
-import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -128,46 +111,38 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.createGraph
-import coil.annotation.ExperimentalCoilApi
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
-import com.android.studentnews.auth.domain.destination.AuthDestination
 import com.android.studentnews.auth.domain.models.UserModel
-import com.android.studentnews.core.data.snackbar_controller.SnackBarController
-import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
-import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.NavigationBarItems
 import com.android.studentnews.main.events.domain.destination.EventsDestination
+import com.android.studentnews.main.events.ui.screens.CategoryList
 import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
-import com.android.studentnews.main.settings.saved.domain.destination.SavedDestination
 import com.android.studentnews.navigation.SubGraph
 import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
+import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
+import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
-import com.google.firebase.Timestamp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 
 
 @SuppressLint(
@@ -178,6 +153,7 @@ import org.koin.androidx.compose.koinViewModel
 fun NewsScreen(
     navHostController: NavHostController,
     newsViewModel: NewsViewModel,
+    eventsViewModel: EventsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
 ) {
@@ -186,7 +162,6 @@ fun NewsScreen(
     val context = LocalContext.current
     val drawerScrollState = rememberScrollState()
     val lazyListState = rememberLazyListState()
-    val scrollState = rememberScrollState()
     val pullToRefreshState = rememberPullToRefreshState()
     val configuration = LocalConfiguration.current
     val isLandScape = remember {
@@ -202,7 +177,7 @@ fun NewsScreen(
 
     var newsCategoryStatus by rememberSaveable { mutableStateOf("") }
     var isMoreDropDownMenuItemOpen by rememberSaveable { mutableStateOf(false) }
-    var isEventsTabClicked by rememberSaveable { mutableStateOf(false) }
+    var eventsListGettingCount by rememberSaveable { mutableIntStateOf(0) }
 
     val newsList = newsViewModel.newsList.collectAsStateWithLifecycle()
     val categoriesList = newsViewModel.categoriesList.collectAsStateWithLifecycle()
@@ -215,6 +190,8 @@ fun NewsScreen(
         initialPage = 0
     )
 
+    var selectedNewsCategoryIndex by rememberSaveable { mutableStateOf<Int?>(null) }
+
     var selectedNavBarIndex by remember { mutableIntStateOf(0) }
 
     val navBarList = listOf(
@@ -222,6 +199,39 @@ fun NewsScreen(
         NavigationBarItems.Search,
         NavigationBarItems.Account,
     )
+
+    LaunchedEffect(tabPagerState.currentPage) {
+        if (tabPagerState.currentPage == 1) {
+            if (eventsListGettingCount < 1) {
+                eventsViewModel.getEventsList()
+                eventsListGettingCount++
+            }
+        }
+    }
+
+    LaunchedEffect(newsViewModel.isRefreshing.value) {
+        if (newsViewModel.isRefreshing.value) {
+            scope.launch {
+                pullToRefreshState.startRefresh()
+                delay(1000L)
+                if (tabPagerState.currentPage == 0) {
+                    newsViewModel.getNewsList()
+                    newsCategoryStatus = ""
+                    selectedNewsCategoryIndex?.let {
+                        selectedNewsCategoryIndex = null
+                    }
+                }
+                if (tabPagerState.currentPage == 1) {
+                    eventsViewModel.getEventsList()
+                    eventsViewModel.selectedCategoryIndex?.let {
+                        eventsViewModel.selectedCategoryIndex = null
+                    }
+                }
+            }
+        } else {
+            pullToRefreshState.endRefresh()
+        }
+    }
 
 
     BackHandler(
@@ -358,51 +368,43 @@ fun NewsScreen(
                     )
                 },
                 bottomBar = {
-
-                    AnimatedVisibility(
-                        visible = lazyListState.lastScrolledBackward
-                                || lazyListState.firstVisibleItemIndex == 0,
-                        enter = fadeIn(),
-                        exit = fadeOut()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .height(50.dp),
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .navigationBarsPadding()
-                                .height(50.dp),
-                        ) {
-                            HorizontalDivider(color = Gray)
+                        HorizontalDivider(color = Gray)
 
-                            BottomAppBar(
-                                containerColor = Color.Transparent,
-                                modifier = Modifier
-                                    .fillMaxWidth(),
-                            ) {
-                                navBarList.forEachIndexed { index, item ->
-                                    NavigationBarItem(
-                                        icon = {
-                                            Icon(
-                                                imageVector = if (selectedNavBarIndex == index) item.selectedIcon else item.unselectedIcon,
-                                                contentDescription = null
-                                            )
-                                        },
-                                        selected = index == selectedNavBarIndex,
-                                        onClick = {
-                                            selectedNavBarIndex = index
-                                            if (selectedNavBarIndex == 1) {
-                                                navHostController.navigate(MainDestination.SEARCH_SCREEN)
-                                            }
-                                            if (selectedNavBarIndex == 2) {
-                                                navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
-                                            }
-                                        },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = Color.Transparent,
-                                            selectedIconColor = if (isSystemInDarkTheme()) White else Black,
-                                            unselectedIconColor = if (isSystemInDarkTheme()) White else Black
+                        BottomAppBar(
+                            containerColor = Color.Transparent,
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                        ) {
+                            navBarList.forEachIndexed { index, item ->
+                                NavigationBarItem(
+                                    icon = {
+                                        Icon(
+                                            imageVector = if (selectedNavBarIndex == index) item.selectedIcon else item.unselectedIcon,
+                                            contentDescription = null
                                         )
+                                    },
+                                    selected = index == selectedNavBarIndex,
+                                    onClick = {
+                                        selectedNavBarIndex = index
+                                        if (selectedNavBarIndex == 1) {
+                                            navHostController.navigate(MainDestination.SEARCH_SCREEN)
+                                        }
+                                        if (selectedNavBarIndex == 2) {
+                                            navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
+                                        }
+                                    },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        indicatorColor = Color.Transparent,
+                                        selectedIconColor = if (isSystemInDarkTheme()) White else Black,
+                                        unselectedIconColor = if (isSystemInDarkTheme()) White else Black
                                     )
-                                }
+                                )
                             }
                         }
                     }
@@ -416,135 +418,77 @@ fun NewsScreen(
                         .padding(paddingValues = innerPadding)
                 ) {
 
-                    Column(
-                        modifier = Modifier
-                            .verticalScroll(scrollState)
-                    ) {
-
-                        if (
-                            lazyListState.firstVisibleItemIndex < 1 &&
-                            tabPagerState.currentPage == 0
+                    // Pager
+                    Column {
+                        TabRow(
+                            selectedTabIndex = tabPagerState.currentPage,
                         ) {
-                            HorizontalPager(
-                                state = categoryPagerState,
-                                pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
-                                    (-30).dp else (-15).dp,
-                                flingBehavior = PagerDefaults.flingBehavior(
-                                    state = categoryPagerState,
-                                    pagerSnapDistance = PagerSnapDistance.atMost(
-                                        1
-                                    ),
-                                    snapAnimationSpec = spring(
-                                        stiffness = Spring.StiffnessVeryLow,
-                                        dampingRatio = Spring.DampingRatioLowBouncy
-                                    )
-                                ),
-                                modifier = Modifier
-                                    .height(if (!isLandScape) 250.dp else 80.dp)
-                            ) { pagerIndex ->
-                                val item = categoriesList.value[pagerIndex]
-                                CategoriesListPagerItem(
-                                    item = item,
-                                    categoriesList = categoriesList.value,
-                                    categoryPagerState = categoryPagerState,
-                                    context = context,
-                                    onItemCLick = { category ->
-                                        newsViewModel.getNewsListByCategory(
-                                            category
-                                        )
-                                        newsCategoryStatus =
-                                            "${category} News"
+                            // News
+                            Tab(
+                                selected = tabPagerState.currentPage == 0,
+                                onClick = {
+                                    if (tabPagerState.currentPage == 0) {
+                                        if (lazyListState.firstVisibleItemIndex != 0) {
+                                            scope.launch {
+                                                lazyListState.scrollToItem(0)
+                                            }
+                                        }
+                                    } else {
+                                        scope.launch {
+                                            tabPagerState.animateScrollToPage(0)
+                                        }
                                     }
-                                )
-                            }
+                                },
+                                icon = {
+                                    if (!isLandScape) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Newspaper,
+                                            contentDescription = "Icon For News"
+                                        )
+                                    }
+                                },
+                                text = {
+                                    Text(text = "News")
+                                },
+                                selectedContentColor = Green,
+                                unselectedContentColor = if (isSystemInDarkTheme()) White else Black
+                            )
+                            // Events
+                            Tab(
+                                selected = tabPagerState.currentPage == 1,
+                                onClick = {
+                                    if (tabPagerState.currentPage == 1) {
+                                        if (eventsViewModel.lazyListState.firstVisibleItemIndex != 0) {
+                                            scope.launch {
+                                                eventsViewModel
+                                                    .lazyListState
+                                                    .animateScrollToItem(0)
+                                            }
 
+                                        }
+                                    } else {
+                                        scope.launch {
+                                            tabPagerState.animateScrollToPage(1)
+                                        }
+                                    }
+                                },
+                                icon = {
+                                    if (!isLandScape) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.Event,
+                                            contentDescription = "Icon For Events"
+                                        )
+                                    }
+                                },
+                                text = {
+                                    Text(text = "Events")
+                                },
+                                selectedContentColor = Green,
+                                unselectedContentColor = if (isSystemInDarkTheme()) White else Black
+                            )
                         }
 
-                        Column {
-                            TabRow(
-                                selectedTabIndex = tabPagerState.currentPage,
-                            ) {
 
-                                // News
-                                Tab(
-                                    selected = tabPagerState.currentPage == 0,
-                                    onClick = {
-                                        if (tabPagerState.currentPage == 0) {
-                                            if (lazyListState.firstVisibleItemIndex != 0) {
-                                                scope.launch {
-                                                    lazyListState.scrollToItem(0)
-                                                }
-                                            }
-                                        } else {
-                                            scope.launch {
-                                                tabPagerState.animateScrollToPage(0)
-                                            }
-                                        }
-                                    },
-                                    icon = {
-                                        if (!isLandScape) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Newspaper,
-                                                contentDescription = "Icon For News"
-                                            )
-                                        }
-                                    },
-                                    text = {
-                                        Text(text = "News")
-                                    },
-                                    selectedContentColor = Green,
-                                    unselectedContentColor = if (isSystemInDarkTheme()) White else Black
-                                )
-                                // Events
-                                Tab(
-                                    selected = tabPagerState.currentPage == 1,
-                                    onClick = {
-                                        if (tabPagerState.currentPage == 1) {
-                                            scope.launch {
-                                                isEventsTabClicked = true
-                                                delay(2000)
-                                                isEventsTabClicked = false
-                                            }
-                                        } else {
-                                            scope.launch {
-                                                tabPagerState.animateScrollToPage(1)
-                                            }
-                                        }
-                                    },
-                                    icon = {
-                                        if (!isLandScape) {
-                                            Icon(
-                                                imageVector = Icons.Outlined.Event,
-                                                contentDescription = "Icon For Events"
-                                            )
-                                        }
-                                    },
-                                    text = {
-                                        Text(text = "Events")
-                                    },
-                                    selectedContentColor = Green,
-                                    unselectedContentColor = if (isSystemInDarkTheme()) White else Black
-                                )
-                            }
-
-                            AnimatedVisibility(
-                                tabPagerState.currentPage == 0
-                                        && (lazyListState.lastScrolledBackward
-                                        || lazyListState.firstVisibleItemScrollOffset == 0)
-                            ) {
-                                Text(
-                                    text = if (newsCategoryStatus.isNotEmpty())
-                                        newsCategoryStatus else "For You",
-                                    style = TextStyle(
-                                        fontSize = FontSize.LARGE.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Gray
-                                    ),
-                                    modifier = Modifier
-                                        .padding(top = 10.dp, start = 10.dp, bottom = 5.dp)
-                                )
-                            }
-                        }
                     }
 
                     Box(
@@ -555,97 +499,163 @@ fun NewsScreen(
                         HorizontalPager(
                             state = tabPagerState
                         ) { page ->
+
                             when (page) {
 
                                 0 -> {
+                                    Column {
 
-                                    LaunchedEffect(newsViewModel.isRefreshing.value) {
-                                        if (newsViewModel.isRefreshing.value) {
-                                            scope.launch {
-                                                pullToRefreshState.startRefresh()
-                                                delay(1000L)
-                                                if (tabPagerState.currentPage == 0) {
-                                                    newsViewModel.getNewsList()
-                                                    newsCategoryStatus = ""
+                                        AnimatedVisibility(lazyListState.firstVisibleItemIndex > 1) {
+
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(all = 5.dp)
+                                            ) {
+                                                AnimatedVisibility(selectedNewsCategoryIndex == null) {
+                                                    CategoryStatusText(
+                                                        category = "For You",
+                                                        style = TextStyle(
+                                                            color = Gray,
+                                                            fontSize = FontSize.MEDIUM.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        ),
+                                                        modifier = Modifier
+                                                            .padding(
+                                                                start = 5.dp,
+                                                                bottom = 5.dp, top = 0.dp)
+                                                    )
+                                                }
+
+                                                Row(
+                                                    modifier = Modifier
+                                                        .horizontalScroll(rememberScrollState()),
+                                                ) {
+                                                    categoriesList
+                                                        .value
+                                                        .forEachIndexed { index, item ->
+                                                            CategoryList(
+                                                                categoryName = item.name ?: "",
+                                                                index = index,
+                                                                selectedCategoryIndex = selectedNewsCategoryIndex,
+                                                                onClick = { index, category ->
+                                                                    selectedNewsCategoryIndex =
+                                                                        index
+                                                                    newsViewModel
+                                                                        .getNewsListByCategory(
+                                                                            category
+                                                                        )
+                                                                    newsCategoryStatus =
+                                                                        "$category News"
+                                                                }
+                                                            )
+                                                        }
                                                 }
                                             }
-                                        } else {
-                                            pullToRefreshState.endRefresh()
                                         }
-                                    }
 
-                                    LazyColumn(
-                                        state = lazyListState,
-                                        flingBehavior = ScrollableDefaults.flingBehavior(),
-                                        userScrollEnabled = true,
-                                        modifier = Modifier
-                                            .fillMaxSize(),
-                                    ) {
-
-                                        items(
-                                            count = newsList.value.size,
-                                            key = { index ->
-                                                newsList.value[index].newsId ?: ""
-                                            }
-                                        ) { index ->
-                                            val item = newsList.value[index]
-
-                                            NewsItem(
-                                                item = item,
-                                                onItemClick = { newsId ->
-                                                    navHostController.navigate(
-                                                        NewsDestination.NEWS_DETAIL_SCREEN(
-                                                            newsId
+                                        LazyColumn(
+                                            state = lazyListState,
+                                            flingBehavior = ScrollableDefaults.flingBehavior(),
+                                            userScrollEnabled = true,
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                        ) {
+                                            item(
+                                                key = "news_category"
+                                            ) {
+                                                HorizontalPager(
+                                                    state = categoryPagerState,
+                                                    pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
+                                                        (-30).dp else (-15).dp,
+                                                    flingBehavior = PagerDefaults.flingBehavior(
+                                                        state = categoryPagerState,
+                                                        pagerSnapDistance = PagerSnapDistance.atMost(
+                                                            1
+                                                        ),
+                                                        snapAnimationSpec = spring(
+                                                            stiffness = Spring.StiffnessVeryLow,
+                                                            dampingRatio = Spring.DampingRatioLowBouncy
                                                         )
+                                                    ),
+                                                    modifier = Modifier
+                                                        .height(if (!isLandScape) 250.dp else 80.dp),
+                                                ) { pagerIndex ->
+                                                    val item =
+                                                        categoriesList.value[pagerIndex]
+                                                    CategoriesListPagerItem(
+                                                        item = item,
+                                                        categoriesList = categoriesList.value,
+                                                        categoryPagerState = categoryPagerState,
+                                                        context = context,
+                                                        onItemCLick = { category ->
+                                                            selectedNewsCategoryIndex = pagerIndex
+                                                            newsViewModel.getNewsListByCategory(
+                                                                category
+                                                            )
+                                                            newsCategoryStatus =
+                                                                "${category} News"
+                                                        }
                                                     )
-                                                },
-                                                context = context,
-                                                animatedVisibilityScope = animatedVisibilityScope,
-                                                sharedTransitionScope = sharedTransitionScope,
-                                            )
+                                                }
+                                            }
+
+                                            item(
+                                                key = "news_category_status"
+                                            ) {
+                                                CategoryStatusText(
+                                                    category = if (newsCategoryStatus.isNotEmpty())
+                                                        newsCategoryStatus else "For You",
+                                                    style = TextStyle(
+                                                        fontSize = FontSize.LARGE.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Gray
+                                                    ),
+                                                    modifier = Modifier
+                                                        .padding(
+                                                            top = 10.dp,
+                                                            start = 10.dp,
+                                                            bottom = 5.dp
+                                                        ),
+                                                )
+                                            }
+
+                                            items(
+                                                count = newsList.value.size,
+                                                key = { index ->
+                                                    newsList.value[index].newsId ?: ""
+                                                }
+                                            ) { index ->
+                                                val item = newsList.value[index]
+
+                                                NewsItem(
+                                                    item = item,
+                                                    onItemClick = { newsId ->
+                                                        navHostController.navigate(
+                                                            NewsDestination.NEWS_DETAIL_SCREEN(
+                                                                newsId
+                                                            )
+                                                        )
+                                                    },
+                                                    context = context,
+                                                    animatedVisibilityScope = animatedVisibilityScope,
+                                                    sharedTransitionScope = sharedTransitionScope,
+                                                )
+                                            }
+
                                         }
 
                                     }
                                 }
 
                                 1 -> {
-                                    val eventsViewModel = koinViewModel<EventsViewModel>()
-
-                                    LaunchedEffect(newsViewModel.isRefreshing.value) {
-                                        if (newsViewModel.isRefreshing.value) {
-                                            scope.launch {
-                                                pullToRefreshState.startRefresh()
-                                                delay(1000L)
-                                                if (tabPagerState.currentPage == 1) {
-                                                    eventsViewModel.selectedCategoryIndex?.let {
-                                                        eventsViewModel.selectedCategoryIndex = null
-                                                        eventsViewModel.getEventsList()
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            pullToRefreshState.endRefresh()
-                                        }
-                                    }
-
-                                    LaunchedEffect(isEventsTabClicked) {
-                                        if (isEventsTabClicked) {
-                                            if (lazyListState.firstVisibleItemIndex != 0) {
-                                                eventsViewModel
-                                                    .lazyListState
-                                                    .animateScrollToItem(0)
-                                            }
-                                        }
-                                    }
-
                                     EventsScreen(
                                         navHostController = navHostController,
                                         eventsViewModel = eventsViewModel,
                                         animatedVisibilityScope = animatedVisibilityScope,
-                                        sharedTransitionScope = sharedTransitionScope
+                                        sharedTransitionScope = sharedTransitionScope,
                                     )
                                 }
-
                             }
                         }
 
@@ -668,7 +678,10 @@ fun NewsScreen(
 
                     }
 
-                    if (newsViewModel.newsListStatus.value == Status.Loading) {
+                    if (
+                        newsViewModel.newsListStatus.value == Status.Loading
+                        || eventsViewModel.eventsListStatus == Status.Loading
+                    ) {
                         LoadingDialog()
                     }
 
@@ -1294,4 +1307,17 @@ fun MoreDropDownMenu(
             contentPadding = PaddingValues(10.dp)
         )
     }
+}
+
+@Composable
+inline fun CategoryStatusText(
+    category: String,
+    style: TextStyle = TextStyle(),
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = category,
+        style = style,
+        modifier = modifier
+    )
 }

@@ -1,10 +1,12 @@
 package com.android.studentnewsadmin.main.events.domain.models
 
+import androidx.compose.runtime.Immutable
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.news.domain.model.UrlList
 import com.google.firebase.Timestamp
 import kotlinx.serialization.SerialName
 
+@Immutable
 data class EventsModel(
     val title: String? = "", // title
     val description: String? = "", // description,

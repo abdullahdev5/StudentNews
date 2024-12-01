@@ -2,7 +2,6 @@
 
 package com.android.studentnews.main.events.ui.screens
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -50,7 +49,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -111,7 +109,6 @@ import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
 import com.android.studentnews.core.domain.common.formatTimeToString
-import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.core.ui.common.LoadingDialog
@@ -119,7 +116,6 @@ import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
-import com.android.studentnews.navigation.SubGraph
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
@@ -131,7 +127,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun EventsDetailScreen(
     eventId: String,
-    isComeForRegistration: Boolean = false,
+    isComeForRegistration: Boolean,
+    notificationId: Int?,
     navHostController: NavHostController,
     eventsViewModel: EventsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -180,13 +177,16 @@ fun EventsDetailScreen(
 
     LaunchedEffect(currentUser) {
         if (isComeForRegistration) {
-            currentUser?.let {
-                if (!userIdsListFromBookings.contains(currentUser?.uid.toString())) {
+            currentUser?.let { thisCurrentUser ->
+                if (!userIdsListFromBookings.contains(thisCurrentUser.uid.toString())) {
                     scope.launch {
                         registerEventSheetState.show()
                     }.invokeOnCompletion {
                         isRegisterEventSheetVisible = true
                     }
+                }
+                notificationId?.let { thisId ->
+                    eventsViewModel.cancelNotification(thisId)
                 }
             }
         }
@@ -674,7 +674,7 @@ fun EventsDetailScreen(
             )
         }
 
-        if (eventsViewModel.eventBookingStatus == Status.Loading) {
+        if (eventsViewModel.eventRegisteringStatus == Status.Loading) {
             LoadingDialog()
         }
 

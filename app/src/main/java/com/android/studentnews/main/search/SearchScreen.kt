@@ -6,6 +6,7 @@
 package com.android.studentnews.main.search
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -71,6 +72,7 @@ import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.main.events.ui.screens.CategoryList
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
@@ -98,7 +100,6 @@ fun SearchScreen(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
     val lazyListState = rememberLazyListState()
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
     var isSearchBarActive by remember { mutableStateOf(true) }
     var currentSelectedCategory by remember { mutableStateOf<String?>(null) }
@@ -203,78 +204,44 @@ fun SearchScreen(
 
             Scaffold(
                 topBar = {
-                    TopAppBar(
-                        title = {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .horizontalScroll(rememberScrollState())
-                            ) {
-                                // Category List
-                                categoryList
-                                    .forEachIndexed { index, item ->
-                                        Card(
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = if (selectedCategoryIndex == index) {
-                                                    if (isSystemInDarkTheme()) White else Black
-                                                } else {
-                                                    if (isSystemInDarkTheme()) DarkGray else LightGray.copy(
-                                                        0.3f
-                                                    )
-                                                },
-                                                contentColor = if (selectedCategoryIndex == index) {
-                                                    if (isSystemInDarkTheme()) Black else White
-                                                } else Color.Unspecified
-                                            ),
-                                            modifier = Modifier
-                                                .padding(all = 5.dp)
-                                                .clickable {
-                                                    selectedCategoryIndex = index
-                                                    currentSelectedCategory = item.name
-                                                    focusManager.clearFocus()
-                                                    if (query.isNotEmpty()) {
-                                                        searchViewModel.onSearch(
-                                                            query,
-                                                            currentSelectedCategory
-                                                        )
-                                                    } else {
-                                                        searchViewModel
-                                                            .getNewsListByCategory(
-                                                                currentSelectedCategory!!
-                                                            )
-                                                    }
-                                                }
-                                        ) {
-                                            Box(
-                                                contentAlignment = Alignment.Center,
-                                                modifier = Modifier
-                                            ) {
-                                                Text(
-                                                    text = item.name ?: "",
-                                                    style = TextStyle(
-                                                        fontSize = FontSize.MEDIUM.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                    ),
-                                                    modifier = Modifier
-                                                        .padding(all = 5.dp)
+                    AnimatedVisibility(lazyListState.lastScrolledBackward
+                            || lazyListState.firstVisibleItemIndex == 0) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 10.dp)
+                                .horizontalScroll(rememberScrollState())
+                        ) {
+                            // Category List
+                            categoryList
+                                .forEachIndexed { index, item ->
+                                    CategoryList(
+                                        categoryName = item.name ?: "",
+                                        index = index,
+                                        selectedCategoryIndex = selectedCategoryIndex,
+                                        onClick = { thisIndex, categoryName ->
+                                            selectedCategoryIndex = thisIndex
+                                            currentSelectedCategory = categoryName
+                                            focusManager.clearFocus()
+                                            if (query.isNotEmpty()) {
+                                                searchViewModel.onSearch(
+                                                    query,
+                                                    currentSelectedCategory
                                                 )
+                                            } else {
+                                                searchViewModel
+                                                    .getNewsListByCategory(
+                                                        currentSelectedCategory!!
+                                                    )
                                             }
                                         }
-                                    }
-                            }
-                        },
-                        scrollBehavior = scrollBehavior,
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent,
-                            scrolledContainerColor = Color.Transparent
-                        ),
-                        modifier = Modifier
-                            .statusBarsPadding()
-                    )
+                                    )
+                                }
+                        }
+                    }
                 },
                 modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                    .fillMaxSize(),
                 containerColor = Color.Transparent
             ) { innerPadding ->
 

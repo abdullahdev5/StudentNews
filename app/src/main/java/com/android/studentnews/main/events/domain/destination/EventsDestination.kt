@@ -9,7 +9,8 @@ sealed class EventsDestination {
     @Serializable
     data class EVENTS_DETAIL_SCREEN(
         val eventId: String,
-        val isComeForRegistration: Boolean = false
+        val isComeForRegistration: Boolean = false,
+        val notificationId: Int? = null, // Id of Notification when user click the Register Action
     ) : EventsDestination()
 
     @Serializable

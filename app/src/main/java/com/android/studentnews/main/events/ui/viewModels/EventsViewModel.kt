@@ -5,6 +5,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.auth.domain.models.UserModel
@@ -26,6 +27,7 @@ import kotlinx.coroutines.launch
 class EventsViewModel(
     private val eventsRepository: EventsRepository,
     private val authRepository: AuthRepository,
+    private val notificationManager: NotificationManagerCompat
 ) : ViewModel() {
 
     private val _currentUser = MutableStateFlow<UserModel?>(null)
@@ -46,13 +48,7 @@ class EventsViewModel(
         private set
 
 
-    var eventBookingStatus by mutableStateOf("")
-        private set
-
-    private val _bookedEventsList = MutableStateFlow<List<EventsModel?>>(emptyList())
-    val bookedEventsList = _bookedEventsList.asStateFlow()
-
-    var bookedEventsListStatus by mutableStateOf("")
+    var eventRegisteringStatus by mutableStateOf("")
         private set
 
     private val _savedEventById = MutableStateFlow<EventsModel?>(null)
@@ -64,7 +60,7 @@ class EventsViewModel(
 
 
     init {
-        getEventsList()
+//        getEventsList()
         getCurrentUser()
         startEventsWorker()
 //        cancelEventsWorker()
@@ -152,7 +148,7 @@ class EventsViewModel(
                 .collectLatest { result ->
                     when (result) {
                         is EventsState.Success -> {
-                            eventBookingStatus = Status.SUCCESS
+                            eventRegisteringStatus = Status.SUCCESS
                             SnackBarController
                                 .sendEvent(
                                     SnackBarEvents(
@@ -162,7 +158,7 @@ class EventsViewModel(
                         }
 
                         is EventsState.Failed -> {
-                            eventBookingStatus = Status.FAILED
+                            eventRegisteringStatus = Status.FAILED
                             SnackBarController
                                 .sendEvent(
                                     SnackBarEvents(
@@ -172,32 +168,7 @@ class EventsViewModel(
                         }
 
                         is EventsState.Loading -> {
-                            eventBookingStatus = Status.Loading
-                        }
-
-                        else -> {}
-                    }
-                }
-        }
-    }
-
-    fun getBookedEventsList() {
-        viewModelScope.launch {
-            eventsRepository
-                .getRegisteredEventsList()
-                .collectLatest { result ->
-                    when (result) {
-                        is EventsState.Loading -> {
-                            bookedEventsListStatus = Status.Loading
-                        }
-
-                        is EventsState.Success -> {
-                            bookedEventsListStatus = Status.SUCCESS
-                            _bookedEventsList.value = result.data
-                        }
-
-                        is EventsState.Failed -> {
-                            bookedEventsListStatus = Status.FAILED
+                            eventRegisteringStatus = Status.Loading
                         }
 
                         else -> {}
@@ -287,6 +258,10 @@ class EventsViewModel(
                     }
                 }
         }
+    }
+
+    fun cancelNotification(id: Int) {
+        notificationManager.cancel(id)
     }
 
     fun startEventsWorker() = eventsRepository.startEventWorker()

@@ -6,6 +6,11 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
+import android.net.Uri
+import androidx.annotation.DrawableRes
+import androidx.appcompat.widget.DrawableUtils
+import androidx.compose.material3.DrawerValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.util.fastJoinToString
 import androidx.core.app.ActivityCompat
@@ -101,181 +106,179 @@ class EventsWorker(
         val imageRequest = ImageRequest.Builder(context)
             .data(getUrlOfImageNotVideo(event?.urlList ?: emptyList()))
             .allowHardware(false)
-            .target(
-                onSuccess = { drawable ->
+            .target { drawable ->
+                val bitmap = drawable.toBitmap()
 
-                    val bitmap = drawable.toBitmap()
+                val notificationId = Random.nextInt()
+                val clickedIntentRequestId = Random.nextInt()
+                val savedIntentRequestId = Random.nextInt()
+                val registrationIntentRequestId = Random.nextInt()
 
-                    val notificationId = Random.nextInt()
-                    val clickedIntentRequestId = Random.nextInt()
-                    val savedIntentRequestId = Random.nextInt()
-                    val registrationIntentRequestId = Random.nextInt()
+                val flag = PendingIntent.FLAG_MUTABLE
+                val savedFlag =
+                    PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_CANCEL_CURRENT
 
-                    val flag = PendingIntent.FLAG_MUTABLE
-                    val savedFlag =
-                        PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_CANCEL_CURRENT
+                val serializedUrlList = event?.urlList?.fastJoinToString(",") {
+                    "${it.url};${it.contentType};${it.sizeBytes};${it.lastPathSegment}"
+                } ?: ""
 
-                    val serializedUrlList = event?.urlList?.fastJoinToString(",") {
-                        "${it.url};${it.contentType};${it.sizeBytes};${it.lastPathSegment}"
-                    } ?: ""
-
-                    val serializedBookingList = event?.bookings?.fastJoinToString(",") {
-                        "${it.userId};${it.userName};${it.userDegree};${it.userPhoneNumber};${it.userCity};${it.userAddress};${it.userProfilePic};${it.userProfilePicBgColor}"
-                    } ?: ""
+                val serializedBookingList = event?.bookings?.fastJoinToString(",") {
+                    "${it.userId};${it.userName};${it.userDegree};${it.userPhoneNumber};${it.userCity};${it.userAddress};${it.userProfilePic};${it.userProfilePicBgColor}"
+                } ?: ""
 
 
-                    val clickedIntent = Intent(
-                        Intent.ACTION_VIEW,
-                        "$EVENTS_URI/eventId=${event?.eventId ?: ""}".toUri(),
-                        context,
-                        MainActivity::class.java,
-                    )
+                val clickedIntent = Intent(
+                    Intent.ACTION_VIEW,
+                    "$EVENTS_URI/eventId=${event?.eventId ?: ""}".toUri(),
+                    context,
+                    MainActivity::class.java,
+                )
 
-                    val savedClickedIntent = Intent(
-                        context,
-                        MyBroadcastReceiver::class.java
-                    ).apply {
-                        action = SAVED_EVENT_ACTION
-                        putExtra(TITLE, event?.title ?: "")
-                        putExtra(DESCRIPTION, event?.description ?: "")
-                        putExtra(ADDRESS, event?.address ?: "")
-                        putExtra(EVENT_ID, event?.eventId ?: "")
-                        putExtra(STARTING_DATE, event?.startingDate ?: 0L)
-                        putExtra(STARTING_TIME_HOUR, event?.startingTimeHour ?: 0)
-                        putExtra(STARTING_TIME_MINUTES, event?.startingTimeMinutes ?: 0)
-                        putExtra(STARTING_TIME_STATUS, event?.startingTimeStatus ?: "")
-                        putExtra(ENDING_DATE, event?.endingDate ?: 0L)
-                        putExtra(ENDING_TIME_HOUR, event?.endingTimeHour ?: 0)
-                        putExtra(ENDING_TIME_MINUTES, event?.endingTimeMinutes ?: 0)
-                        putExtra(ENDING_TIME_STATUS, event?.endingTimeStatus ?: "")
-                        putExtra(URL_LIST, serializedUrlList)
-                        putExtra(BOOKINGS, serializedBookingList)
-                        putExtra(IS_AVAILABLE, event?.isAvailable ?: true)
-                        putExtra(NOTIFICATION_ID, notificationId)
-                    }
-
-
-                    val registrationIntent = Intent(
-                        Intent.ACTION_VIEW,
-                        "$EVENTS_REGISTRATION_URI/eventId=${event?.eventId ?: ""}/isComeForRegistration=${true}".toUri(),
-                        context,
-                        MainActivity::class.java,
-                    )
-
-
-                    val clickedPendingIntent = PendingIntent.getActivity(
-                        context,
-                        clickedIntentRequestId,
-                        clickedIntent,
-                        flag
-                    )
-
-                    val savedPendingIntent = PendingIntent.getBroadcast(
-                        context,
-                        savedIntentRequestId,
-                        savedClickedIntent,
-                        savedFlag
-                    )
-
-                    val registrationPendingIntent = PendingIntent.getActivity(
-                        context,
-                        registrationIntentRequestId,
-                        registrationIntent,
-                        flag
-                    )
-
-
-                    // Starting
-                    val startingDay = formatDateToDay(event?.startingDate ?: 0L)
-                    val startingMonthName = formatDateToMonthName(event?.startingDate ?: 0L)
-                    val startingYear = formatDateToYear(event?.startingDate ?: 0L)
-                    val startingTime = "${
-                        formatTimeToString(
-                            event?.startingTimeHour ?: 0,
-                            event?.startingTimeMinutes ?: 0
-                        ).dropLast(2)
-                    } ${event?.startingTimeStatus}"
-
-                    // Ending
-                    val endingDay = formatDateToDay(event?.endingDate ?: 0L)
-                    val endingMonthName = formatDateToMonthName(event?.endingDate ?: 0L)
-                    val endingYear = formatDateToYear(event?.endingDate ?: 0L)
-                    val endingTime = "${
-                        formatTimeToString(
-                            event?.endingTimeHour ?: 0,
-                            event?.endingTimeMinutes ?: 0
-                        ).dropLast(2)
-                    } ${event?.endingTimeStatus}"
-                    val isAvailable =
-                        if ((event?.isAvailable ?: true)) "Available" else "Not Available"
-
-
-                    val notification =
-                        NotificationCompat.Builder(context, NotificationRelated.EVENTS_CHANNEL_ID)
-                            .setSmallIcon(R.mipmap.sym_def_app_icon)
-                            .setContentTitle("Hey $currentUserName, New Event is Here. Register?")
-                            .setContentText(event?.title ?: "")
-                            .setLargeIcon(bitmap)
-                            .setContentIntent(clickedPendingIntent)
-                            .setAutoCancel(true)
-                            .setStyle(
-                                NotificationCompat.InboxStyle()
-                                    .addLine("Starting Date: $startingDay, $startingMonthName, $startingYear")
-                                    .addLine("Starting Time: $startingTime")
-                                    .addLine("Ending Date: $endingDay, $endingMonthName, $endingYear")
-                                    .addLine("Ending Time: $endingTime")
-                                    .addLine("Status: $isAvailable")
-                            )
-                            .addAction(
-                                NotificationCompat.Action(
-                                    null,
-                                    HtmlCompat.fromHtml(
-                                        "<font color=\"" + ContextCompat.getColor(
-                                            context,
-                                            R.color.holo_green_light
-                                        )
-                                                + "\">" + "Save" + "</font>",
-                                        HtmlCompat.FROM_HTML_MODE_LEGACY
-                                    ),
-                                    savedPendingIntent
-                                )
-                            )
-                            .addAction(
-                                NotificationCompat.Action(
-                                    null,
-                                    HtmlCompat.fromHtml(
-                                        "<font color=\"" + ContextCompat.getColor(
-                                            context,
-                                            R.color.holo_green_light
-                                        )
-                                                + "\">" + "Register" + "</font>",
-                                        HtmlCompat.FROM_HTML_MODE_LEGACY
-                                    ),
-                                    registrationPendingIntent,
-                                )
-                            )
-                            .build()
-
-                    if (ActivityCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.POST_NOTIFICATIONS
-                        ) != PackageManager.PERMISSION_GRANTED
-                    ) {
-                        // TODO: Consider calling
-                        //    ActivityCompat#requestPermissions
-                        // here to request the missing permissions, and then overriding
-                        //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                        //                                          int[] grantResults)
-                        // to handle the case where the user grants the permission. See the documentation
-                        // for ActivityCompat#requestPermissions for more details.
-                    }
-                    notificationManager.notify(
-                        notificationId,
-                        notification
-                    )
-
+                val savedClickedIntent = Intent(
+                    context,
+                    SavedEventBroadcastReceiver::class.java
+                ).apply {
+                    action = SAVED_EVENT_ACTION
+                    putExtra(TITLE, event?.title ?: "")
+                    putExtra(DESCRIPTION, event?.description ?: "")
+                    putExtra(ADDRESS, event?.address ?: "")
+                    putExtra(EVENT_ID, event?.eventId ?: "")
+                    putExtra(STARTING_DATE, event?.startingDate ?: 0L)
+                    putExtra(STARTING_TIME_HOUR, event?.startingTimeHour ?: 0)
+                    putExtra(STARTING_TIME_MINUTES, event?.startingTimeMinutes ?: 0)
+                    putExtra(STARTING_TIME_STATUS, event?.startingTimeStatus ?: "")
+                    putExtra(ENDING_DATE, event?.endingDate ?: 0L)
+                    putExtra(ENDING_TIME_HOUR, event?.endingTimeHour ?: 0)
+                    putExtra(ENDING_TIME_MINUTES, event?.endingTimeMinutes ?: 0)
+                    putExtra(ENDING_TIME_STATUS, event?.endingTimeStatus ?: "")
+                    putExtra(URL_LIST, serializedUrlList)
+                    putExtra(BOOKINGS, serializedBookingList)
+                    putExtra(IS_AVAILABLE, event?.isAvailable ?: true)
+                    putExtra(NOTIFICATION_ID, notificationId)
                 }
-            )
+
+
+                val registrationIntent = Intent(
+                    Intent.ACTION_VIEW,
+                    ("$EVENTS_REGISTRATION_URI/eventId=${event?.eventId ?: ""}" +
+                            "/isComeForRegistration=${true}" + "/notificationId=$notificationId"
+                            ).toUri(),
+                    context,
+                    MainActivity::class.java,
+                )
+
+
+                val clickedPendingIntent = PendingIntent.getActivity(
+                    context,
+                    clickedIntentRequestId,
+                    clickedIntent,
+                    flag
+                )
+
+                val savedPendingIntent = PendingIntent.getBroadcast(
+                    context,
+                    savedIntentRequestId,
+                    savedClickedIntent,
+                    savedFlag
+                )
+
+                val registrationPendingIntent = PendingIntent.getActivity(
+                    context,
+                    registrationIntentRequestId,
+                    registrationIntent,
+                    flag
+                )
+
+
+                // Starting
+                val startingDay = formatDateToDay(event?.startingDate ?: 0L)
+                val startingMonthName = formatDateToMonthName(event?.startingDate ?: 0L)
+                val startingYear = formatDateToYear(event?.startingDate ?: 0L)
+                val startingTime = "${
+                    formatTimeToString(
+                        event?.startingTimeHour ?: 0,
+                        event?.startingTimeMinutes ?: 0
+                    ).dropLast(2)
+                } ${event?.startingTimeStatus}"
+
+                // Ending
+                val endingDay = formatDateToDay(event?.endingDate ?: 0L)
+                val endingMonthName = formatDateToMonthName(event?.endingDate ?: 0L)
+                val endingYear = formatDateToYear(event?.endingDate ?: 0L)
+                val endingTime = "${
+                    formatTimeToString(
+                        event?.endingTimeHour ?: 0,
+                        event?.endingTimeMinutes ?: 0
+                    ).dropLast(2)
+                } ${event?.endingTimeStatus}"
+                val isAvailable =
+                    if ((event?.isAvailable ?: true)) "Available" else "Not Available"
+
+
+                val notification =
+                    NotificationCompat.Builder(context, NotificationRelated.EVENTS_CHANNEL_ID)
+                        .setSmallIcon(R.mipmap.sym_def_app_icon)
+                        .setContentTitle("Hey $currentUserName, New Event is Here. Register?")
+                        .setContentText(event?.title ?: "")
+                        .setLargeIcon(bitmap)
+                        .setContentIntent(clickedPendingIntent)
+                        .setAutoCancel(true)
+                        .setStyle(
+                            NotificationCompat.InboxStyle()
+                                .addLine("Starting Date: $startingDay, $startingMonthName, $startingYear")
+                                .addLine("Starting Time: $startingTime")
+                                .addLine("Ending Date: $endingDay, $endingMonthName, $endingYear")
+                                .addLine("Ending Time: $endingTime")
+                                .addLine("Status: $isAvailable")
+                        )
+                        .addAction(
+                            NotificationCompat.Action(
+                                null,
+                                HtmlCompat.fromHtml(
+                                    "<font color=\"" + ContextCompat.getColor(
+                                        context,
+                                        R.color.holo_green_light
+                                    )
+                                            + "\">" + "Save" + "</font>",
+                                    HtmlCompat.FROM_HTML_MODE_LEGACY
+                                ),
+                                savedPendingIntent
+                            )
+                        )
+                        .addAction(
+                            NotificationCompat.Action(
+                                null,
+                                HtmlCompat.fromHtml(
+                                    "<font color=\"" + ContextCompat.getColor(
+                                        context,
+                                        R.color.holo_green_light
+                                    )
+                                            + "\">" + "Register" + "</font>",
+                                    HtmlCompat.FROM_HTML_MODE_LEGACY
+                                ),
+                                registrationPendingIntent,
+                            )
+                        )
+                        .build()
+
+                if (ActivityCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.POST_NOTIFICATIONS
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    // TODO: Consider calling
+                    //    ActivityCompat#requestPermissions
+                    // here to request the missing permissions, and then overriding
+                    //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+                    //                                          int[] grantResults)
+                    // to handle the case where the user grants the permission. See the documentation
+                    // for ActivityCompat#requestPermissions for more details.
+                }
+                notificationManager.notify(
+                    notificationId,
+                    notification
+                )
+            }
             .build()
         context.imageLoader.enqueue(imageRequest)
 

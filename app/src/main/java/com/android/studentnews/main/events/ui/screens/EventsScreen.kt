@@ -2,6 +2,7 @@
 
 package com.android.studentnews.main.events.ui.screens
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -24,6 +25,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DateRange
@@ -64,6 +67,7 @@ import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.core.domain.common.formatDateToString
 import com.android.studentnews.core.domain.common.formatTimeToString
+import com.android.studentnews.news.ui.CategoryStatusText
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkGray
@@ -71,6 +75,7 @@ import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
+import kotlinx.coroutines.flow.collect
 
 enum class EventsCategoryList(
     val category: String,
@@ -80,13 +85,13 @@ enum class EventsCategoryList(
     NOT_AVAILABLE("Not Available", 1)
 }
 
+@SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
 fun EventsScreen(
     navHostController: NavHostController,
     eventsViewModel: EventsViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
-    modifier: Modifier = Modifier,
 ) {
 
     val context = LocalContext.current
@@ -98,82 +103,88 @@ fun EventsScreen(
         EventsCategoryList.NOT_AVAILABLE,
     )
 
-
     if (eventsList.size != 0) {
 
-        Column(
-            modifier = modifier
-        ) {
+        Column {
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp, start = 10.dp, bottom = 10.dp)
-            ) {
-                AnimatedVisibility(eventsViewModel.selectedCategoryIndex != null) {
-                    Text("sortedBy:-")
-                }
-                // Category
-                categoryList
-                    .sortedByDescending {
-                        eventsViewModel.selectedCategoryIndex != null
-                                && eventsViewModel.selectedCategoryIndex == it.index
+            AnimatedVisibility(eventsViewModel.lazyListState.firstVisibleItemIndex > 1) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(all = 5.dp)
+                ) {
+                    AnimatedVisibility(eventsViewModel.selectedCategoryIndex != null) {
+                        Text("sortedBy:-")
                     }
-                    .forEach { item ->
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSystemInDarkTheme()) {
-                                    if (
-                                        eventsViewModel.selectedCategoryIndex != null
-                                        && eventsViewModel.selectedCategoryIndex == item.index
-                                    ) White else DarkGray
-                                } else {
-                                    if (
-                                        eventsViewModel.selectedCategoryIndex != null
-                                        && eventsViewModel.selectedCategoryIndex == item.index
-                                    ) Black else LightGray
-                                },
-                                contentColor = if (isSystemInDarkTheme()) {
-                                    if (
-                                        eventsViewModel.selectedCategoryIndex != null
-                                        && eventsViewModel.selectedCategoryIndex == item.index
-                                    ) Black else White
-                                } else {
-                                    if (
-                                        eventsViewModel.selectedCategoryIndex != null
-                                        && eventsViewModel.selectedCategoryIndex == item.index
-                                    ) White else Black
-                                }
-                            ),
-                            modifier = Modifier
-                                .padding(start = 5.dp, end = 5.dp)
-                                .clickable {
-                                    eventsViewModel.cancelEventsWorker()
-                                    eventsViewModel.selectedCategoryIndex = item.index
+                    // Category
+                    categoryList
+                        .sortedByDescending {
+                            eventsViewModel.selectedCategoryIndex != null
+                                    && eventsViewModel.selectedCategoryIndex == it.index
+                        }
+                        .forEach { item ->
+
+                            CategoryList(
+                                categoryName = item.category,
+                                index = item.index,
+                                selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
+                                onClick = { index, category ->
+                                    eventsViewModel.selectedCategoryIndex = index
                                     if (eventsViewModel.selectedCategoryIndex == 0) {
                                         eventsViewModel.getEventsListByAvailableStatus(true)
                                     } else if (eventsViewModel.selectedCategoryIndex == 1) {
                                         eventsViewModel.getEventsListByAvailableStatus(false)
                                     }
                                 }
-                        ) {
-                            Text(
-                                text = item.category,
-                                modifier = Modifier
-                                    .padding(all = 5.dp)
                             )
                         }
-                    }
 
+                }
             }
-
 
             LazyColumn(
                 state = eventsViewModel.lazyListState,
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize()
             ) {
+
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 10.dp)
+                    ) {
+                        AnimatedVisibility(eventsViewModel.selectedCategoryIndex != null) {
+                            Text("sortedBy:-")
+                        }
+                        // Category
+                        categoryList
+                            .sortedByDescending {
+                                eventsViewModel.selectedCategoryIndex != null
+                                        && eventsViewModel.selectedCategoryIndex == it.index
+                            }
+                            .forEach { item ->
+
+                                CategoryList(
+                                    categoryName = item.category,
+                                    index = item.index,
+                                    selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
+                                    onClick = { index, category ->
+                                        eventsViewModel.cancelEventsWorker()
+                                        eventsViewModel.selectedCategoryIndex = index
+                                        if (eventsViewModel.selectedCategoryIndex == 0) {
+                                            eventsViewModel.getEventsListByAvailableStatus(true)
+                                        } else if (eventsViewModel.selectedCategoryIndex == 1) {
+                                            eventsViewModel.getEventsListByAvailableStatus(false)
+                                        }
+                                    }
+                                )
+                            }
+
+                    }
+                }
 
                 items(eventsList.size) { index ->
                     val item = eventsList[index]
@@ -190,9 +201,9 @@ fun EventsScreen(
                         },
                     )
                 }
-
             }
         }
+
     } else {
         Box(
             contentAlignment = Alignment.Center,
@@ -206,11 +217,6 @@ fun EventsScreen(
             }
         }
     }
-
-
-    if (eventsViewModel.eventsListStatus == Status.Loading) {
-        LoadingDialog()
-    }
 }
 
 @Composable
@@ -219,7 +225,7 @@ fun EventsItem(
     context: Context,
     onItemClick: (String) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
-    sharedTransitionScope: SharedTransitionScope
+    sharedTransitionScope: SharedTransitionScope,
 ) {
     Card(
         modifier = Modifier
@@ -344,5 +350,51 @@ fun EventsItem(
             }
         }
 
+    }
+}
+
+@Composable
+inline fun CategoryList(
+    categoryName: String,
+    index: Int,
+    selectedCategoryIndex: Int?,
+    crossinline onClick: (Int, String) -> Unit,
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSystemInDarkTheme()) {
+                if (
+                    selectedCategoryIndex != null
+                    && selectedCategoryIndex == index
+                ) White else DarkGray
+            } else {
+                if (
+                    selectedCategoryIndex != null
+                    && selectedCategoryIndex == index
+                ) Black else LightGray
+            },
+            contentColor = if (isSystemInDarkTheme()) {
+                if (
+                    selectedCategoryIndex != null
+                    && selectedCategoryIndex == index
+                ) Black else White
+            } else {
+                if (
+                    selectedCategoryIndex != null
+                    && selectedCategoryIndex == index
+                ) White else Black
+            }
+        ),
+        modifier = Modifier
+            .padding(start = 5.dp, end = 5.dp)
+            .clickable {
+                onClick(index, categoryName)
+            }
+    ) {
+        CategoryStatusText(
+            category = categoryName,
+            modifier = Modifier
+                .padding(all = 5.dp)
+        )
     }
 }

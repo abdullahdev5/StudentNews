@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.time.Duration
+import java.util.concurrent.TimeUnit
 
 class EventsRepositoryImpl(
     private val auth: FirebaseAuth,
@@ -322,11 +323,12 @@ class EventsRepositoryImpl(
 
         val workRequest = PeriodicWorkRequest.Builder(
             EventsWorker::class.java,
-            repeatInterval = Duration.ofMinutes(15),
+            repeatInterval = 1,
+            repeatIntervalTimeUnit = TimeUnit.DAYS
         )
             .setBackoffCriteria(
                 backoffPolicy = BackoffPolicy.LINEAR,
-                duration = Duration.ofMinutes(10)
+                duration = Duration.ofHours(5)
             )
             .build()
 
