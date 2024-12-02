@@ -10,18 +10,18 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -29,22 +29,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.outlined.ImagesearchRoller
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,7 +57,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
@@ -67,24 +65,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.android.studentnews.core.data.snackbar_controller.SnackBarController
-import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
-import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.events.ui.screens.CategoryList
 import com.android.studentnews.main.news.domain.destination.NewsDestination
-import com.android.studentnews.main.news.domain.model.CategoryModel
-import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.NewsItem
-import com.android.studentnews.ui.theme.Black
-import com.android.studentnews.ui.theme.DarkColor
-import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
-import com.android.studentnews.ui.theme.LightGray
-import com.android.studentnews.ui.theme.White
-import com.google.firebase.Timestamp
-import kotlinx.coroutines.launch
 
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
@@ -106,8 +93,17 @@ fun SearchScreen(
 
     var query by rememberSaveable { mutableStateOf("") }
 
+    var searchCount by rememberSaveable { mutableIntStateOf(0) }
+
     val searchNewsList by searchViewModel.searchNewsList.collectAsStateWithLifecycle()
     val categoryList by searchViewModel.categoriesList.collectAsStateWithLifecycle()
+
+    var isSearchResultNotFound = remember(searchViewModel.searchingStatus) {
+        derivedStateOf {
+            searchNewsList.isEmpty()
+                    && searchViewModel.searchingStatus != Status.Loading
+        }
+    }.value
 
 
     LaunchedEffect(true) {
@@ -133,6 +129,7 @@ fun SearchScreen(
             if (query.isNotEmpty()) {
                 focusManager.clearFocus()
                 searchViewModel.onSearch(query, currentSelectedCategory)
+                searchCount++
             }
         },
         placeholder = {
@@ -169,10 +166,12 @@ fun SearchScreen(
                     if (query.isNotEmpty()) {
                         focusManager.clearFocus()
                         searchViewModel.onSearch(query, currentSelectedCategory)
+                        searchCount++
                     }
                 }) {
                     Icon(
-                        imageVector = Icons.Default.Search,
+                        imageVector = if (searchCount != 0 && query.isEmpty())
+                            Icons.Outlined.SearchOff else Icons.Default.Search,
                         contentDescription = "Icon for Search"
                     )
                 }
@@ -192,7 +191,7 @@ fun SearchScreen(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            if (searchViewModel.searchingStatus.value == Status.Loading) {
+            if (searchViewModel.searchingStatus == Status.Loading) {
                 LinearProgressIndicator(
                     color = Green,
                     trackColor = Color.Transparent,
@@ -204,8 +203,10 @@ fun SearchScreen(
 
             Scaffold(
                 topBar = {
-                    AnimatedVisibility(lazyListState.lastScrolledBackward
-                            || lazyListState.firstVisibleItemIndex == 0) {
+                    AnimatedVisibility(
+                        lazyListState.lastScrolledBackward
+                                || lazyListState.firstVisibleItemIndex == 0
+                    ) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -234,6 +235,7 @@ fun SearchScreen(
                                                         currentSelectedCategory!!
                                                     )
                                             }
+                                            searchCount++
                                         }
                                     )
                                 }
@@ -281,7 +283,7 @@ fun SearchScreen(
                     }
                 }
 
-                if (searchViewModel.searchingStatus.value == Status.FAILED
+                if (searchViewModel.searchingStatus == Status.FAILED
                     || searchNewsList.isEmpty()
                 ) {
                     Box(
@@ -289,13 +291,46 @@ fun SearchScreen(
                             .fillMaxSize(),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text(
-                            text = if (searchViewModel.searchingStatus.value == Status.FAILED)
-                                "${searchViewModel.errorMsg}"
-                            else if (searchNewsList.isEmpty())
-                                "No Search Result Found!"
-                            else ""
-                        )
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .padding(all = 10.dp)
+                        ) {
+                            if (
+                                searchCount == 0 || isSearchResultNotFound
+                            ) {
+                                Icon(
+                                    imageVector = if (
+                                        searchCount != 0 && isSearchResultNotFound
+                                    ) Icons.Outlined.SearchOff else Icons.Outlined.Search,
+                                    contentDescription = "icon for Showing to do Search",
+                                    modifier = Modifier
+                                        .width(100.dp)
+                                        .height(100.dp),
+                                    tint = Green
+                                )
+                            }
+                            Text(
+                                text = if (searchCount == 0)
+                                    "Search for news"
+                                else if (searchViewModel.searchingStatus == Status.FAILED)
+                                    searchViewModel.errorMsg
+                                else if (isSearchResultNotFound)
+                                    "No Search Result Found!"
+                                else if (searchViewModel.searchingStatus == Status.Loading)
+                                    "Searching....."
+                                else "",
+                                style = TextStyle(
+                                    fontSize = if (searchCount == 0)
+                                        FontSize.LARGE.sp else FontSize.MEDIUM.sp,
+                                    fontWeight = if (searchCount == 0)
+                                        FontWeight.Bold else FontWeight.Normal,
+                                    color = if (searchCount == 0)
+                                        Gray else LocalContentColor.current
+                                )
+                            )
+                        }
                     }
                 }
 

@@ -42,10 +42,6 @@
             android:name=".main.MyBroadcastReceiver"
             android:exported="false" />
 
-        <receiver
-            android:name=".main.events.SavedEventBroadcastReceiver"
-            android:exported="false" />
-
         <provider
             android:authorities="com.android.studentnews.fileprovider"
             android:name="androidx.core.content.FileProvider"

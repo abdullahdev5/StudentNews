@@ -265,45 +265,21 @@ class EventsRepositoryImpl(
     }
 
 
-    override fun getEventsUpdate(): Flow<EventsState<EventsModel?>> {
+    override suspend fun getEventsUpdates(): EventsModel? {
 
-//        val event = eventsColRef
-//            ?.whereEqualTo("isAvailable", true)
-//            ?.orderBy("timestamp", Query.Direction.DESCENDING)
-//            ?.get()
-//            ?.await()
-//            ?.documents
-//            ?.firstOrNull()
-//            ?.toObject(EventsModel::class.java)
-//
-//        if (event == null) {
-//            throw Exception()
-//        }
-//
-//        return event
+        val event = eventsColRef
+            ?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.get()
+            ?.await()
+            ?.documents
+            ?.firstOrNull()
+            ?.toObject(EventsModel::class.java)
 
-        return callbackFlow {
-            eventsColRef
-                ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                ?.addSnapshotListener { value, error ->
-                    if (error != null) {
-                        throw error
-                    }
-
-                    if (value != null) {
-                        for (document in value.documentChanges) {
-                            if (document.type == DocumentChange.Type.MODIFIED) {
-                                val event = document.document.toObject(EventsModel::class.java)
-                                trySend(EventsState.Success(event))
-                            }
-                        }
-                    }
-                }
-
-            awaitClose {
-                close()
-            }
+        if (event == null) {
+            throw Exception()
         }
+
+        return event
     }
 
     override suspend fun getCurrentUserName(): String {
@@ -328,7 +304,7 @@ class EventsRepositoryImpl(
         )
             .setBackoffCriteria(
                 backoffPolicy = BackoffPolicy.LINEAR,
-                duration = Duration.ofHours(5)
+                duration = Duration.ofHours(4)
             )
             .build()
 

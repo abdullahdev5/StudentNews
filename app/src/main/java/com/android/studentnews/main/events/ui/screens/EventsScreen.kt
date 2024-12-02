@@ -172,7 +172,6 @@ fun EventsScreen(
                                     index = item.index,
                                     selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
                                     onClick = { index, category ->
-                                        eventsViewModel.cancelEventsWorker()
                                         eventsViewModel.selectedCategoryIndex = index
                                         if (eventsViewModel.selectedCategoryIndex == 0) {
                                             eventsViewModel.getEventsListByAvailableStatus(true)

@@ -38,7 +38,7 @@ interface EventsRepository {
     fun getEventsListByAvailableStatus(availableStatus: Boolean): Flow<EventsState<List<EventsModel>>>
 
 
-    fun getEventsUpdate(): Flow<EventsState<EventsModel?>>
+    suspend fun getEventsUpdates(): EventsModel?
 
     suspend fun getCurrentUserName(): String
 

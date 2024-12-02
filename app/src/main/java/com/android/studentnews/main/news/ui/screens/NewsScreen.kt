@@ -179,13 +179,13 @@ fun NewsScreen(
     var isMoreDropDownMenuItemOpen by rememberSaveable { mutableStateOf(false) }
     var eventsListGettingCount by rememberSaveable { mutableIntStateOf(0) }
 
-    val newsList = newsViewModel.newsList.collectAsStateWithLifecycle()
-    val categoriesList = newsViewModel.categoriesList.collectAsStateWithLifecycle()
-    val currentUser = newsViewModel.currentUser.collectAsStateWithLifecycle()
+    val newsList by newsViewModel.newsList.collectAsStateWithLifecycle()
+    val categoriesList by newsViewModel.categoriesList.collectAsStateWithLifecycle()
+    val currentUser by newsViewModel.currentUser.collectAsStateWithLifecycle()
 
     val categoryPagerState = rememberPagerState(
         pageCount = {
-            categoriesList.value.size
+            categoriesList.size
         },
         initialPage = 0
     )
@@ -265,7 +265,7 @@ fun NewsScreen(
                         .widthIn(max = configuration.screenWidthDp.dp / 1.3f)
                 ) {
                     MainDrawerContent(
-                        currentUser = currentUser.value,
+                        currentUser = currentUser,
                         scrollState = drawerScrollState,
                         context = context,
                         animatedVisibilityScope = animatedVisibilityScope,
@@ -374,7 +374,7 @@ fun NewsScreen(
                             .navigationBarsPadding()
                             .height(50.dp),
                     ) {
-                        HorizontalDivider(color = Gray)
+                        HorizontalDivider()
 
                         BottomAppBar(
                             containerColor = Color.Transparent,
@@ -410,7 +410,14 @@ fun NewsScreen(
                     }
                 },
                 modifier = Modifier
-                    .nestedScroll(topBarScrollBehavior.nestedScrollConnection)
+                    .then(
+                        if (lazyListState.canScrollForward
+                            || eventsViewModel.lazyListState.canScrollForward
+                        )
+                            Modifier
+                                .nestedScroll(topBarScrollBehavior.nestedScrollConnection)
+                        else Modifier
+                    )
             ) { innerPadding ->
 
                 Column(
@@ -512,27 +519,26 @@ fun NewsScreen(
                                                     .fillMaxWidth()
                                                     .padding(all = 5.dp)
                                             ) {
-                                                AnimatedVisibility(selectedNewsCategoryIndex == null) {
-                                                    CategoryStatusText(
-                                                        category = "For You",
-                                                        style = TextStyle(
-                                                            color = Gray,
-                                                            fontSize = FontSize.MEDIUM.sp,
-                                                            fontWeight = FontWeight.Bold
-                                                        ),
-                                                        modifier = Modifier
-                                                            .padding(
-                                                                start = 5.dp,
-                                                                bottom = 5.dp, top = 0.dp)
-                                                    )
-                                                }
+                                                CategoryStatusText(
+                                                    category = if (newsCategoryStatus.isNotEmpty())
+                                                        newsCategoryStatus else "For You",
+                                                    style = TextStyle(
+                                                        color = Gray,
+                                                        fontSize = FontSize.MEDIUM.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    ),
+                                                    modifier = Modifier
+                                                        .padding(
+                                                            start = 5.dp,
+                                                            bottom = 5.dp, top = 0.dp
+                                                        )
+                                                )
 
                                                 Row(
                                                     modifier = Modifier
                                                         .horizontalScroll(rememberScrollState()),
                                                 ) {
                                                     categoriesList
-                                                        .value
                                                         .forEachIndexed { index, item ->
                                                             CategoryList(
                                                                 categoryName = item.name ?: "",
@@ -582,10 +588,10 @@ fun NewsScreen(
                                                         .height(if (!isLandScape) 250.dp else 80.dp),
                                                 ) { pagerIndex ->
                                                     val item =
-                                                        categoriesList.value[pagerIndex]
+                                                        categoriesList[pagerIndex]
                                                     CategoriesListPagerItem(
                                                         item = item,
-                                                        categoriesList = categoriesList.value,
+                                                        categoriesList = categoriesList,
                                                         categoryPagerState = categoryPagerState,
                                                         context = context,
                                                         onItemCLick = { category ->
@@ -621,12 +627,12 @@ fun NewsScreen(
                                             }
 
                                             items(
-                                                count = newsList.value.size,
+                                                count = newsList.size,
                                                 key = { index ->
-                                                    newsList.value[index].newsId ?: ""
+                                                    newsList[index].newsId ?: ""
                                                 }
                                             ) { index ->
-                                                val item = newsList.value[index]
+                                                val item = newsList[index]
 
                                                 NewsItem(
                                                     item = item,
@@ -686,7 +692,7 @@ fun NewsScreen(
                     }
 
                     if (newsViewModel.newsListStatus.value == Status.FAILED
-                        || newsList.value.isEmpty()
+                        || newsList.isEmpty()
                     ) {
                         Column(
                             modifier = Modifier
@@ -698,7 +704,7 @@ fun NewsScreen(
                             Text(
                                 text = if (newsViewModel.newsListStatus.value == Status.FAILED)
                                     "${newsViewModel.errorMsg}"
-                                else if (newsList.value.isEmpty()) {
+                                else if (newsList.isEmpty()) {
                                     if (newsViewModel.newsListStatus.value == Status.SUCCESS)
                                         "No News Found!" else ""
                                 } else ""

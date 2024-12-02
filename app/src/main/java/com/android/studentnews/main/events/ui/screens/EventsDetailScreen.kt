@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
@@ -305,7 +306,8 @@ fun EventsDetailScreen(
                         }
                     }
                 },
-                enabled = !userIdsListFromBookings.contains(currentUser?.uid),
+                enabled = !userIdsListFromBookings.contains(currentUser?.uid)
+                        && eventById?.isAvailable ?: true,
                 colors = ButtonColors(
                     containerColor = Green,
                     contentColor = White,
@@ -316,12 +318,15 @@ fun EventsDetailScreen(
                     .fillMaxWidth()
                     .padding(all = 10.dp)
                     .background(color = Color.Transparent)
+                    .navigationBarsPadding()
             ) {
-                if (userIdsListFromBookings.contains(currentUser?.uid)) {
-                    Text(text = "Already Registered")
-                } else {
-                    Text(text = "Register")
-                }
+                Text(
+                    text = if (userIdsListFromBookings.contains(currentUser?.uid)) {
+                        "Already Registered"
+                    } else if (!(eventById?.isAvailable ?: true)) {
+                        "Not Available"
+                    } else "Register"
+                )
             }
         },
         modifier = Modifier

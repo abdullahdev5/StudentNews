@@ -1,12 +1,10 @@
 package com.android.studentnews.main.search
 
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
-import com.android.studentnews.core.data.snackbar_controller.SnackBarController
-import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
@@ -15,7 +13,6 @@ import com.android.studentnews.news.domain.resource.NewsState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 class SearchViewModel(
@@ -29,9 +26,11 @@ class SearchViewModel(
     private val _categoriesList = MutableStateFlow<List<CategoryModel>>(emptyList())
     val categoriesList = _categoriesList.asStateFlow()
 
-    val searchingStatus = mutableStateOf("")
+    var searchingStatus by mutableStateOf("")
+        private set
 
-    val errorMsg = mutableStateOf("")
+    var errorMsg by mutableStateOf("")
+        private set
 
 
     init {
@@ -40,7 +39,7 @@ class SearchViewModel(
 
 
     fun onSearch(query: String, currentSelectedCategory: String?) {
-        searchingStatus.value = Status.Loading
+        searchingStatus = Status.Loading
         viewModelScope.launch {
             delay(1000L)
             newsRepository
@@ -49,16 +48,16 @@ class SearchViewModel(
                     when (result) {
                         is NewsState.Success<*> -> {
                             _searchNewsList.value = result.data as List<NewsModel>
-                            searchingStatus.value = Status.SUCCESS
+                            searchingStatus = Status.SUCCESS
                         }
 
                         is NewsState.Loading -> {
-                            searchingStatus.value = Status.Loading
+                            searchingStatus = Status.Loading
                         }
 
                         is NewsState.Failed -> {
-                            searchingStatus.value = Status.FAILED
-                            errorMsg.value = result.error.localizedMessage ?: ""
+                            searchingStatus = Status.FAILED
+                            errorMsg = result.error.localizedMessage ?: ""
                         }
                     }
                 }
@@ -66,7 +65,7 @@ class SearchViewModel(
     }
 
     fun getNewsListByCategory(category: String) {
-        searchingStatus.value = Status.Loading
+        searchingStatus = Status.Loading
         viewModelScope.launch {
             delay(1000L)
             newsRepository
@@ -74,17 +73,17 @@ class SearchViewModel(
                 .collect { result ->
                     when (result) {
                         is NewsState.Failed -> {
-                            searchingStatus.value = Status.FAILED
-                            errorMsg.value = result.error.localizedMessage ?: ""
+                            searchingStatus = Status.FAILED
+                            errorMsg = result.error.localizedMessage ?: ""
                         }
 
                         NewsState.Loading -> {
-                            searchingStatus.value = Status.Loading
+                            searchingStatus = Status.Loading
                         }
 
                         is NewsState.Success -> {
                             _searchNewsList.value = result.data
-                            searchingStatus.value = Status.SUCCESS
+                            searchingStatus = Status.SUCCESS
                         }
                     }
                 }

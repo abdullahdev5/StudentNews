@@ -78,7 +78,7 @@ class NewsRepositoryImpl(
             .get()
             .await()
             .documents
-            .random()
+            .firstOrNull()
             ?.toObject(NewsModel::class.java)
 
         return news
@@ -299,7 +299,7 @@ class NewsRepositoryImpl(
             repeatIntervalTimeUnit = TimeUnit.HOURS,
         ).setBackoffCriteria(
             backoffPolicy = BackoffPolicy.LINEAR,
-            duration = Duration.ofMinutes(1)
+            duration = Duration.ofHours(2)
         )
             // .setConstraints(constraints)
             .build()

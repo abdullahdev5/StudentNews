@@ -6,12 +6,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
-import android.net.Uri
-import androidx.annotation.DrawableRes
-import androidx.appcompat.widget.DrawableUtils
-import androidx.compose.material3.DrawerValue
-import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.util.fastJoinToString
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
@@ -20,7 +14,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.net.toUri
 import androidx.core.text.HtmlCompat
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import coil.imageLoader
@@ -35,16 +28,7 @@ import com.android.studentnews.main.MyBroadcastReceiver
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnews.main.news.NOTIFICATION_ID
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
-import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.conflate
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.fold
-import kotlinx.coroutines.flow.switchMap
-import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 
 
@@ -81,19 +65,12 @@ class EventsWorker(
     override suspend fun doWork(): Result {
 
         return try {
-            val event = eventsRepository.getEventsUpdate().first()
+            val event = eventsRepository.getEventsUpdates()
             val currentUserName = eventsRepository.getCurrentUserName()
 
-            when (event) {
-                is EventsState.Success -> {
+            showNotification(event, currentUserName)
 
-                    showNotification(event.data, currentUserName)
-
-                    Result.success()
-                }
-
-                else -> Result.failure()
-            }
+            Result.success()
 
         } catch (e: Exception) {
             Result.failure()
@@ -136,7 +113,7 @@ class EventsWorker(
 
                 val savedClickedIntent = Intent(
                     context,
-                    SavedEventBroadcastReceiver::class.java
+                    MyBroadcastReceiver::class.java
                 ).apply {
                     action = SAVED_EVENT_ACTION
                     putExtra(TITLE, event?.title ?: "")

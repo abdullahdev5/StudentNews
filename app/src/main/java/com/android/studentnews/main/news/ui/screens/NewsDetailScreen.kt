@@ -3,6 +3,7 @@
 package com.android.studentnews.main.news.ui.screens
 
 import android.content.Intent
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -44,6 +46,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -57,11 +60,13 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.Hyphens
@@ -110,6 +115,7 @@ fun NewsDetailScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
     val scrollState = rememberScrollState()
 
     val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
@@ -125,6 +131,7 @@ fun NewsDetailScreen(
         )
     }
     var isShareBtnClicked by remember { mutableStateOf(false) }
+    var scrollInDp by remember { mutableStateOf(0.dp) }
 
     val pagerState = rememberPagerState(
         pageCount = {
@@ -135,6 +142,10 @@ fun NewsDetailScreen(
     LaunchedEffect(Unit) {
         newsDetailViewModel.getNewsById(newsId)
         newsDetailViewModel.getSavedNewsById(newsId)
+    }
+
+    LaunchedEffect(scrollState.value) {
+        scrollInDp = with(density) { scrollState.value.toDp() }
     }
 
     LaunchedEffect(isShareBtnClicked) {
@@ -166,6 +177,7 @@ fun NewsDetailScreen(
 
                         context.startActivity(sharedIntent)
                         newsDetailViewModel.storeShareCount(newsId)
+                        isShareBtnClicked = false
                     }
                 }
             )
@@ -178,7 +190,6 @@ fun NewsDetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(60.dp)
                     .navigationBarsPadding()
             ) {
                 HorizontalDivider(color = Gray)
@@ -204,92 +215,81 @@ fun NewsDetailScreen(
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    Row() {
+                    AnimatedVisibility(scrollInDp > 300.dp) {
+                        Row {
+                            IconsForLikeAndMore(
+                                onShare = {
+                                    isShareBtnClicked = true
+                                },
+                                onSave = {
+                                    isSaved = !isSaved
 
-                        // Like
-                        IconButton(
-                            onClick = {
-                                isLiked = !isLiked
+                                    newsById?.let {
 
-                                if (isLiked) {
-                                    newsDetailViewModel.onNewsLike(newsId)
-                                } else {
-                                    newsDetailViewModel.onNewsUnLike(newsId)
-                                }
-                            },
-                            colors = IconButtonDefaults.iconButtonColors(
-                                contentColor = if (isLiked) Red else {
-                                    if (isSystemInDarkTheme()) White else Black
-                                }
-                            ),
-                        ) {
+                                        val news = NewsModel(
+                                            newsId = it.newsId,
+                                            title = it.title,
+                                            description = it.description,
+                                            category = it.category,
+                                            timestamp = Timestamp.now(),
+                                            link = it.link,
+                                            linkTitle = it.linkTitle,
+                                            urlList = it.urlList,
+                                            shareCount = it.shareCount ?: 0,
+                                            likes = it.likes
+                                        )
 
-                            AnimatedVisibility(isLiked) {
-                                Icon(
-                                    imageVector = Icons.Default.Favorite,
-                                    contentDescription = "Icon of liked News",
-                                )
-                            }
-
-                            AnimatedVisibility(!isLiked) {
-                                Icon(
-                                    imageVector = Icons.Default.FavoriteBorder,
-                                    contentDescription = "Icon of unliked News",
-                                )
-                            }
-                        }
-
-                        IconButton(
-                            onClick = {
-
-                                isSaved = !isSaved
-
-                                newsById?.let {
-
-                                    val news = NewsModel(
-                                        newsId = it.newsId,
-                                        title = it.title,
-                                        description = it.description,
-                                        category = it.category,
-                                        timestamp = Timestamp.now(),
-                                        link = it.link,
-                                        linkTitle = it.linkTitle,
-                                        urlList = it.urlList,
-                                        shareCount = it.shareCount ?: 0,
-                                        likes = it.likes
-                                    )
-
-                                    if (isSaved) {
-                                        newsDetailViewModel.onNewsSave(news)
-                                    } else {
-                                        newsDetailViewModel.onNewsRemoveFromSave(news)
+                                        if (isSaved) {
+                                            newsDetailViewModel.onNewsSave(news)
+                                        } else {
+                                            newsDetailViewModel.onNewsRemoveFromSave(news)
+                                        }
                                     }
-                                }
-                            },
-                        ) {
-                            AnimatedVisibility(isSaved) {
-                                Icon(
-                                    imageVector = Icons.Filled.Bookmark,
-                                    contentDescription = "Icon for Saved News",
-                                )
-                            }
+                                },
+                                onLike = {
+                                    isLiked = !isLiked
 
-                            AnimatedVisibility(!isSaved) {
-                                Icon(
-                                    imageVector = Icons.Outlined.BookmarkBorder,
-                                    contentDescription = "Icon for unSaved News",
-                                )
-                            }
-                        }
+                                    if (isLiked) {
+                                        newsDetailViewModel.onNewsLike(newsId)
+                                    } else {
+                                        newsDetailViewModel.onNewsUnLike(newsId)
+                                    }
+                                },
+                                saveIconBtnContent = {
+                                    AnimatedVisibility(isSaved) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Bookmark,
+                                            contentDescription = "Icon for Saved News",
+                                        )
+                                    }
 
-                        IconButton(
-                            onClick = {
-                                isShareBtnClicked = true
-                            },
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = "Icon for unSaved News",
+                                    AnimatedVisibility(!isSaved) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.BookmarkBorder,
+                                            contentDescription = "Icon for unSaved News",
+                                        )
+                                    }
+                                },
+                                likedIconBtnContent = {
+                                    AnimatedVisibility(isLiked) {
+                                        Icon(
+                                            imageVector = Icons.Default.Favorite,
+                                            contentDescription = "Icon of liked News",
+                                        )
+                                    }
+
+                                    AnimatedVisibility(!isLiked) {
+                                        Icon(
+                                            imageVector = Icons.Default.FavoriteBorder,
+                                            contentDescription = "Icon of unliked News",
+                                        )
+                                    }
+                                },
+                                likeBtnColors = IconButtonDefaults.iconButtonColors(
+                                    contentColor = if (isLiked) Red else {
+                                        if (isSystemInDarkTheme()) White else Black
+                                    }
+                                )
                             )
                         }
                     }
@@ -453,32 +453,13 @@ fun NewsDetailScreen(
                             .align(Alignment.TopEnd)
                             .padding(bottom = 20.dp, end = 10.dp)
                     ) {
-
-                        // Share
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Share Icon
-                            IconButton(
-                                onClick = {
-                                    isShareBtnClicked = true
-                                },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Share,
-                                    contentDescription = "Icon of unliked News",
-                                )
-                            }
-                            // Share Count
-                            if ((newsById?.shareCount ?: 0) > 0) {
-                                Text(text = (newsById?.shareCount ?: 0).toString())
-                            }
-                        }
-
-                        // Save
-                        IconButton(
-                            onClick = {
-
+                        IconsForLikeAndMore(
+                            // on Share
+                            onShare = {
+                                isShareBtnClicked = true
+                            },
+                            // on Save
+                            onSave = {
                                 isSaved = !isSaved
 
                                 newsById?.let {
@@ -502,50 +483,34 @@ fun NewsDetailScreen(
                                     }
                                 }
                             },
-                        ) {
-                            this@Column.AnimatedVisibility(isSaved) {
-                                Icon(
-                                    imageVector = Icons.Default.Bookmark,
-                                    contentDescription = "Icon of Liked News",
-                                )
-                            }
+                            // on Like
+                            onLike = {
+                                isLiked = !isLiked
 
-                            this@Column.AnimatedVisibility(!isSaved) {
-                                Icon(
-                                    imageVector = Icons.Default.BookmarkBorder,
-                                    contentDescription = "Icon of unliked News",
-                                )
-                            }
-                        }
+                                if (isLiked) {
+                                    newsDetailViewModel.onNewsLike(newsId)
+                                } else {
+                                    newsDetailViewModel.onNewsUnLike(newsId)
+                                }
+                            },
+                            // Save Icon
+                            saveIconBtnContent = {
+                                this@Column.AnimatedVisibility(isSaved) {
+                                    Icon(
+                                        imageVector = Icons.Default.Bookmark,
+                                        contentDescription = "Icon of Liked News",
+                                    )
+                                }
 
-                        // Like
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .sharedElement(
-                                    state = rememberSharedContentState(key = "like/$newsId"),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                    renderInOverlayDuringTransition = true
-                                ),
-                        ) {
+                                this@Column.AnimatedVisibility(!isSaved) {
+                                    Icon(
+                                        imageVector = Icons.Default.BookmarkBorder,
+                                        contentDescription = "Icon of unliked News",
+                                    )
+                                }
+                            },
                             // Like Icon
-                            IconButton(
-                                onClick = {
-
-                                    isLiked = !isLiked
-
-                                    if (isLiked) {
-                                        newsDetailViewModel.onNewsLike(newsId)
-                                    } else {
-                                        newsDetailViewModel.onNewsUnLike(newsId)
-                                    }
-                                },
-                                colors = IconButtonDefaults.iconButtonColors(
-                                    contentColor = if (isLiked) Red else {
-                                        if (isSystemInDarkTheme()) White else Black
-                                    }
-                                ),
-                            ) {
+                            likedIconBtnContent = {
                                 this@Column.AnimatedVisibility(isLiked) {
                                     Icon(
                                         imageVector = Icons.Default.Favorite,
@@ -559,14 +524,29 @@ fun NewsDetailScreen(
                                         contentDescription = "Icon of unliked News",
                                     )
                                 }
-                            }
+                            },
+                            // Share Count
+                            shareCountContent = {
+                                if ((newsById?.shareCount ?: 0) > 0) {
+                                    Text(text = (newsById?.shareCount ?: 0).toString())
+                                }
+                            },
                             // Like Count
-                            this@Column.AnimatedVisibility(
-                                isLiked && (newsById?.likes?.size ?: 0) > 0
-                            ) {
-                                Text(text = (newsById?.likes?.size ?: 0).toString())
-                            }
-                        }
+                            likeCountContent = {
+                                // Like Count
+                                if (
+                                    isLiked && (newsById?.likes?.size ?: 0) > 0
+                                ) {
+                                    Text(text = (newsById?.likes?.size ?: 0).toString())
+                                }
+                            },
+                            // Like Button Colors
+                            likeBtnColors = IconButtonDefaults.iconButtonColors(
+                                contentColor = if (isLiked) Red else {
+                                    if (isSystemInDarkTheme()) White else Black
+                                }
+                            ),
+                        )
                     }
 
                     Column(
@@ -706,6 +686,57 @@ fun UrlListPagerIndicator(
             Text(text = "/", color = White)
             Text(text = "${state.pageCount}", color = White)
         }
+    }
+}
+
+@Composable
+fun IconsForLikeAndMore(
+    onShare: () -> Unit,
+    onSave: () -> Unit,
+    onLike: () -> Unit,
+    saveIconBtnContent: @Composable () -> Unit,
+    likedIconBtnContent: @Composable () -> Unit,
+    shareCountContent: @Composable (() -> Unit)? = null,
+    likeCountContent: @Composable (() -> Unit)? = null,
+    likeBtnColors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
+) {
+    // Share
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Share Icon
+        IconButton(
+            onClick = onShare,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Share,
+                contentDescription = "Icon of unliked News",
+            )
+        }
+        // Share Count
+        shareCountContent?.invoke()
+    }
+
+    // Save
+    IconButton(
+        onClick = onSave,
+    ) {
+        saveIconBtnContent()
+    }
+
+    // Like
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // Like Icon
+        IconButton(
+            onClick = onLike,
+            colors = likeBtnColors,
+        ) {
+            likedIconBtnContent()
+        }
+        // Like Count
+        likeCountContent?.invoke()
     }
 }
 
