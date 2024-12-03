@@ -3,9 +3,9 @@ package com.android.studentnews.main.events.data.repository
 import androidx.work.BackoffPolicy
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.android.studentnews.auth.domain.models.UserModel
+import com.android.studentnews.core.data.paginator.DefaultPaginator
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.events.EventsWorker
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
@@ -14,12 +14,11 @@ import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.getField
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -45,6 +44,9 @@ class EventsRepositoryImpl(
         get() = userDocRef?.collection(FirestoreNodes.SAVED_EVENTS)
 
 
+    override var lastEventsVisibleItem: DocumentSnapshot? = null
+
+
     override fun getEventsList(): Flow<EventsState<List<EventsModel?>>> {
         return callbackFlow {
 
@@ -52,14 +54,53 @@ class EventsRepositoryImpl(
 
             eventsColRef
                 ?.orderBy("timestamp", Query.Direction.DESCENDING)
+                ?.limit(6)
                 ?.get()
                 ?.addOnSuccessListener { documents ->
-                    val eventsList = documents.toObjects(EventsModel::class.java)
+
+                    lastEventsVisibleItem = documents.documents[documents.size() - 1]
+
+                    val eventsList = documents.map {
+                        it.toObject(EventsModel::class.java)
+                    }
                     trySend(EventsState.Success(eventsList))
                 }
                 ?.addOnFailureListener { error ->
                     trySend(EventsState.Failed(error))
                 }
+
+            awaitClose {
+                close()
+            }
+        }
+    }
+
+    override fun <T> getNextList(
+        collectionReference: CollectionReference?,
+        lastItem: DocumentSnapshot?,
+        myClassToObject: Class<T>,
+        isExists: Boolean,
+    ): Flow<EventsState<List<T>>> {
+        return callbackFlow {
+
+            DefaultPaginator(
+                collectionReference = collectionReference,
+                lastItem = lastItem,
+                onLoading = {
+                    trySend(EventsState.Loading)
+                },
+                onSuccess = { nextList ->
+                    trySend(EventsState.Success(nextList))
+                },
+                onError = { error ->
+                    trySend(EventsState.Failed(error))
+                },
+                myClassToObject = myClassToObject,
+                isExistReturn = { isExists ->
+                    trySend(EventsState.IsAfterPaginateDocumentsExist(isExists))
+                },
+                isExists = isExists
+            )
 
             awaitClose {
                 close()

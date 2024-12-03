@@ -5,18 +5,26 @@ import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.flow.Flow
 
 interface EventsRepository {
 
     val userDocRef: DocumentReference?
-
     val eventsColRef: CollectionReference?
-
     val savedEventsColRef: CollectionReference?
+
+    var lastEventsVisibleItem: DocumentSnapshot?
 
 
     fun getEventsList(): Flow<EventsState<List<EventsModel?>>>
+
+    fun <T> getNextList(
+        collectionReference: CollectionReference?,
+        lastItem: DocumentSnapshot?,
+        myClassToObject: Class<T>,
+        isExists: Boolean,
+    ): Flow<EventsState<List<T>>>
 
     fun getEventById(eventId: String): Flow<EventsState<EventsModel?>>
 

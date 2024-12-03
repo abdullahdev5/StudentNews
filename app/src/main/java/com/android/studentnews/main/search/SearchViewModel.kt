@@ -59,6 +59,7 @@ class SearchViewModel(
                             searchingStatus = Status.FAILED
                             errorMsg = result.error.localizedMessage ?: ""
                         }
+                        else -> {}
                     }
                 }
         }
@@ -85,6 +86,7 @@ class SearchViewModel(
                             _searchNewsList.value = result.data
                             searchingStatus = Status.SUCCESS
                         }
+                        else -> {}
                     }
                 }
         }

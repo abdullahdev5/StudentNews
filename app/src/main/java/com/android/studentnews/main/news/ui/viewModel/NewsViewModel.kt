@@ -1,21 +1,19 @@
 package com.android.studentnews.news.ui.viewModel
 
-import android.content.Context
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.auth.domain.repository.AuthRepository
-import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
-import com.android.studentnews.core.data.snackbar_controller.SnackBarController
-import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
-import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.domain.resource.NewsState
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +39,7 @@ class NewsViewModel(
     val errorMsg = mutableStateOf("")
 
     val newsListStatus = mutableStateOf("")
+    var isAfterPaginateDocumentsExist by mutableStateOf(true)
 
     // Current User
     private val _currentUser = MutableStateFlow<UserModel?>(null)
@@ -78,6 +77,44 @@ class NewsViewModel(
                             _newsList.value = result.data
                             newsListStatus.value = Status.SUCCESS
                         }
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun getNextNewsList() {
+        viewModelScope.launch {
+            delay(2000)
+            newsRepository
+                .getNextList<NewsModel>(
+                    collectionReference = newsRepository.newsColRef,
+                    lastItem = newsRepository.lastNewsListVisibleItem,
+                    myClassToObject = NewsModel::class.java,
+                    isExists = isAfterPaginateDocumentsExist
+                )
+                .collectLatest { result ->
+                    when (result) {
+                        is NewsState.Loading -> {
+                            newsListStatus.value = Status.Loading
+                        }
+
+                        is NewsState.Success -> {
+                            _newsList.value = result.data
+                            newsListStatus.value = Status.SUCCESS
+                        }
+
+                        is NewsState.Failed -> {
+                            newsListStatus.value = Status.FAILED
+                            errorMsg.value = result.error.localizedMessage ?: ""
+                        }
+
+                        is NewsState.IsAfterPaginateDocumentsExist -> {
+                            isAfterPaginateDocumentsExist = result.isExists
+                            println("Is Exists getNextNewsList(): $isAfterPaginateDocumentsExist")
+                        }
+
+                        else -> {}
                     }
                 }
         }
@@ -106,6 +143,8 @@ class NewsViewModel(
                             _newsList.value = result.data
                             newsListStatus.value = Status.SUCCESS
                         }
+
+                        else -> {}
                     }
                 }
         }
@@ -152,3 +191,12 @@ class NewsViewModel(
 
 
 }
+
+open class Paginatior<T>(
+    val collectionReference: CollectionReference?,
+    val lastItem: DocumentSnapshot? = null,
+    val onLoading: () -> Unit,
+    val onSuccess: (List<T>) -> Unit,
+    val onError: (Throwable) -> Unit,
+    val myClassToObject: () -> Class<T>,
+)

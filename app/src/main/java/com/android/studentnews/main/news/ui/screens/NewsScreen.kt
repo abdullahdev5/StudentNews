@@ -123,7 +123,6 @@ import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.NavigationBarItems
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
@@ -222,12 +221,14 @@ fun NewsScreen(
                     selectedNewsCategoryIndex?.let {
                         selectedNewsCategoryIndex = null
                     }
+                    newsViewModel.isAfterPaginateDocumentsExist = true
                 }
                 if (tabPagerState.currentPage == 1) {
                     eventsViewModel.getEventsList()
                     eventsViewModel.selectedCategoryIndex?.let {
                         eventsViewModel.selectedCategoryIndex = null
                     }
+                    eventsViewModel.isAfterPaginateDocumentsExist = true
                 }
             }
         } else {
@@ -545,7 +546,10 @@ fun NewsScreen(
                                                         .forEachIndexed { index, item ->
                                                             CategoryListItem(
                                                                 categoryName = item.name ?: "",
-                                                                modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                                                                modifier = Modifier.padding(
+                                                                    start = 5.dp,
+                                                                    end = 5.dp
+                                                                ),
                                                                 colors = SegmentedButtonDefaults.colors(
                                                                     activeContainerColor = if (isSystemInDarkTheme()) White else Black,
                                                                     inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
@@ -657,6 +661,27 @@ fun NewsScreen(
                                                     animatedVisibilityScope = animatedVisibilityScope,
                                                     sharedTransitionScope = sharedTransitionScope,
                                                 )
+
+                                                if (
+                                                    index == newsList.lastIndex - 1
+                                                    && newsCategoryStatus.isEmpty()
+                                                    && newsViewModel.isAfterPaginateDocumentsExist
+                                                ) {
+                                                    println("Is Exists Under UI Condition: ${newsViewModel.isAfterPaginateDocumentsExist}")
+                                                    newsViewModel.getNextNewsList()
+                                                }
+                                            }
+
+                                            if (newsViewModel.newsListStatus.value == Status.Loading) {
+                                                item {
+                                                    Row(
+                                                        horizontalArrangement = Arrangement.Center,
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                    ) {
+                                                        CircularProgressIndicator()
+                                                    }
+                                                }
                                             }
 
                                         }
@@ -692,13 +717,6 @@ fun NewsScreen(
                                 .align(Alignment.TopCenter)
                         )
 
-                    }
-
-                    if (
-                        newsViewModel.newsListStatus.value == Status.Loading
-                        || eventsViewModel.eventsListStatus == Status.Loading
-                    ) {
-                        LoadingDialog()
                     }
 
                     if (newsViewModel.newsListStatus.value == Status.FAILED

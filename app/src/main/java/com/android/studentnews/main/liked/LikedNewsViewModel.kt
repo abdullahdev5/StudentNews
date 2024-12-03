@@ -56,6 +56,7 @@ class LikedNewsViewModel(
                             likedNewsListStatus = Status.SUCCESS
                             _likedNewsList.value = result.data
                         }
+                        else -> {}
                     }
                 }
         }

@@ -37,6 +37,8 @@ class EventsViewModel(
     val eventsList = _eventsList.asStateFlow()
     var eventsListStatus by mutableStateOf("")
         private set
+    var isAfterPaginateDocumentsExist by mutableStateOf(true)
+
     var eventsListErrorMsg by mutableStateOf("")
         private set
 
@@ -85,6 +87,38 @@ class EventsViewModel(
                             eventsListErrorMsg = result.error.localizedMessage ?: ""
                         }
 
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun getNextEventsList() {
+        viewModelScope.launch {
+            delay(2000)
+            eventsRepository
+                .getNextList<EventsModel>(
+                    collectionReference = eventsRepository.eventsColRef,
+                    lastItem = eventsRepository.lastEventsVisibleItem,
+                    myClassToObject = EventsModel::class.java,
+                    isExists = isAfterPaginateDocumentsExist
+                )
+                .collectLatest { result ->
+                    when (result) {
+                        is EventsState.Loading -> {
+                            eventsListStatus = Status.Loading
+                        }
+                        is EventsState.Failed -> {
+                            eventsListStatus = Status.FAILED
+                            eventsListErrorMsg = result.error.localizedMessage ?: ""
+                        }
+                        is EventsState.Success -> {
+                            _eventsList.value = result.data
+                            eventsListStatus = Status.SUCCESS
+                        }
+                        is EventsState.IsAfterPaginateDocumentsExist -> {
+                            isAfterPaginateDocumentsExist = result.isExists
+                        }
                         else -> {}
                     }
                 }

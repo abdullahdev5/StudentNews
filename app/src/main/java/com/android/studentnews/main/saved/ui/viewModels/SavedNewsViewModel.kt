@@ -125,6 +125,7 @@ class SavedNewsViewModel(
                                     )
                                 )
                         }
+                        else -> {}
                     }
                 }
         }

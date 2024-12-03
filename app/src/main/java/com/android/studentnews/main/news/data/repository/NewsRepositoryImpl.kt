@@ -6,6 +6,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
+import com.android.studentnews.core.data.paginator.DefaultPaginator
 import com.android.studentnews.main.news.NewsWorker
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.news.domain.model.CategoryModel
@@ -15,6 +16,7 @@ import com.android.studentnews.news.domain.resource.NewsState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
@@ -45,6 +47,10 @@ class NewsRepositoryImpl(
     override val savedNewsColRef: CollectionReference?
         get() = userDocRef?.collection(FirestoreNodes.SAVED_NEWS_COL)
 
+//    private var lastVisibleItem: DocumentSnapshot? = null
+
+    override var lastNewsListVisibleItem: DocumentSnapshot? = null
+
 
     // News
     override fun getNewsList(): Flow<NewsState<List<NewsModel>>> = callbackFlow {
@@ -53,8 +59,13 @@ class NewsRepositoryImpl(
 
         newsColRef
             ?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.limit(4)
             ?.get()
             ?.addOnSuccessListener { documents -> //, error ->
+
+                lastNewsListVisibleItem = documents.documents[documents.size() - 1]
+                println("Last Visible Item Index in getNewsList(): $lastNewsListVisibleItem")
+
                 val news = documents.map {
                     it.toObject(NewsModel::class.java)
                 }
@@ -67,6 +78,44 @@ class NewsRepositoryImpl(
 
         awaitClose {
             close()
+        }
+    }
+
+    override fun <T> getNextList(
+        collectionReference: CollectionReference?,
+        lastItem: DocumentSnapshot?,
+        myClassToObject: Class<T>,
+        isExists: Boolean,
+    ): Flow<NewsState<List<T>>> {
+        return callbackFlow {
+
+            if (lastNewsListVisibleItem != null) {
+                if (lastNewsListVisibleItem!!.exists()) {
+
+                    DefaultPaginator(
+                        collectionReference = collectionReference,
+                        lastItem = lastItem,
+                        onLoading = {
+                            trySend(NewsState.Loading)
+                        },
+                        onSuccess = { nextList ->
+                            trySend(NewsState.Success(nextList))
+                        },
+                        onError = { error ->
+                            trySend(NewsState.Failed(error))
+                        },
+                        myClassToObject = myClassToObject,
+                        isExistReturn = { isExists ->
+                            trySend(NewsState.IsAfterPaginateDocumentsExist(isExists))
+                        },
+                        isExists = isExists
+                    )
+                }
+            }
+
+            awaitClose {
+                close()
+            }
         }
     }
 

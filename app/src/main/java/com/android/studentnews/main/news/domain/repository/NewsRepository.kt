@@ -4,8 +4,10 @@ import android.content.Context
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.resource.NewsState
+import com.android.studentnews.news.ui.viewModel.Paginatior
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.flow.Flow
 
 interface NewsRepository {
@@ -16,8 +18,16 @@ interface NewsRepository {
     val categoriesColRef: CollectionReference?
     val savedNewsColRef: CollectionReference?
 
+    var lastNewsListVisibleItem: DocumentSnapshot?
+
     // News
     fun getNewsList(): Flow<NewsState<List<NewsModel>>>
+    fun <T> getNextList(
+        collectionReference: CollectionReference?,
+        lastItem: DocumentSnapshot?,
+        myClassToObject: Class<T>,
+        isExists: Boolean,
+    ): Flow<NewsState<List<T>>>
     suspend fun getNewsUpdates(): NewsModel?
     fun onNewsSave(news: NewsModel): Flow<NewsState<String>>
     fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>>
