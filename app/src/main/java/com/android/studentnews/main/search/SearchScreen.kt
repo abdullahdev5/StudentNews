@@ -103,10 +103,17 @@ fun SearchScreen(
     val searchNewsList by searchViewModel.searchNewsList.collectAsStateWithLifecycle()
     val categoryList by searchViewModel.categoriesList.collectAsStateWithLifecycle()
 
-    var isSearchResultNotFound = remember(searchViewModel.searchingStatus) {
+    var isSearchResultNotFound = remember {
         derivedStateOf {
             searchNewsList.isEmpty()
-                    && searchViewModel.searchingStatus != Status.Loading
+                    && (searchViewModel.searchingStatus.isNotEmpty()
+                    && searchViewModel.searchingStatus != Status.Loading)
+        }
+    }.value
+
+    var isNotSearchedYet = remember {
+        derivedStateOf {
+            searchViewModel.searchingStatus.isEmpty()
         }
     }.value
 
@@ -208,50 +215,45 @@ fun SearchScreen(
 
             Scaffold(
                 topBar = {
-                    AnimatedVisibility(
-                        lazyListState.lastScrolledBackward
-                                || lazyListState.firstVisibleItemIndex == 0
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 5.dp)
+                            .horizontalScroll(rememberScrollState())
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(all = 5.dp)
-                                .horizontalScroll(rememberScrollState())
-                        ) {
-                            // Category List
-                            categoryList
-                                .forEachIndexed { index, item ->
-                                    CategoryListItem(
-                                        categoryName = item.name ?: "",
-                                        modifier = Modifier.padding(all = 5.dp),
-                                        colors = SegmentedButtonDefaults.colors(
-                                            activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                            inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                            activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                            inactiveContentColor = LocalContentColor.current
-                                        ),
-                                        index = index,
-                                        selectedCategoryIndex = selectedCategoryIndex,
-                                        onClick = { thisIndex, categoryName ->
-                                            selectedCategoryIndex = thisIndex
-                                            currentSelectedCategory = categoryName
-                                            focusManager.clearFocus()
-                                            if (query.isNotEmpty()) {
-                                                searchViewModel.onSearch(
-                                                    query,
-                                                    currentSelectedCategory
+                        // Category List
+                        categoryList
+                            .forEachIndexed { index, item ->
+                                CategoryListItem(
+                                    categoryName = item.name ?: "",
+                                    modifier = Modifier.padding(all = 5.dp),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                        inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                        activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                        inactiveContentColor = LocalContentColor.current
+                                    ),
+                                    index = index,
+                                    selectedCategoryIndex = selectedCategoryIndex,
+                                    onClick = { thisIndex, categoryName ->
+                                        selectedCategoryIndex = thisIndex
+                                        currentSelectedCategory = categoryName
+                                        focusManager.clearFocus()
+                                        if (query.isNotEmpty()) {
+                                            searchViewModel.onSearch(
+                                                query,
+                                                currentSelectedCategory
+                                            )
+                                        } else {
+                                            searchViewModel
+                                                .getNewsListByCategory(
+                                                    currentSelectedCategory!!
                                                 )
-                                            } else {
-                                                searchViewModel
-                                                    .getNewsListByCategory(
-                                                        currentSelectedCategory!!
-                                                    )
-                                            }
-                                            searchCount++
                                         }
-                                    )
-                                }
-                        }
+                                        searchCount++
+                                    }
+                                )
+                            }
                     }
                 },
                 modifier = Modifier
@@ -310,12 +312,11 @@ fun SearchScreen(
                                 .padding(all = 10.dp)
                         ) {
                             if (
-                                searchCount == 0 || isSearchResultNotFound
+                                isNotSearchedYet || isSearchResultNotFound
                             ) {
                                 Icon(
-                                    imageVector = if (
-                                        searchCount != 0 && isSearchResultNotFound
-                                    ) Icons.Outlined.SearchOff else Icons.Outlined.Search,
+                                    imageVector = if (isSearchResultNotFound)
+                                        Icons.Outlined.SearchOff else Icons.Outlined.Search,
                                     contentDescription = "icon for Showing to do Search",
                                     modifier = Modifier
                                         .width(100.dp)
@@ -324,7 +325,7 @@ fun SearchScreen(
                                 )
                             }
                             Text(
-                                text = if (searchCount == 0)
+                                text = if (isNotSearchedYet)
                                     "Search for news"
                                 else if (searchViewModel.searchingStatus == Status.FAILED)
                                     searchViewModel.errorMsg
