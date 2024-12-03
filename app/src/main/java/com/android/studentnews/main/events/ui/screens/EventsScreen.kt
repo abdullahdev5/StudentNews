@@ -8,42 +8,39 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Surface
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonColors
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,13 +51,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.studentnews.core.domain.constants.FontSize
-import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
@@ -68,14 +62,12 @@ import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.core.domain.common.formatDateToString
 import com.android.studentnews.core.domain.common.formatTimeToString
 import com.android.studentnews.news.ui.CategoryStatusText
-import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
-import kotlinx.coroutines.flow.collect
 
 enum class EventsCategoryList(
     val category: String,
@@ -85,6 +77,7 @@ enum class EventsCategoryList(
     NOT_AVAILABLE("Not Available", 1)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
 fun EventsScreen(
@@ -112,11 +105,8 @@ fun EventsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(all = 5.dp)
+                        .padding(all = 5.dp),
                 ) {
-                    AnimatedVisibility(eventsViewModel.selectedCategoryIndex != null) {
-                        Text("sortedBy:-")
-                    }
                     // Category
                     categoryList
                         .sortedByDescending {
@@ -125,8 +115,15 @@ fun EventsScreen(
                         }
                         .forEach { item ->
 
-                            CategoryList(
+                            CategoryListItem(
                                 categoryName = item.category,
+                                modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                    inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                    activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                    inactiveContentColor = LocalContentColor.current
+                                ),
                                 index = item.index,
                                 selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
                                 onClick = { index, category ->
@@ -139,7 +136,6 @@ fun EventsScreen(
                                 }
                             )
                         }
-
                 }
             }
 
@@ -150,38 +146,49 @@ fun EventsScreen(
             ) {
 
                 item {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(all = 10.dp)
+                            .padding(start = 5.dp, top = 5.dp),
                     ) {
-                        AnimatedVisibility(eventsViewModel.selectedCategoryIndex != null) {
-                            Text("sortedBy:-")
-                        }
-                        // Category
-                        categoryList
-                            .sortedByDescending {
-                                eventsViewModel.selectedCategoryIndex != null
-                                        && eventsViewModel.selectedCategoryIndex == it.index
-                            }
-                            .forEach { item ->
+                        Text(
+                            text = "Filters",
+                            fontWeight = FontWeight.Bold,
+                            color = Gray,
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            // Category
+                            categoryList
+                                .sortedByDescending {
+                                    eventsViewModel.selectedCategoryIndex != null
+                                            && eventsViewModel.selectedCategoryIndex == it.index
+                                }
+                                .forEach { item ->
 
-                                CategoryList(
-                                    categoryName = item.category,
-                                    index = item.index,
-                                    selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                                    onClick = { index, category ->
-                                        eventsViewModel.selectedCategoryIndex = index
-                                        if (eventsViewModel.selectedCategoryIndex == 0) {
-                                            eventsViewModel.getEventsListByAvailableStatus(true)
-                                        } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                            eventsViewModel.getEventsListByAvailableStatus(false)
+                                    CategoryListItem(
+                                        categoryName = item.category,
+                                        modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                                        colors = SegmentedButtonDefaults.colors(
+                                            activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                            inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                            activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                            inactiveContentColor = LocalContentColor.current
+                                        ),
+                                        index = item.index,
+                                        selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
+                                        onClick = { index, category ->
+                                            eventsViewModel.selectedCategoryIndex = index
+                                            if (eventsViewModel.selectedCategoryIndex == 0) {
+                                                eventsViewModel.getEventsListByAvailableStatus(true)
+                                            } else if (eventsViewModel.selectedCategoryIndex == 1) {
+                                                eventsViewModel.getEventsListByAvailableStatus(false)
+                                            }
                                         }
-                                    }
-                                )
-                            }
-
+                                    )
+                                }
+                        }
                     }
                 }
 
@@ -352,48 +359,71 @@ fun EventsItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-inline fun CategoryList(
+inline fun CategoryListItem(
     categoryName: String,
+    modifier: Modifier = Modifier,
+    colors: SegmentedButtonColors = SegmentedButtonDefaults.colors(),
     index: Int,
     selectedCategoryIndex: Int?,
     crossinline onClick: (Int, String) -> Unit,
 ) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSystemInDarkTheme()) {
-                if (
-                    selectedCategoryIndex != null
-                    && selectedCategoryIndex == index
-                ) White else DarkGray
-            } else {
-                if (
-                    selectedCategoryIndex != null
-                    && selectedCategoryIndex == index
-                ) Black else LightGray
-            },
-            contentColor = if (isSystemInDarkTheme()) {
-                if (
-                    selectedCategoryIndex != null
-                    && selectedCategoryIndex == index
-                ) Black else White
-            } else {
-                if (
-                    selectedCategoryIndex != null
-                    && selectedCategoryIndex == index
-                ) White else Black
-            }
-        ),
-        modifier = Modifier
-            .padding(start = 5.dp, end = 5.dp)
-            .clickable {
+
+    SingleChoiceSegmentedButtonRow {
+        SegmentedButton(
+            selected = selectedCategoryIndex == index,
+            onClick = {
                 onClick(index, categoryName)
-            }
-    ) {
-        CategoryStatusText(
-            category = categoryName,
-            modifier = Modifier
-                .padding(all = 5.dp)
+            },
+            label = {
+                Text(
+                    text = categoryName,
+                    fontSize = FontSize.SMALL.sp
+                )
+            },
+//            icon = {},
+            shape = RoundedCornerShape(10.dp),
+            colors = colors,
+            modifier = modifier
         )
     }
+
+//    Card(
+//        colors = CardDefaults.cardColors(
+//            containerColor = if (isSystemInDarkTheme()) {
+//                if (
+//                    selectedCategoryIndex != null
+//                    && selectedCategoryIndex == index
+//                ) White else DarkGray
+//            } else {
+//                if (
+//                    selectedCategoryIndex != null
+//                    && selectedCategoryIndex == index
+//                ) Black else LightGray
+//            },
+//            contentColor = if (isSystemInDarkTheme()) {
+//                if (
+//                    selectedCategoryIndex != null
+//                    && selectedCategoryIndex == index
+//                ) Black else White
+//            } else {
+//                if (
+//                    selectedCategoryIndex != null
+//                    && selectedCategoryIndex == index
+//                ) White else Black
+//            }
+//        ),
+//        modifier = Modifier
+//            .padding(start = 5.dp, end = 5.dp)
+//            .clickable {
+//                onClick(index, categoryName)
+//            }
+//    ) {
+//        CategoryStatusText(
+//            category = categoryName,
+//            modifier = Modifier
+//                .padding(all = 5.dp)
+//        )
+//    }
 }

@@ -70,6 +70,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBarItem
@@ -77,6 +78,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -124,7 +126,7 @@ import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.NavigationBarItems
 import com.android.studentnews.main.events.domain.destination.EventsDestination
-import com.android.studentnews.main.events.ui.screens.CategoryList
+import com.android.studentnews.main.events.ui.screens.CategoryListItem
 import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
@@ -165,7 +167,7 @@ fun NewsScreen(
     val pullToRefreshState = rememberPullToRefreshState()
     val configuration = LocalConfiguration.current
     val isLandScape = remember {
-        configuration.orientation.equals(Configuration.ORIENTATION_LANDSCAPE)
+        configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
     val drawerState = rememberDrawerState(
         initialValue = DrawerValue.Closed
@@ -519,20 +521,21 @@ fun NewsScreen(
                                                     .fillMaxWidth()
                                                     .padding(all = 5.dp)
                                             ) {
-                                                CategoryStatusText(
-                                                    category = if (newsCategoryStatus.isNotEmpty())
-                                                        newsCategoryStatus else "For You",
-                                                    style = TextStyle(
-                                                        color = Gray,
-                                                        fontSize = FontSize.MEDIUM.sp,
-                                                        fontWeight = FontWeight.Bold
-                                                    ),
-                                                    modifier = Modifier
-                                                        .padding(
-                                                            start = 5.dp,
-                                                            bottom = 5.dp, top = 0.dp
-                                                        )
-                                                )
+                                                if (selectedNewsCategoryIndex == null) {
+                                                    CategoryStatusText(
+                                                        category = "For You",
+                                                        style = TextStyle(
+                                                            fontSize = FontSize.MEDIUM.sp,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = Gray
+                                                        ),
+                                                        modifier = Modifier
+                                                            .padding(
+                                                                top = 5.dp,
+                                                                start = 5.dp,
+                                                            ),
+                                                    )
+                                                }
 
                                                 Row(
                                                     modifier = Modifier
@@ -540,8 +543,15 @@ fun NewsScreen(
                                                 ) {
                                                     categoriesList
                                                         .forEachIndexed { index, item ->
-                                                            CategoryList(
+                                                            CategoryListItem(
                                                                 categoryName = item.name ?: "",
+                                                                modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                                                                colors = SegmentedButtonDefaults.colors(
+                                                                    activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                                                    inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                                                    activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                                                    inactiveContentColor = LocalContentColor.current
+                                                                ),
                                                                 index = index,
                                                                 selectedCategoryIndex = selectedNewsCategoryIndex,
                                                                 onClick = { index, category ->
@@ -585,7 +595,7 @@ fun NewsScreen(
                                                         )
                                                     ),
                                                     modifier = Modifier
-                                                        .height(if (!isLandScape) 250.dp else 80.dp),
+                                                        .height(250.dp),
                                                 ) { pagerIndex ->
                                                     val item =
                                                         categoriesList[pagerIndex]

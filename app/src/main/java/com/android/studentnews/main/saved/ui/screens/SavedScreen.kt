@@ -2,7 +2,9 @@
 
 package com.android.studentnews.main.settings.saved.ui.screens
 
+import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -31,11 +33,14 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalScrollCaptureInProgress
+import androidx.core.os.ConfigurationCompat
 import androidx.navigation.NavHostController
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
@@ -55,7 +60,12 @@ fun SavedScreen(
 ) {
 
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
     val scope = rememberCoroutineScope()
+    val scrollBehaviour = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+    val isLandscape = remember {
+        configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    }
 
     val pagerState = rememberPagerState(pageCount = { 2 })
 
@@ -89,10 +99,17 @@ fun SavedScreen(
                         contentDescription = "Icon For Saved"
                     )
                 },
+                scrollBehavior = scrollBehaviour
             )
         },
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .then(
+                if (isLandscape)
+                    Modifier
+                        .nestedScroll(scrollBehaviour.nestedScrollConnection)
+                else Modifier
+            ),
     ) { innerPadding ->
 
         Column(
@@ -110,10 +127,12 @@ fun SavedScreen(
                         Text(text = "News")
                     },
                     icon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Newspaper,
-                            contentDescription = "Icon for News"
-                        )
+                        if (!isLandscape) {
+                            Icon(
+                                imageVector = Icons.Outlined.Newspaper,
+                                contentDescription = "Icon for News"
+                            )
+                        }
                     },
                     onClick = {
                         scope.launch {
@@ -130,10 +149,12 @@ fun SavedScreen(
                         Text(text = "Events")
                     },
                     icon = {
-                        Icon(
-                            imageVector = Icons.Outlined.Event,
-                            contentDescription = "Icon for Events"
-                        )
+                        if (!isLandscape) {
+                            Icon(
+                                imageVector = Icons.Outlined.Event,
+                                contentDescription = "Icon for Events"
+                            )
+                        }
                     },
                     onClick = {
                         scope.launch {

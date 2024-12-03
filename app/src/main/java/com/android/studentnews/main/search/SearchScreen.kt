@@ -11,6 +11,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +30,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.ImagesearchRoller
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,6 +40,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.SearchBarDefaults
+import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,11 +68,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.main.events.ui.screens.CategoryList
+import com.android.studentnews.main.events.ui.screens.CategoryListItem
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.news.ui.NewsItem
+import com.android.studentnews.ui.theme.Black
+import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
+import com.android.studentnews.ui.theme.LightGray
+import com.android.studentnews.ui.theme.White
 
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
@@ -210,14 +215,21 @@ fun SearchScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(all = 10.dp)
+                                .padding(all = 5.dp)
                                 .horizontalScroll(rememberScrollState())
                         ) {
                             // Category List
                             categoryList
                                 .forEachIndexed { index, item ->
-                                    CategoryList(
+                                    CategoryListItem(
                                         categoryName = item.name ?: "",
+                                        modifier = Modifier.padding(all = 5.dp),
+                                        colors = SegmentedButtonDefaults.colors(
+                                            activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                            inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                            activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                            inactiveContentColor = LocalContentColor.current
+                                        ),
                                         index = index,
                                         selectedCategoryIndex = selectedCategoryIndex,
                                         onClick = { thisIndex, categoryName ->
