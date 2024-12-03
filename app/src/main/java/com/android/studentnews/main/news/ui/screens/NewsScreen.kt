@@ -552,7 +552,7 @@ fun NewsScreen(
                                                                 ),
                                                                 colors = SegmentedButtonDefaults.colors(
                                                                     activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                                                    inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                                                    inactiveContainerColor = Color.Transparent,
                                                                     activeContentColor = if (isSystemInDarkTheme()) Black else White,
                                                                     inactiveContentColor = LocalContentColor.current
                                                                 ),

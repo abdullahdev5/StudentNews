@@ -45,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -115,35 +116,35 @@ fun EventsScreen(
                     }
                     .forEach { item ->
 
-                        CategoryListItem(
-                            categoryName = item.category,
-                            modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                            colors = SegmentedButtonDefaults.colors(
-                                activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                inactiveContentColor = LocalContentColor.current
-                            ),
-                            index = item.index,
-                            selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                            onClick = { index, _ ->
-                                eventsViewModel.selectedCategoryIndex = index
-                                if (eventsViewModel.selectedCategoryIndex == 0) {
-                                    eventsViewModel.getEventsListByAvailableStatus(true)
-                                } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                    eventsViewModel.getEventsListByAvailableStatus(false)
+                            CategoryListItem(
+                                categoryName = item.category,
+                                modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                                colors = SegmentedButtonDefaults.colors(
+                                    activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                    inactiveContainerColor = Color.Transparent,
+                                    activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                    inactiveContentColor = LocalContentColor.current
+                                ),
+                                index = item.index,
+                                selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
+                                onClick = { index, category ->
+                                    eventsViewModel.selectedCategoryIndex = index
+                                    if (eventsViewModel.selectedCategoryIndex == 0) {
+                                        eventsViewModel.getEventsListByAvailableStatus(true)
+                                    } else if (eventsViewModel.selectedCategoryIndex == 1) {
+                                        eventsViewModel.getEventsListByAvailableStatus(false)
+                                    }
                                 }
-                            }
-                        )
-                    }
+                            )
+                        }
+                }
             }
-        }
 
-        LazyColumn(
-            state = eventsViewModel.lazyListState,
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
+            LazyColumn(
+                state = eventsViewModel.lazyListState,
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
 
             if (eventsViewModel.eventsListStatus != Status.Loading) {
                 item {
@@ -173,7 +174,7 @@ fun EventsScreen(
                                         modifier = Modifier.padding(start = 5.dp, end = 5.dp),
                                         colors = SegmentedButtonDefaults.colors(
                                             activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                            inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                            inactiveContainerColor = Color.Transparent,
                                             activeContentColor = if (isSystemInDarkTheme()) Black else White,
                                             inactiveContentColor = LocalContentColor.current
                                         ),
@@ -404,7 +405,7 @@ inline fun CategoryListItem(
                     fontSize = FontSize.SMALL.sp
                 )
             },
-//            icon = {},
+            icon = {},
             shape = RoundedCornerShape(10.dp),
             colors = colors,
             modifier = modifier
