@@ -130,17 +130,17 @@ class NewsViewModel(
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Loading -> {
-                            newsListStatus.value = Status.Loading
+                            newsListStatus = Status.Loading
                         }
 
                         is NewsState.Success -> {
                             _newsList.value = result.data
-                            newsListStatus.value = Status.SUCCESS
+                            newsListStatus = Status.SUCCESS
                         }
 
                         is NewsState.Failed -> {
-                            newsListStatus.value = Status.FAILED
-                            errorMsg.value = result.error.localizedMessage ?: ""
+                            newsListStatus = Status.FAILED
+                            errorMsg = result.error.localizedMessage ?: ""
                         }
 
                         is NewsState.IsAfterPaginateEndReached -> {
