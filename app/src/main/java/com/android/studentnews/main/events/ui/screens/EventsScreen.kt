@@ -9,7 +9,6 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,8 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -64,11 +61,8 @@ import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.core.domain.common.formatDateToString
 import com.android.studentnews.core.domain.common.formatTimeToString
 import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.news.ui.CategoryStatusText
 import com.android.studentnews.ui.theme.Black
-import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
-import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 
@@ -213,7 +207,7 @@ fun EventsScreen(
                 if (
                     index == eventsList.lastIndex - 1
                     && eventsViewModel.selectedCategoryIndex == null
-                    && eventsViewModel.isAfterPaginateDocumentsExist
+                    && eventsViewModel.isEndReached
                 ) {
                     eventsViewModel.getNextEventsList()
                 }

@@ -12,7 +12,6 @@ import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.domain.resource.NewsState
-import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
@@ -39,11 +38,41 @@ class NewsViewModel(
     val errorMsg = mutableStateOf("")
 
     val newsListStatus = mutableStateOf("")
-    var isAfterPaginateDocumentsExist by mutableStateOf(true)
+    var newsCategoryListStatusWhenClick by mutableStateOf("")
+        private set
+
+    var isEndReached by mutableStateOf(false)
 
     // Current User
     private val _currentUser = MutableStateFlow<UserModel?>(null)
     val currentUser = _currentUser.asStateFlow()
+
+//    var lastItem: DocumentSnapshot? = null
+//        private set
+//
+//    var endReached by mutableStateOf(true)
+
+//    val paginator = MyPaginator<NewsModel>(
+//        initialKey = lastItem,
+//        firstTimeLimit = 5,
+//        collectionReference = newsRepository.newsColRef,
+//        onLoading = {
+//            newsListStatus.value = Status.Loading
+//        },
+//        onError = { error ->
+//            newsListStatus.value = Status.FAILED
+//            errorMsg.value = error?.localizedMessage ?: ""
+//        },
+//        onSuccess = { thisEndReached, thisLastItem, items ->
+//            _newsList.value = items
+//            lastItem = thisLastItem
+//            endReached = thisEndReached
+//        },
+//        onReset = {
+//            lastItem = null
+//        },
+//        myClassToObject = NewsModel::class.java
+//    )
 
 
     init {
@@ -83,15 +112,15 @@ class NewsViewModel(
         }
     }
 
-    fun getNextNewsList() {
+    fun getNextNewsList(limit: Long) {
         viewModelScope.launch {
-            delay(2000)
+            delay(3000)
             newsRepository
                 .getNextList<NewsModel>(
                     collectionReference = newsRepository.newsColRef,
                     lastItem = newsRepository.lastNewsListVisibleItem,
                     myClassToObject = NewsModel::class.java,
-                    isExists = isAfterPaginateDocumentsExist
+                    limit = limit,
                 )
                 .collectLatest { result ->
                     when (result) {
@@ -109,9 +138,8 @@ class NewsViewModel(
                             errorMsg.value = result.error.localizedMessage ?: ""
                         }
 
-                        is NewsState.IsAfterPaginateDocumentsExist -> {
-                            isAfterPaginateDocumentsExist = result.isExists
-                            println("Is Exists getNextNewsList(): $isAfterPaginateDocumentsExist")
+                        is NewsState.IsAfterPaginateEndReached -> {
+                            isEndReached = result.isEndReached
                         }
 
                         else -> {}
@@ -131,17 +159,17 @@ class NewsViewModel(
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Failed -> {
-                            newsListStatus.value = Status.FAILED
+                            newsCategoryListStatusWhenClick = Status.FAILED
                             errorMsg.value = result.error.localizedMessage ?: ""
                         }
 
                         NewsState.Loading -> {
-                            newsListStatus.value = Status.Loading
+                            newsCategoryListStatusWhenClick = Status.Loading
                         }
 
                         is NewsState.Success -> {
                             _newsList.value = result.data
-                            newsListStatus.value = Status.SUCCESS
+                            newsCategoryListStatusWhenClick = Status.SUCCESS
                         }
 
                         else -> {}
@@ -191,12 +219,3 @@ class NewsViewModel(
 
 
 }
-
-open class Paginatior<T>(
-    val collectionReference: CollectionReference?,
-    val lastItem: DocumentSnapshot? = null,
-    val onLoading: () -> Unit,
-    val onSuccess: (List<T>) -> Unit,
-    val onError: (Throwable) -> Unit,
-    val myClassToObject: () -> Class<T>,
-)

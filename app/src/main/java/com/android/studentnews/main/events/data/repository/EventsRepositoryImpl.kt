@@ -54,7 +54,7 @@ class EventsRepositoryImpl(
 
             eventsColRef
                 ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                ?.limit(6)
+                ?.limit(5)
                 ?.get()
                 ?.addOnSuccessListener { documents ->
 
@@ -79,7 +79,6 @@ class EventsRepositoryImpl(
         collectionReference: CollectionReference?,
         lastItem: DocumentSnapshot?,
         myClassToObject: Class<T>,
-        isExists: Boolean,
     ): Flow<EventsState<List<T>>> {
         return callbackFlow {
 
@@ -89,17 +88,18 @@ class EventsRepositoryImpl(
                 onLoading = {
                     trySend(EventsState.Loading)
                 },
-                onSuccess = { nextList ->
+                onSuccess = { lastItem, nextList ->
                     trySend(EventsState.Success(nextList))
+                    lastEventsVisibleItem = lastItem
                 },
                 onError = { error ->
                     trySend(EventsState.Failed(error))
                 },
                 myClassToObject = myClassToObject,
-                isExistReturn = { isExists ->
-                    trySend(EventsState.IsAfterPaginateDocumentsExist(isExists))
+                isEndReached = { isExists ->
+                    trySend(EventsState.IsAfterPaginateEndReached(isExists))
                 },
-                isExists = isExists
+                limit = 2
             )
 
             awaitClose {

@@ -23,7 +23,6 @@ interface EventsRepository {
         collectionReference: CollectionReference?,
         lastItem: DocumentSnapshot?,
         myClassToObject: Class<T>,
-        isExists: Boolean,
     ): Flow<EventsState<List<T>>>
 
     fun getEventById(eventId: String): Flow<EventsState<EventsModel?>>

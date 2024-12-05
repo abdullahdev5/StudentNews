@@ -123,6 +123,7 @@ import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.NavigationBarItems
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
@@ -137,10 +138,8 @@ import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
-import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
-import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -221,14 +220,14 @@ fun NewsScreen(
                     selectedNewsCategoryIndex?.let {
                         selectedNewsCategoryIndex = null
                     }
-                    newsViewModel.isAfterPaginateDocumentsExist = true
+                    newsViewModel.isEndReached = true
                 }
                 if (tabPagerState.currentPage == 1) {
                     eventsViewModel.getEventsList()
                     eventsViewModel.selectedCategoryIndex?.let {
                         eventsViewModel.selectedCategoryIndex = null
                     }
-                    eventsViewModel.isAfterPaginateDocumentsExist = true
+                    eventsViewModel.isEndReached = true
                 }
             }
         } else {
@@ -665,10 +664,10 @@ fun NewsScreen(
                                                 if (
                                                     index == newsList.lastIndex - 1
                                                     && newsCategoryStatus.isEmpty()
-                                                    && newsViewModel.isAfterPaginateDocumentsExist
+                                                    && newsViewModel.isEndReached
                                                 ) {
-                                                    println("Is Exists Under UI Condition: ${newsViewModel.isAfterPaginateDocumentsExist}")
-                                                    newsViewModel.getNextNewsList()
+                                                    println("Is Exists Under UI Condition: ${newsViewModel.isEndReached}")
+                                                    newsViewModel.getNextNewsList(limit = 6)
                                                 }
                                             }
 
@@ -739,6 +738,13 @@ fun NewsScreen(
                             )
                         }
                     }
+
+
+                    // Loading When Category Click
+                    if (newsViewModel.newsCategoryListStatusWhenClick == Status.Loading) {
+                        LoadingDialog()
+                    }
+
                 }
             }
 

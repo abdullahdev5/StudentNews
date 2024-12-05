@@ -37,7 +37,7 @@ class EventsViewModel(
     val eventsList = _eventsList.asStateFlow()
     var eventsListStatus by mutableStateOf("")
         private set
-    var isAfterPaginateDocumentsExist by mutableStateOf(true)
+    var isEndReached by mutableStateOf(false)
 
     var eventsListErrorMsg by mutableStateOf("")
         private set
@@ -101,7 +101,6 @@ class EventsViewModel(
                     collectionReference = eventsRepository.eventsColRef,
                     lastItem = eventsRepository.lastEventsVisibleItem,
                     myClassToObject = EventsModel::class.java,
-                    isExists = isAfterPaginateDocumentsExist
                 )
                 .collectLatest { result ->
                     when (result) {
@@ -116,8 +115,8 @@ class EventsViewModel(
                             _eventsList.value = result.data
                             eventsListStatus = Status.SUCCESS
                         }
-                        is EventsState.IsAfterPaginateDocumentsExist -> {
-                            isAfterPaginateDocumentsExist = result.isExists
+                        is EventsState.IsAfterPaginateEndReached -> {
+                            isEndReached = result.isEndReached
                         }
                         else -> {}
                     }

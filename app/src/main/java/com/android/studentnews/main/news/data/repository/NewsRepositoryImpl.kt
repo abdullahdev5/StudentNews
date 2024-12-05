@@ -20,6 +20,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
@@ -85,7 +86,7 @@ class NewsRepositoryImpl(
         collectionReference: CollectionReference?,
         lastItem: DocumentSnapshot?,
         myClassToObject: Class<T>,
-        isExists: Boolean,
+        limit: Long,
     ): Flow<NewsState<List<T>>> {
         return callbackFlow {
 
@@ -98,17 +99,18 @@ class NewsRepositoryImpl(
                         onLoading = {
                             trySend(NewsState.Loading)
                         },
-                        onSuccess = { nextList ->
+                        onSuccess = { lastItem, nextList ->
                             trySend(NewsState.Success(nextList))
+                            lastNewsListVisibleItem = lastItem
                         },
                         onError = { error ->
                             trySend(NewsState.Failed(error))
                         },
                         myClassToObject = myClassToObject,
-                        isExistReturn = { isExists ->
-                            trySend(NewsState.IsAfterPaginateDocumentsExist(isExists))
+                        isEndReached = { isExists ->
+                            trySend(NewsState.IsAfterPaginateEndReached(isExists))
                         },
-                        isExists = isExists
+                        limit = limit,
                     )
                 }
             }
