@@ -9,6 +9,7 @@ import androidx.work.WorkManager
 import com.android.studentnews.core.data.paginator.DefaultPaginator
 import com.android.studentnews.main.news.NewsWorker
 import com.android.studentnews.core.domain.constants.FirestoreNodes
+import com.android.studentnews.main.events.TITLE
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -20,7 +21,6 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
@@ -52,6 +52,8 @@ class NewsRepositoryImpl(
 
     override var lastNewsListVisibleItem: DocumentSnapshot? = null
 
+    override var isNewsListEndReached: Boolean = false
+
 
     // News
     override fun getNewsList(): Flow<NewsState<List<NewsModel>>> = callbackFlow {
@@ -65,7 +67,7 @@ class NewsRepositoryImpl(
             ?.addOnSuccessListener { documents -> //, error ->
 
                 lastNewsListVisibleItem = documents.documents[documents.size() - 1]
-                println("Last Visible Item Index in getNewsList(): $lastNewsListVisibleItem")
+                println("Last Item: In getNewsList(): ${lastNewsListVisibleItem?.getString(TITLE)}")
 
                 val news = documents.map {
                     it.toObject(NewsModel::class.java)
@@ -83,7 +85,7 @@ class NewsRepositoryImpl(
     }
 
     override fun <T> getNextList(
-        collectionReference: CollectionReference?,
+        collectionReference: CollectionReference,
         lastItem: DocumentSnapshot?,
         myClassToObject: Class<T>,
         limit: Long,
@@ -101,14 +103,14 @@ class NewsRepositoryImpl(
                         },
                         onSuccess = { lastItem, nextList ->
                             trySend(NewsState.Success(nextList))
-                            lastNewsListVisibleItem = lastItem
+//                            lastNewsListVisibleItem = lastItem
                         },
                         onError = { error ->
                             trySend(NewsState.Failed(error))
                         },
                         myClassToObject = myClassToObject,
-                        isEndReached = { isExists ->
-                            trySend(NewsState.IsAfterPaginateEndReached(isExists))
+                        isEndReached = { isEndReached ->
+                            isNewsListEndReached = isEndReached
                         },
                         limit = limit,
                     )

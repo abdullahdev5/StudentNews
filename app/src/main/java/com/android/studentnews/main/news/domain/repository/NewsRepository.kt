@@ -1,6 +1,5 @@
 package com.android.studentnews.news.domain.repository
 
-import android.content.Context
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.resource.NewsState
@@ -18,11 +17,12 @@ interface NewsRepository {
     val savedNewsColRef: CollectionReference?
 
     var lastNewsListVisibleItem: DocumentSnapshot?
+    var isNewsListEndReached: Boolean
 
     // News
     fun getNewsList(): Flow<NewsState<List<NewsModel>>>
     fun <T> getNextList(
-        collectionReference: CollectionReference?,
+        collectionReference: CollectionReference,
         lastItem: DocumentSnapshot?,
         myClassToObject: Class<T>,
         limit: Long,

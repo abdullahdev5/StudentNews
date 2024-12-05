@@ -3,6 +3,7 @@ package com.android.studentnews.news.ui.viewModel
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.auth.domain.models.UserModel
@@ -46,38 +47,16 @@ class NewsViewModel(
     var newsCategoryListStatusWhenClick by mutableStateOf("")
         private set
 
-    var isEndReached by mutableStateOf(false)
+    var isEndReached
+        get() = newsRepository.isNewsListEndReached
+        set(value) { value }
+
+    val lastItem
+        get() = newsRepository.lastNewsListVisibleItem
 
     // Current User
     private val _currentUser = MutableStateFlow<UserModel?>(null)
     val currentUser = _currentUser.asStateFlow()
-
-//    var lastItem: DocumentSnapshot? = null
-//        private set
-//
-//    var endReached by mutableStateOf(true)
-
-//    val paginator = MyPaginator<NewsModel>(
-//        initialKey = lastItem,
-//        firstTimeLimit = 5,
-//        collectionReference = newsRepository.newsColRef,
-//        onLoading = {
-//            newsListStatus.value = Status.Loading
-//        },
-//        onError = { error ->
-//            newsListStatus.value = Status.FAILED
-//            errorMsg.value = error?.localizedMessage ?: ""
-//        },
-//        onSuccess = { thisEndReached, thisLastItem, items ->
-//            _newsList.value = items
-//            lastItem = thisLastItem
-//            endReached = thisEndReached
-//        },
-//        onReset = {
-//            lastItem = null
-//        },
-//        myClassToObject = NewsModel::class.java
-//    )
 
 
     init {
@@ -111,6 +90,7 @@ class NewsViewModel(
                             _newsList.value = result.data
                             newsListStatus = Status.SUCCESS
                         }
+
                         else -> {}
                     }
                 }
@@ -122,7 +102,7 @@ class NewsViewModel(
             delay(3000)
             newsRepository
                 .getNextList<NewsModel>(
-                    collectionReference = newsRepository.newsColRef,
+                    collectionReference = newsRepository.newsColRef!!,
                     lastItem = newsRepository.lastNewsListVisibleItem,
                     myClassToObject = NewsModel::class.java,
                     limit = limit,
@@ -141,10 +121,6 @@ class NewsViewModel(
                         is NewsState.Failed -> {
                             newsListStatus = Status.FAILED
                             errorMsg = result.error.localizedMessage ?: ""
-                        }
-
-                        is NewsState.IsAfterPaginateEndReached -> {
-                            isEndReached = result.isEndReached
                         }
 
                         else -> {}

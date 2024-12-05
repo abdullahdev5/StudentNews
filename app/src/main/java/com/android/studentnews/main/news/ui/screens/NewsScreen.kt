@@ -648,10 +648,10 @@ fun NewsScreen(
                                                 if (
                                                     index == newsList.lastIndex - 1
                                                     && newsCategoryStatus.isEmpty()
-                                                    && newsViewModel.isEndReached
+                                                    && !newsViewModel.isEndReached
                                                 ) {
                                                     println("Is Exists Under UI Condition: ${newsViewModel.isEndReached}")
-                                                    newsViewModel.getNextNewsList(limit = 6)
+                                                    newsViewModel.getNextNewsList(limit = 4)
                                                 }
                                             }
 

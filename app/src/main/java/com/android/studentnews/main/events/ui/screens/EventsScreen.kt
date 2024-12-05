@@ -143,7 +143,7 @@ fun EventsScreen(
         ) {
 
             item {
-                Column(
+                Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(start = 5.dp, top = 5.dp),
@@ -196,11 +196,11 @@ fun EventsScreen(
                 )
 
                 if (
-                    index == eventsList.lastIndex - 1
+                    index == eventsList.lastIndex
                     && eventsViewModel.selectedCategoryIndex == null
-                    && eventsViewModel.isEndReached
+                    && !eventsViewModel.isEndReached
                 ) {
-                    eventsViewModel.getNextEventsList()
+                    eventsViewModel.getNextEventsList(limit = 2)
                 }
             }
 

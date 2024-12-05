@@ -46,6 +46,8 @@ class EventsRepositoryImpl(
 
     override var lastEventsVisibleItem: DocumentSnapshot? = null
 
+    override var isEventsListEndReached: Boolean = false
+
 
     override fun getEventsList(): Flow<EventsState<List<EventsModel?>>> {
         return callbackFlow {
@@ -54,7 +56,7 @@ class EventsRepositoryImpl(
 
             eventsColRef
                 ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                ?.limit(5)
+                ?.limit(4)
                 ?.get()
                 ?.addOnSuccessListener { documents ->
 
@@ -76,32 +78,39 @@ class EventsRepositoryImpl(
     }
 
     override fun <T> getNextList(
-        collectionReference: CollectionReference?,
-        lastItem: DocumentSnapshot?,
+        collectionReference: CollectionReference,
+        lastItem: DocumentSnapshot,
         myClassToObject: Class<T>,
+        limit: Long,
     ): Flow<EventsState<List<T>>> {
         return callbackFlow {
 
-            DefaultPaginator(
-                collectionReference = collectionReference,
-                lastItem = lastItem,
-                onLoading = {
-                    trySend(EventsState.Loading)
-                },
-                onSuccess = { lastItem, nextList ->
-                    trySend(EventsState.Success(nextList))
-                    lastEventsVisibleItem = lastItem
-                },
-                onError = { error ->
-                    trySend(EventsState.Failed(error))
-                },
-                myClassToObject = myClassToObject,
-                isEndReached = { isExists ->
-                    trySend(EventsState.IsAfterPaginateEndReached(isExists))
-                },
-                limit = 2
-            )
 
+            if (lastEventsVisibleItem != null) {
+                if (lastEventsVisibleItem!!.exists()) {
+
+                    DefaultPaginator(
+                        collectionReference = collectionReference,
+                        lastItem = lastItem,
+                        onLoading = {
+                            trySend(EventsState.Loading)
+                        },
+                        onSuccess = { lastItem, nextList ->
+                            trySend(EventsState.Success(nextList))
+//                            lastEventsVisibleItem = lastItem
+                        },
+                        onError = { error ->
+                            trySend(EventsState.Failed(error))
+                        },
+                        myClassToObject = myClassToObject,
+                        isEndReached = { isEndReached ->
+                            isEventsListEndReached = isEndReached
+                        },
+                        limit = limit
+                    )
+
+                }
+            }
             awaitClose {
                 close()
             }

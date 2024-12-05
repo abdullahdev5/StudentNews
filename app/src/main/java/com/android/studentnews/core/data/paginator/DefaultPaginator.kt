@@ -7,11 +7,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 import java.lang.Class
 
-inline fun <T> DefaultPaginator(
-    collectionReference: CollectionReference?,
+inline suspend fun <T> DefaultPaginator(
+    collectionReference: CollectionReference,
     lastItem: DocumentSnapshot? = null,
     onLoading: () -> Unit,
-    crossinline onSuccess: (DocumentSnapshot?, List<T>) -> Unit,
+    crossinline onSuccess: (DocumentSnapshot, List<T>) -> Unit,
     crossinline onError: (Throwable) -> Unit,
     myClassToObject: Class<T>,
     crossinline isEndReached: (Boolean) -> Unit,
@@ -19,24 +19,24 @@ inline fun <T> DefaultPaginator(
 ) {
     onLoading()
 
+    delay(1000)
+
     collectionReference
-        ?.orderBy("timestamp", Query.Direction.DESCENDING)
-        ?.startAfter(lastItem)
-        ?.limit(limit)
-        ?.get()
-        ?.addOnSuccessListener { documents ->
+        .orderBy("timestamp", Query.Direction.DESCENDING)
+        .startAfter(lastItem)
+//        .limit(limit)
+        .get()
+        .addOnSuccessListener { documents ->
             isEndReached(documents != null)
+            val thisLastItem = documents.documents[documents.size() - 1]
             if (documents != null) {
-                val lastItem = documents.documents[documents.size() - 1]
                 val nextList = documents.map {
                     it.toObject(myClassToObject)
                 }
-                lastItem?.let {
-                    onSuccess(it, nextList)
-                }
+                onSuccess(thisLastItem, nextList)
             }
         }
-        ?.addOnFailureListener { error ->
+        .addOnFailureListener { error ->
             onError(error)
         }
 }

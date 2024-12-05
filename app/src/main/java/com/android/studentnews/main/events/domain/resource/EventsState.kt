@@ -5,5 +5,4 @@ sealed class EventsState<out T> {
     data class Success<T>(val data: T) : EventsState<T>()
     data class Progress(val progress: Float) : EventsState<Nothing>()
     data class Failed(val error: Throwable) : EventsState<Nothing>()
-    data class IsAfterPaginateEndReached(val isEndReached: Boolean): EventsState<Nothing>()
 }

@@ -37,7 +37,12 @@ class EventsViewModel(
     val eventsList = _eventsList.asStateFlow()
     var eventsListStatus by mutableStateOf("")
         private set
-    var isEndReached by mutableStateOf(false)
+    var isEndReached
+        get() = eventsRepository.isEventsListEndReached
+        set(value) { value }
+
+    val lastEventsListItem
+        get() = eventsRepository.lastEventsVisibleItem
 
     var eventsListErrorMsg by mutableStateOf("")
         private set
@@ -93,14 +98,15 @@ class EventsViewModel(
         }
     }
 
-    fun getNextEventsList() {
+    fun getNextEventsList(limit: Long) {
         viewModelScope.launch {
-            delay(2000)
+            delay(3000)
             eventsRepository
                 .getNextList<EventsModel>(
-                    collectionReference = eventsRepository.eventsColRef,
-                    lastItem = eventsRepository.lastEventsVisibleItem,
+                    collectionReference = eventsRepository.eventsColRef!!,
+                    lastItem = lastEventsListItem!!,
                     myClassToObject = EventsModel::class.java,
+                    limit = limit
                 )
                 .collectLatest { result ->
                     when (result) {
@@ -114,9 +120,6 @@ class EventsViewModel(
                         is EventsState.Success -> {
                             _eventsList.value = result.data
                             eventsListStatus = Status.SUCCESS
-                        }
-                        is EventsState.IsAfterPaginateEndReached -> {
-                            isEndReached = result.isEndReached
                         }
                         else -> {}
                     }
