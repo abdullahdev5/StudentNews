@@ -152,44 +152,35 @@ fun EventsScreen(
                             .fillMaxWidth()
                             .padding(start = 5.dp, top = 5.dp),
                     ) {
-                        Text(
-                            text = "Filters",
-                            fontWeight = FontWeight.Bold,
-                            color = Gray,
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            // Category
-                            categoryList
-                                .sortedByDescending {
-                                    eventsViewModel.selectedCategoryIndex != null
-                                            && eventsViewModel.selectedCategoryIndex == it.index
-                                }
-                                .forEach { item ->
+                        // Category
+                        categoryList
+                            .sortedByDescending {
+                                eventsViewModel.selectedCategoryIndex != null
+                                        && eventsViewModel.selectedCategoryIndex == it.index
+                            }
+                            .forEach { item ->
 
-                                    CategoryListItem(
-                                        categoryName = item.category,
-                                        modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                                        colors = SegmentedButtonDefaults.colors(
-                                            activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                            inactiveContainerColor = Color.Transparent,
-                                            activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                            inactiveContentColor = LocalContentColor.current
-                                        ),
-                                        index = item.index,
-                                        selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                                        onClick = { index, category ->
-                                            eventsViewModel.selectedCategoryIndex = index
-                                            if (eventsViewModel.selectedCategoryIndex == 0) {
-                                                eventsViewModel.getEventsListByAvailableStatus(true)
-                                            } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                                eventsViewModel.getEventsListByAvailableStatus(false)
-                                            }
+                                CategoryListItem(
+                                    categoryName = item.category,
+                                    modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                        inactiveContainerColor = Color.Transparent,
+                                        activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                        inactiveContentColor = LocalContentColor.current
+                                    ),
+                                    index = item.index,
+                                    selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
+                                    onClick = { index, category ->
+                                        eventsViewModel.selectedCategoryIndex = index
+                                        if (eventsViewModel.selectedCategoryIndex == 0) {
+                                            eventsViewModel.getEventsListByAvailableStatus(true)
+                                        } else if (eventsViewModel.selectedCategoryIndex == 1) {
+                                            eventsViewModel.getEventsListByAvailableStatus(false)
                                         }
-                                    )
-                                }
-                        }
+                                    }
+                                )
+                            }
                     }
                 }
 

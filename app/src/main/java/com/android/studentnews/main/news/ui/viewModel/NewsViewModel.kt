@@ -1,16 +1,12 @@
 package com.android.studentnews.news.ui.viewModel
 
-import android.content.Context
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.auth.domain.repository.AuthRepository
-import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
-import com.android.studentnews.core.data.snackbar_controller.SnackBarController
-import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
-import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
@@ -36,11 +32,13 @@ class NewsViewModel(
     private val _categoriesList = MutableStateFlow<List<CategoryModel>>(emptyList())
     val categoriesList = _categoriesList.asStateFlow()
 
-    var isRefreshing = mutableStateOf(false)
+    var isRefreshing by mutableStateOf(false)
 
-    val errorMsg = mutableStateOf("")
+    var errorMsg by mutableStateOf("")
+        private set
 
-    val newsListStatus = mutableStateOf("")
+    var newsListStatus by mutableStateOf("")
+        private set
 
     // Current User
     private val _currentUser = MutableStateFlow<UserModel?>(null)
@@ -48,7 +46,7 @@ class NewsViewModel(
 
 
     init {
-        isRefreshing.value = true
+        isRefreshing = true
         getCategoriesList()
         getCurrentUser()
         setupPeriodicNewsWorkRequest()
@@ -58,7 +56,7 @@ class NewsViewModel(
 
     // News
     fun getNewsList() {
-        newsListStatus.value = Status.Loading
+        newsListStatus = Status.Loading
         viewModelScope.launch {
             delay(1000L)
             newsRepository
@@ -66,17 +64,17 @@ class NewsViewModel(
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Failed -> {
-                            newsListStatus.value = Status.FAILED
-                            errorMsg.value = result.error.localizedMessage ?: ""
+                            newsListStatus = Status.FAILED
+                            errorMsg = result.error.localizedMessage ?: ""
                         }
 
                         NewsState.Loading -> {
-                            newsListStatus.value = Status.Loading
+                            newsListStatus = Status.Loading
                         }
 
                         is NewsState.Success -> {
                             _newsList.value = result.data
-                            newsListStatus.value = Status.SUCCESS
+                            newsListStatus = Status.SUCCESS
                         }
                     }
                 }
@@ -86,7 +84,7 @@ class NewsViewModel(
 
     // Category
     fun getNewsListByCategory(category: String) {
-        newsListStatus.value = Status.Loading
+        newsListStatus = Status.Loading
         viewModelScope.launch {
             delay(1000L)
             newsRepository
@@ -94,17 +92,17 @@ class NewsViewModel(
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Failed -> {
-                            newsListStatus.value = Status.FAILED
-                            errorMsg.value = result.error.localizedMessage ?: ""
+                            newsListStatus = Status.FAILED
+                            errorMsg = result.error.localizedMessage ?: ""
                         }
 
                         NewsState.Loading -> {
-                            newsListStatus.value = Status.Loading
+                            newsListStatus = Status.Loading
                         }
 
                         is NewsState.Success -> {
                             _newsList.value = result.data
-                            newsListStatus.value = Status.SUCCESS
+                            newsListStatus = Status.SUCCESS
                         }
                     }
                 }
