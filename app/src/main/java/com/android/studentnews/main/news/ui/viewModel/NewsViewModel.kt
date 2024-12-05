@@ -7,12 +7,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.auth.domain.repository.AuthRepository
+import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
+import com.android.studentnews.core.data.snackbar_controller.SnackBarController
+import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
+import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.domain.resource.NewsState
-import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,11 +36,13 @@ class NewsViewModel(
     private val _categoriesList = MutableStateFlow<List<CategoryModel>>(emptyList())
     val categoriesList = _categoriesList.asStateFlow()
 
-    var isRefreshing = mutableStateOf(false)
+    var isRefreshing by mutableStateOf(false)
 
-    val errorMsg = mutableStateOf("")
+    var errorMsg by mutableStateOf("")
+        private set
 
-    val newsListStatus = mutableStateOf("")
+    var newsListStatus by mutableStateOf("")
+        private set
     var newsCategoryListStatusWhenClick by mutableStateOf("")
         private set
 
@@ -76,7 +81,7 @@ class NewsViewModel(
 
 
     init {
-        isRefreshing.value = true
+        isRefreshing = true
         getCategoriesList()
         getCurrentUser()
         setupPeriodicNewsWorkRequest()
@@ -86,7 +91,7 @@ class NewsViewModel(
 
     // News
     fun getNewsList() {
-        newsListStatus.value = Status.Loading
+        newsListStatus = Status.Loading
         viewModelScope.launch {
             delay(1000L)
             newsRepository
@@ -94,17 +99,17 @@ class NewsViewModel(
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Failed -> {
-                            newsListStatus.value = Status.FAILED
-                            errorMsg.value = result.error.localizedMessage ?: ""
+                            newsListStatus = Status.FAILED
+                            errorMsg = result.error.localizedMessage ?: ""
                         }
 
                         NewsState.Loading -> {
-                            newsListStatus.value = Status.Loading
+                            newsListStatus = Status.Loading
                         }
 
                         is NewsState.Success -> {
                             _newsList.value = result.data
-                            newsListStatus.value = Status.SUCCESS
+                            newsListStatus = Status.SUCCESS
                         }
                         else -> {}
                     }
@@ -151,7 +156,7 @@ class NewsViewModel(
 
     // Category
     fun getNewsListByCategory(category: String) {
-        newsListStatus.value = Status.Loading
+        newsListStatus = Status.Loading
         viewModelScope.launch {
             delay(1000L)
             newsRepository
@@ -159,8 +164,8 @@ class NewsViewModel(
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Failed -> {
+                            errorMsg = result.error.localizedMessage ?: ""
                             newsCategoryListStatusWhenClick = Status.FAILED
-                            errorMsg.value = result.error.localizedMessage ?: ""
                         }
 
                         NewsState.Loading -> {

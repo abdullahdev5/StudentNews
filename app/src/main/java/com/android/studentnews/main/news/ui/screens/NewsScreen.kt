@@ -209,8 +209,8 @@ fun NewsScreen(
         }
     }
 
-    LaunchedEffect(newsViewModel.isRefreshing.value) {
-        if (newsViewModel.isRefreshing.value) {
+    LaunchedEffect(newsViewModel.isRefreshing) {
+        if (newsViewModel.isRefreshing) {
             scope.launch {
                 pullToRefreshState.startRefresh()
                 delay(1000L)
@@ -521,22 +521,6 @@ fun NewsScreen(
                                                     .fillMaxWidth()
                                                     .padding(all = 5.dp)
                                             ) {
-                                                if (selectedNewsCategoryIndex == null) {
-                                                    CategoryStatusText(
-                                                        category = "For You",
-                                                        style = TextStyle(
-                                                            fontSize = FontSize.MEDIUM.sp,
-                                                            fontWeight = FontWeight.Bold,
-                                                            color = Gray
-                                                        ),
-                                                        modifier = Modifier
-                                                            .padding(
-                                                                top = 5.dp,
-                                                                start = 5.dp,
-                                                            ),
-                                                    )
-                                                }
-
                                                 Row(
                                                     modifier = Modifier
                                                         .horizontalScroll(rememberScrollState()),
@@ -671,7 +655,7 @@ fun NewsScreen(
                                                 }
                                             }
 
-                                            if (newsViewModel.newsListStatus.value == Status.Loading) {
+                                            if (newsViewModel.newsListStatus == Status.Loading) {
                                                 item {
                                                     Row(
                                                         horizontalArrangement = Arrangement.Center,
@@ -702,9 +686,9 @@ fun NewsScreen(
                         if (pullToRefreshState.isRefreshing) {
                             LaunchedEffect(true) {
                                 scope.launch {
-                                    newsViewModel.isRefreshing.value = true
+                                    newsViewModel.isRefreshing = true
                                     delay(1000L)
-                                    newsViewModel.isRefreshing.value = false
+                                    newsViewModel.isRefreshing = false
                                 }
                             }
                         }
@@ -718,7 +702,7 @@ fun NewsScreen(
 
                     }
 
-                    if (newsViewModel.newsListStatus.value == Status.FAILED
+                    if (newsViewModel.newsListStatus == Status.FAILED
                         || newsList.isEmpty()
                     ) {
                         Column(
@@ -729,10 +713,10 @@ fun NewsScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = if (newsViewModel.newsListStatus.value == Status.FAILED)
+                                text = if (newsViewModel.newsListStatus == Status.FAILED)
                                     "${newsViewModel.errorMsg}"
                                 else if (newsList.isEmpty()) {
-                                    if (newsViewModel.newsListStatus.value == Status.SUCCESS)
+                                    if (newsViewModel.newsListStatus == Status.SUCCESS)
                                         "No News Found!" else ""
                                 } else ""
                             )

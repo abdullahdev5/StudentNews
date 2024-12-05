@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -110,6 +112,50 @@ fun EventsScreen(
                     }
                     .forEach { item ->
 
+                        CategoryListItem(
+                            categoryName = item.category,
+                            modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                            colors = SegmentedButtonDefaults.colors(
+                                activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                inactiveContainerColor = Color.Transparent,
+                                activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                inactiveContentColor = LocalContentColor.current
+                            ),
+                            index = item.index,
+                            selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
+                            onClick = { index, category ->
+                                eventsViewModel.selectedCategoryIndex = index
+                                if (eventsViewModel.selectedCategoryIndex == 0) {
+                                    eventsViewModel.getEventsListByAvailableStatus(true)
+                                } else if (eventsViewModel.selectedCategoryIndex == 1) {
+                                    eventsViewModel.getEventsListByAvailableStatus(false)
+                                }
+                            }
+                        )
+                    }
+            }
+        }
+
+        LazyColumn(
+            state = eventsViewModel.lazyListState,
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 5.dp, top = 5.dp),
+                ) {
+                    // Category
+                    categoryList
+                        .sortedByDescending {
+                            eventsViewModel.selectedCategoryIndex != null
+                                    && eventsViewModel.selectedCategoryIndex == it.index
+                        }
+                        .forEach { item ->
+
                             CategoryListItem(
                                 categoryName = item.category,
                                 modifier = Modifier.padding(start = 5.dp, end = 5.dp),
@@ -121,7 +167,7 @@ fun EventsScreen(
                                 ),
                                 index = item.index,
                                 selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                                onClick = { index, category ->
+                                onClick = { index, _ ->
                                     eventsViewModel.selectedCategoryIndex = index
                                     if (eventsViewModel.selectedCategoryIndex == 0) {
                                         eventsViewModel.getEventsListByAvailableStatus(true)
@@ -131,61 +177,6 @@ fun EventsScreen(
                                 }
                             )
                         }
-                }
-            }
-
-            LazyColumn(
-                state = eventsViewModel.lazyListState,
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-
-            if (eventsViewModel.eventsListStatus != Status.Loading) {
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 5.dp, top = 5.dp),
-                    ) {
-                        Text(
-                            text = "Filters",
-                            fontWeight = FontWeight.Bold,
-                            color = Gray,
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            // Category
-                            categoryList
-                                .sortedByDescending {
-                                    eventsViewModel.selectedCategoryIndex != null
-                                            && eventsViewModel.selectedCategoryIndex == it.index
-                                }
-                                .forEach { item ->
-
-                                    CategoryListItem(
-                                        categoryName = item.category,
-                                        modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                                        colors = SegmentedButtonDefaults.colors(
-                                            activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                            inactiveContainerColor = Color.Transparent,
-                                            activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                            inactiveContentColor = LocalContentColor.current
-                                        ),
-                                        index = item.index,
-                                        selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                                        onClick = { index, _ ->
-                                            eventsViewModel.selectedCategoryIndex = index
-                                            if (eventsViewModel.selectedCategoryIndex == 0) {
-                                                eventsViewModel.getEventsListByAvailableStatus(true)
-                                            } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                                eventsViewModel.getEventsListByAvailableStatus(false)
-                                            }
-                                        }
-                                    )
-                                }
-                        }
-                    }
                 }
             }
 
@@ -212,6 +203,7 @@ fun EventsScreen(
                     eventsViewModel.getNextEventsList()
                 }
             }
+
 
             if (eventsViewModel.eventsListStatus == Status.Loading) {
                 item {
@@ -288,7 +280,11 @@ fun EventsItem(
                         .sharedElement(
                             state = rememberSharedContentState(key = "image/${item?.eventId ?: ""}"),
                             animatedVisibilityScope = animatedVisibilityScope,
-                            clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
+                            clipInOverlayDuringTransition = OverlayClip(
+                                RoundedCornerShape(
+                                    10.dp
+                                )
+                            )
                         )
                 )
             }
@@ -356,7 +352,8 @@ fun EventsItem(
                     Text(
                         text = "${
                             formatTimeToString(
-                                (item?.startingTimeHour ?: 10), (item?.startingTimeMinutes ?: 0)
+                                (item?.startingTimeHour ?: 10),
+                                (item?.startingTimeMinutes ?: 0)
                             ).dropLast(2)
                         } ${item?.startingTimeStatus} - ${
                             formatTimeToString(
