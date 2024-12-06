@@ -194,14 +194,6 @@ fun EventsScreen(
                         )
                     },
                 )
-
-                if (
-                    index == eventsList.lastIndex
-                    && eventsViewModel.selectedCategoryIndex == null
-                    && !eventsViewModel.isEndReached
-                ) {
-                    eventsViewModel.getNextEventsList(limit = 2)
-                }
             }
 
 

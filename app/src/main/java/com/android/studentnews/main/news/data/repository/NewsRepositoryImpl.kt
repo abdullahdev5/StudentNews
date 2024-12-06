@@ -1,15 +1,18 @@
 package com.android.studentnews.news.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
-import com.android.studentnews.core.data.paginator.DefaultPaginator
-import com.android.studentnews.main.news.NewsWorker
+import com.android.studentnews.core.data.paginator.NewsListPagingSource
 import com.android.studentnews.core.domain.constants.FirestoreNodes
-import com.android.studentnews.main.events.TITLE
+import com.android.studentnews.main.news.NewsWorker
+import com.android.studentnews.main.news.data.paginator.NewsCategoryListPagingSource
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -26,6 +29,10 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+
+const val NEWS_LIST_PAGE_SIZE = 4
+const val NEWS_CATEGORY_LIST_PAGE_SIZE = 2
+
 
 class NewsRepositoryImpl(
     private val auth: FirebaseAuth,
@@ -56,71 +63,21 @@ class NewsRepositoryImpl(
 
 
     // News
-    override fun getNewsList(): Flow<NewsState<List<NewsModel>>> = callbackFlow {
+    override fun getNewsList(): Flow<PagingData<NewsModel>> {
 
-        trySend(NewsState.Loading)
+        return Pager(
+            config = PagingConfig(
+                pageSize = NEWS_LIST_PAGE_SIZE,
+            )
+        ) {
+            NewsListPagingSource(
+                newsColRef
+                    ?.orderBy("timestamp", Query.Direction.DESCENDING)
+                    ?.limit(NEWS_LIST_PAGE_SIZE.toLong())
+                !!
+            )
+        }.flow
 
-        newsColRef
-            ?.orderBy("timestamp", Query.Direction.DESCENDING)
-            ?.limit(4)
-            ?.get()
-            ?.addOnSuccessListener { documents -> //, error ->
-
-                lastNewsListVisibleItem = documents.documents[documents.size() - 1]
-                println("Last Item: In getNewsList(): ${lastNewsListVisibleItem?.getString(TITLE)}")
-
-                val news = documents.map {
-                    it.toObject(NewsModel::class.java)
-                }
-                trySend(NewsState.Success(news))
-            }
-            ?.addOnFailureListener { error ->
-                trySend(NewsState.Failed(error))
-            }
-
-
-        awaitClose {
-            close()
-        }
-    }
-
-    override fun <T> getNextList(
-        collectionReference: CollectionReference,
-        lastItem: DocumentSnapshot?,
-        myClassToObject: Class<T>,
-        limit: Long,
-    ): Flow<NewsState<List<T>>> {
-        return callbackFlow {
-
-            if (lastNewsListVisibleItem != null) {
-                if (lastNewsListVisibleItem!!.exists()) {
-
-                    DefaultPaginator(
-                        collectionReference = collectionReference,
-                        lastItem = lastItem,
-                        onLoading = {
-                            trySend(NewsState.Loading)
-                        },
-                        onSuccess = { lastItem, nextList ->
-                            trySend(NewsState.Success(nextList))
-//                            lastNewsListVisibleItem = lastItem
-                        },
-                        onError = { error ->
-                            trySend(NewsState.Failed(error))
-                        },
-                        myClassToObject = myClassToObject,
-                        isEndReached = { isEndReached ->
-                            isNewsListEndReached = isEndReached
-                        },
-                        limit = limit,
-                    )
-                }
-            }
-
-            awaitClose {
-                close()
-            }
-        }
     }
 
     override suspend fun getNewsUpdates(): NewsModel? {
@@ -243,58 +200,37 @@ class NewsRepositoryImpl(
 
     // Category
 
-    override fun getNewsListByCategory(category: String): Flow<NewsState<List<NewsModel>>> =
-        callbackFlow {
+    override fun getNewsListByCategory(category: String): Flow<PagingData<NewsModel>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = NEWS_LIST_PAGE_SIZE
+            )
+        ) {
+            NewsListPagingSource(
+                newsColRef
+                    ?.orderBy("timestamp", Query.Direction.DESCENDING)
+                    ?.whereEqualTo("category", category)
+                    ?.limit(NEWS_LIST_PAGE_SIZE.toLong())
+                !!
+            )
+        }.flow
+    }
 
-            trySend(NewsState.Loading)
+    override fun getCategoriesList(): Flow<PagingData<CategoryModel>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = NEWS_CATEGORY_LIST_PAGE_SIZE
+            )
+        ) {
+            NewsCategoryListPagingSource(
+                categoriesColRef
+                    ?.orderBy("timestamp", Query.Direction.DESCENDING)
+                    ?.limit(NEWS_CATEGORY_LIST_PAGE_SIZE.toLong())
+                !!
+            )
+        }.flow
 
-            val listener = newsColRef
-                ?.whereEqualTo("category", category)
-                ?.get()
-                ?.addOnSuccessListener { documents ->
-                    if (documents != null) {
-                        val newsListByCategory = documents.map {
-                            it.toObject(NewsModel::class.java)
-                        }
-
-                        trySend(NewsState.Success(newsListByCategory))
-                    }
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(NewsState.Failed(error))
-                }
-
-            awaitClose {
-                listener?.addOnCanceledListener {
-
-                }
-            }
-        }
-
-    override fun getCategoriesList(): Flow<NewsState<List<CategoryModel?>>> =
-        callbackFlow {
-
-            trySend(NewsState.Loading)
-
-            val listener = categoriesColRef
-                ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                ?.get()
-                ?.addOnSuccessListener { documents ->
-                    if (documents != null) {
-                        val categories = documents.toObjects(CategoryModel::class.java)
-                        trySend(NewsState.Success(categories))
-                    }
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(NewsState.Failed(error))
-                }
-
-            awaitClose {
-                listener?.addOnCanceledListener {
-
-                }
-            }
-        }
+    }
 
 
     // Search

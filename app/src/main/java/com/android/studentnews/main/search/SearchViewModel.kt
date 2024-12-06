@@ -72,22 +72,22 @@ class SearchViewModel(
             newsRepository
                 .getNewsListByCategory(category)
                 .collect { result ->
-                    when (result) {
-                        is NewsState.Failed -> {
-                            searchingStatus = Status.FAILED
-                            errorMsg = result.error.localizedMessage ?: ""
-                        }
-
-                        NewsState.Loading -> {
-                            searchingStatus = Status.Loading
-                        }
-
-                        is NewsState.Success -> {
-                            _searchNewsList.value = result.data
-                            searchingStatus = Status.SUCCESS
-                        }
-                        else -> {}
-                    }
+//                    when (result) {
+//                        is NewsState.Failed -> {
+//                            searchingStatus = Status.FAILED
+//                            errorMsg = result.error.localizedMessage ?: ""
+//                        }
+//
+//                        NewsState.Loading -> {
+//                            searchingStatus = Status.Loading
+//                        }
+//
+//                        is NewsState.Success -> {
+//                            _searchNewsList.value = result.data
+//                            searchingStatus = Status.SUCCESS
+//                        }
+//                        else -> {}
+//                    }
                 }
         }
     }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -34,9 +35,11 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.PagerState
@@ -106,8 +109,10 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -116,6 +121,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.paging.LoadState
+import androidx.paging.LoadStates
+import androidx.paging.PagingSource
+import androidx.paging.compose.collectAsLazyPagingItems
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
@@ -179,13 +188,13 @@ fun NewsScreen(
     var isMoreDropDownMenuItemOpen by rememberSaveable { mutableStateOf(false) }
     var eventsListGettingCount by rememberSaveable { mutableIntStateOf(0) }
 
-    val newsList by newsViewModel.newsList.collectAsStateWithLifecycle()
-    val categoriesList by newsViewModel.categoriesList.collectAsStateWithLifecycle()
+    val newsList = newsViewModel.newsList.collectAsLazyPagingItems()
+    val categoriesList = newsViewModel.categoriesList.collectAsLazyPagingItems()
     val currentUser by newsViewModel.currentUser.collectAsStateWithLifecycle()
 
     val categoryPagerState = rememberPagerState(
         pageCount = {
-            categoriesList.size
+            categoriesList.itemCount
         },
         initialPage = 0
     )
@@ -215,12 +224,12 @@ fun NewsScreen(
                 pullToRefreshState.startRefresh()
                 delay(1000L)
                 if (tabPagerState.currentPage == 0) {
-                    newsViewModel.getNewsList()
+                    delay(1000)
+                    newsList.refresh()
                     newsCategoryStatus = ""
                     selectedNewsCategoryIndex?.let {
                         selectedNewsCategoryIndex = null
                     }
-                    newsViewModel.isEndReached = true
                 }
                 if (tabPagerState.currentPage == 1) {
                     eventsViewModel.getEventsList()
@@ -515,45 +524,41 @@ fun NewsScreen(
                                     Column {
 
                                         AnimatedVisibility(lazyListState.firstVisibleItemIndex > 1) {
-
-                                            Column(
+                                            Row(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
-                                                    .padding(all = 5.dp)
+                                                    .horizontalScroll(rememberScrollState())
                                             ) {
-                                                Row(
-                                                    modifier = Modifier
-                                                        .horizontalScroll(rememberScrollState()),
-                                                ) {
-                                                    categoriesList
-                                                        .forEachIndexed { index, item ->
-                                                            CategoryListItem(
-                                                                categoryName = item.name ?: "",
-                                                                modifier = Modifier.padding(
-                                                                    start = 5.dp,
-                                                                    end = 5.dp
-                                                                ),
-                                                                colors = SegmentedButtonDefaults.colors(
-                                                                    activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                                                    inactiveContainerColor = Color.Transparent,
-                                                                    activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                                                    inactiveContentColor = LocalContentColor.current
-                                                                ),
-                                                                index = index,
-                                                                selectedCategoryIndex = selectedNewsCategoryIndex,
-                                                                onClick = { index, category ->
-                                                                    selectedNewsCategoryIndex =
-                                                                        index
-                                                                    newsViewModel
-                                                                        .getNewsListByCategory(
-                                                                            category
-                                                                        )
-                                                                    newsCategoryStatus =
-                                                                        "$category News"
-                                                                }
-                                                            )
-                                                        }
-                                                }
+                                                categoriesList
+                                                    .itemSnapshotList
+                                                    .items
+                                                    .forEachIndexed { index, item ->
+                                                        CategoryListItem(
+                                                            categoryName = item.name ?: "",
+                                                            modifier = Modifier.padding(
+                                                                start = 5.dp,
+                                                                end = 5.dp
+                                                            ),
+                                                            colors = SegmentedButtonDefaults.colors(
+                                                                activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                                                inactiveContainerColor = Color.Transparent,
+                                                                activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                                                inactiveContentColor = LocalContentColor.current
+                                                            ),
+                                                            index = index,
+                                                            selectedCategoryIndex = selectedNewsCategoryIndex,
+                                                            onClick = { index, category ->
+                                                                selectedNewsCategoryIndex =
+                                                                    index
+                                                                newsViewModel
+                                                                    .getNewsListByCategory(
+                                                                        category
+                                                                    )
+                                                                newsCategoryStatus =
+                                                                    "$category News"
+                                                            }
+                                                        )
+                                                    }
                                             }
                                         }
 
@@ -585,10 +590,10 @@ fun NewsScreen(
                                                         .height(250.dp),
                                                 ) { pagerIndex ->
                                                     val item =
-                                                        categoriesList[pagerIndex]
+                                                        categoriesList[pagerIndex]!!
                                                     CategoriesListPagerItem(
                                                         item = item,
-                                                        categoriesList = categoriesList,
+                                                        categoriesList = categoriesList.itemSnapshotList.items,
                                                         categoryPagerState = categoryPagerState,
                                                         context = context,
                                                         onItemCLick = { category ->
@@ -624,9 +629,9 @@ fun NewsScreen(
                                             }
 
                                             items(
-                                                count = newsList.size,
+                                                count = newsList.itemCount,
                                                 key = { index ->
-                                                    newsList[index].newsId ?: ""
+                                                    newsList[index]?.newsId ?: ""
                                                 }
                                             ) { index ->
                                                 val item = newsList[index]
@@ -644,18 +649,12 @@ fun NewsScreen(
                                                     animatedVisibilityScope = animatedVisibilityScope,
                                                     sharedTransitionScope = sharedTransitionScope,
                                                 )
-
-                                                if (
-                                                    index == newsList.lastIndex - 1
-                                                    && newsCategoryStatus.isEmpty()
-                                                    && !newsViewModel.isEndReached
-                                                ) {
-                                                    println("Is Exists Under UI Condition: ${newsViewModel.isEndReached}")
-                                                    newsViewModel.getNextNewsList(limit = 4)
-                                                }
                                             }
 
-                                            if (newsViewModel.newsListStatus == Status.Loading) {
+                                            if (newsList.loadState.prepend is LoadState.Loading
+                                                || newsList.loadState.append is LoadState.Loading
+                                                || newsList.loadState.refresh is LoadState.Loading
+                                            ) {
                                                 item {
                                                     Row(
                                                         horizontalArrangement = Arrangement.Center,
@@ -700,33 +699,6 @@ fun NewsScreen(
                                 .align(Alignment.TopCenter)
                         )
 
-                    }
-
-                    if (newsViewModel.newsListStatus == Status.FAILED
-                        || newsList.isEmpty()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(paddingValues = innerPadding),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = if (newsViewModel.newsListStatus == Status.FAILED)
-                                    "${newsViewModel.errorMsg}"
-                                else if (newsList.isEmpty()) {
-                                    if (newsViewModel.newsListStatus == Status.SUCCESS)
-                                        "No News Found!" else ""
-                                } else ""
-                            )
-                        }
-                    }
-
-
-                    // Loading When Category Click
-                    if (newsViewModel.newsCategoryListStatusWhenClick == Status.Loading) {
-                        LoadingDialog()
                     }
 
                 }

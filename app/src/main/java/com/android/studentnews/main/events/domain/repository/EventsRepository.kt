@@ -20,13 +20,6 @@ interface EventsRepository {
 
     fun getEventsList(): Flow<EventsState<List<EventsModel?>>>
 
-    fun <T> getNextList(
-        collectionReference: CollectionReference,
-        lastItem: DocumentSnapshot,
-        myClassToObject: Class<T>,
-        limit: Long
-    ): Flow<EventsState<List<T>>>
-
     fun getEventById(eventId: String): Flow<EventsState<EventsModel?>>
 
     fun onEventRegister(

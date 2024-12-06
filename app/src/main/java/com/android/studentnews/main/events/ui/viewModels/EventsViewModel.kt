@@ -98,35 +98,6 @@ class EventsViewModel(
         }
     }
 
-    fun getNextEventsList(limit: Long) {
-        viewModelScope.launch {
-            delay(3000)
-            eventsRepository
-                .getNextList<EventsModel>(
-                    collectionReference = eventsRepository.eventsColRef!!,
-                    lastItem = lastEventsListItem!!,
-                    myClassToObject = EventsModel::class.java,
-                    limit = limit
-                )
-                .collectLatest { result ->
-                    when (result) {
-                        is EventsState.Loading -> {
-                            eventsListStatus = Status.Loading
-                        }
-                        is EventsState.Failed -> {
-                            eventsListStatus = Status.FAILED
-                            eventsListErrorMsg = result.error.localizedMessage ?: ""
-                        }
-                        is EventsState.Success -> {
-                            _eventsList.value = result.data
-                            eventsListStatus = Status.SUCCESS
-                        }
-                        else -> {}
-                    }
-                }
-        }
-    }
-
     fun getEventById(eventId: String) {
         viewModelScope.launch {
             eventsByIdStatus = Status.Loading

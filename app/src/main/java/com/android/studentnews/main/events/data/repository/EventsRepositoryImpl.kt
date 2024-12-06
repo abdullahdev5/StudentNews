@@ -5,7 +5,6 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import com.android.studentnews.auth.domain.models.UserModel
-import com.android.studentnews.core.data.paginator.DefaultPaginator
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.events.EventsWorker
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
@@ -71,46 +70,6 @@ class EventsRepositoryImpl(
                     trySend(EventsState.Failed(error))
                 }
 
-            awaitClose {
-                close()
-            }
-        }
-    }
-
-    override fun <T> getNextList(
-        collectionReference: CollectionReference,
-        lastItem: DocumentSnapshot,
-        myClassToObject: Class<T>,
-        limit: Long,
-    ): Flow<EventsState<List<T>>> {
-        return callbackFlow {
-
-
-            if (lastEventsVisibleItem != null) {
-                if (lastEventsVisibleItem!!.exists()) {
-
-                    DefaultPaginator(
-                        collectionReference = collectionReference,
-                        lastItem = lastItem,
-                        onLoading = {
-                            trySend(EventsState.Loading)
-                        },
-                        onSuccess = { lastItem, nextList ->
-                            trySend(EventsState.Success(nextList))
-//                            lastEventsVisibleItem = lastItem
-                        },
-                        onError = { error ->
-                            trySend(EventsState.Failed(error))
-                        },
-                        myClassToObject = myClassToObject,
-                        isEndReached = { isEndReached ->
-                            isEventsListEndReached = isEndReached
-                        },
-                        limit = limit
-                    )
-
-                }
-            }
             awaitClose {
                 close()
             }

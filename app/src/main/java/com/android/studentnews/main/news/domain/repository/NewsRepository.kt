@@ -1,5 +1,6 @@
 package com.android.studentnews.news.domain.repository
 
+import androidx.paging.PagingData
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.resource.NewsState
@@ -20,13 +21,7 @@ interface NewsRepository {
     var isNewsListEndReached: Boolean
 
     // News
-    fun getNewsList(): Flow<NewsState<List<NewsModel>>>
-    fun <T> getNextList(
-        collectionReference: CollectionReference,
-        lastItem: DocumentSnapshot?,
-        myClassToObject: Class<T>,
-        limit: Long,
-    ): Flow<NewsState<List<T>>>
+    fun getNewsList(): Flow<PagingData<NewsModel>>
     suspend fun getNewsUpdates(): NewsModel?
     fun onNewsSave(news: NewsModel): Flow<NewsState<String>>
     fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>>
@@ -35,8 +30,8 @@ interface NewsRepository {
     fun getLikedNewsList(): Flow<NewsState<List<NewsModel>>>
 
     // Category
-    fun getNewsListByCategory(category: String): Flow<NewsState<List<NewsModel>>>
-    fun getCategoriesList(): Flow<NewsState<List<CategoryModel?>>>
+    fun getNewsListByCategory(category: String): Flow<PagingData<NewsModel>>
+    fun getCategoriesList(): Flow<PagingData<CategoryModel>>
 
     // Search
     fun onSearch(query: String, currentSelectedCategory: String?): Flow<NewsState<List<NewsModel>>>
