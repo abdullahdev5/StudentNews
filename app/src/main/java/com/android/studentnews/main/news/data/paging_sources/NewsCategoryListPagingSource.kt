@@ -1,4 +1,4 @@
-package com.android.studentnews.main.news.data.paginator
+package com.android.studentnews.main.news.data.paging_sources
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState

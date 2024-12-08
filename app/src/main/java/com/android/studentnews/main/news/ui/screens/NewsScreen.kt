@@ -123,13 +123,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.LoadStates
+import androidx.paging.PagingData
 import androidx.paging.PagingSource
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
+import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
@@ -151,6 +154,7 @@ import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 
@@ -225,7 +229,7 @@ fun NewsScreen(
                 delay(1000L)
                 if (tabPagerState.currentPage == 0) {
                     delay(1000)
-                    newsList.refresh()
+                    newsViewModel.getNewsList(null)
                     newsCategoryStatus = ""
                     selectedNewsCategoryIndex?.let {
                         selectedNewsCategoryIndex = null
@@ -551,9 +555,7 @@ fun NewsScreen(
                                                                 selectedNewsCategoryIndex =
                                                                     index
                                                                 newsViewModel
-                                                                    .getNewsListByCategory(
-                                                                        category
-                                                                    )
+                                                                    .getNewsList(category)
                                                                 newsCategoryStatus =
                                                                     "$category News"
                                                             }
@@ -586,6 +588,9 @@ fun NewsScreen(
                                                             dampingRatio = Spring.DampingRatioLowBouncy
                                                         )
                                                     ),
+                                                    key = categoriesList.itemKey {
+                                                        it.categoryId ?: ""
+                                                    },
                                                     modifier = Modifier
                                                         .height(250.dp),
                                                 ) { pagerIndex ->
@@ -597,10 +602,9 @@ fun NewsScreen(
                                                         categoryPagerState = categoryPagerState,
                                                         context = context,
                                                         onItemCLick = { category ->
+
                                                             selectedNewsCategoryIndex = pagerIndex
-                                                            newsViewModel.getNewsListByCategory(
-                                                                category
-                                                            )
+                                                            newsViewModel.getNewsList(category)
                                                             newsCategoryStatus =
                                                                 "${category} News"
                                                         }
@@ -630,8 +634,8 @@ fun NewsScreen(
 
                                             items(
                                                 count = newsList.itemCount,
-                                                key = { index ->
-                                                    newsList[index]?.newsId ?: ""
+                                                key = newsList.itemKey {
+                                                    it.newsId ?: ""
                                                 }
                                             ) { index ->
                                                 val item = newsList[index]
@@ -651,10 +655,7 @@ fun NewsScreen(
                                                 )
                                             }
 
-                                            if (newsList.loadState.prepend is LoadState.Loading
-                                                || newsList.loadState.append is LoadState.Loading
-                                                || newsList.loadState.refresh is LoadState.Loading
-                                            ) {
+                                            if (newsList.loadState.append is LoadState.Loading) {
                                                 item {
                                                     Row(
                                                         horizontalArrangement = Arrangement.Center,
@@ -663,6 +664,19 @@ fun NewsScreen(
                                                     ) {
                                                         CircularProgressIndicator()
                                                     }
+                                                }
+                                            }
+
+                                            if (newsList.loadState.refresh is LoadState.Error) {
+                                                item {
+                                                    ErrorMessageContainer(
+                                                        errorMessage =
+                                                        (newsList.loadState.refresh as LoadState.Error).error.localizedMessage
+                                                            ?: "",
+                                                        modifier = Modifier
+                                                            .fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.Center
+                                                    )
                                                 }
                                             }
 
@@ -702,6 +716,11 @@ fun NewsScreen(
                     }
 
                 }
+
+                if (newsList.loadState.refresh is LoadState.Loading) {
+                    LoadingDialog()
+                }
+
             }
 
         }

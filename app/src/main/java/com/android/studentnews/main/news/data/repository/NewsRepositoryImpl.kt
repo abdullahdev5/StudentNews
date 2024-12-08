@@ -12,15 +12,15 @@ import androidx.work.WorkManager
 import com.android.studentnews.core.data.paginator.NewsListPagingSource
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.news.NewsWorker
-import com.android.studentnews.main.news.data.paginator.NewsCategoryListPagingSource
+import com.android.studentnews.main.news.data.paging_sources.NewsCategoryListPagingSource
 import com.android.studentnews.main.news.domain.model.CategoryModel
+import com.android.studentnews.main.search.SearchListPagingSource
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.domain.resource.NewsState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
@@ -55,28 +55,26 @@ class NewsRepositoryImpl(
     override val savedNewsColRef: CollectionReference?
         get() = userDocRef?.collection(FirestoreNodes.SAVED_NEWS_COL)
 
-//    private var lastVisibleItem: DocumentSnapshot? = null
-
-    override var lastNewsListVisibleItem: DocumentSnapshot? = null
-
-    override var isNewsListEndReached: Boolean = false
-
 
     // News
-    override fun getNewsList(): Flow<PagingData<NewsModel>> {
+    override fun getNewsList(category: String?): Flow<PagingData<NewsModel>> {
+
+        val query = category?.let {
+            newsColRef?.whereEqualTo("category", category)
+                ?.limit(NEWS_LIST_PAGE_SIZE.toLong())
+        } ?: newsColRef?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.limit(NEWS_LIST_PAGE_SIZE.toLong())
 
         return Pager(
             config = PagingConfig(
                 pageSize = NEWS_LIST_PAGE_SIZE,
-            )
-        ) {
-            NewsListPagingSource(
-                newsColRef
-                    ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                    ?.limit(NEWS_LIST_PAGE_SIZE.toLong())
-                !!
-            )
-        }.flow
+            ),
+            pagingSourceFactory = {
+                NewsListPagingSource(
+                    query!!
+                )
+            }
+        ).flow
 
     }
 
@@ -200,32 +198,16 @@ class NewsRepositoryImpl(
 
     // Category
 
-    override fun getNewsListByCategory(category: String): Flow<PagingData<NewsModel>> {
+    override fun getCategoriesList(limit: Int): Flow<PagingData<CategoryModel>> {
         return Pager(
             config = PagingConfig(
-                pageSize = NEWS_LIST_PAGE_SIZE
-            )
-        ) {
-            NewsListPagingSource(
-                newsColRef
-                    ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                    ?.whereEqualTo("category", category)
-                    ?.limit(NEWS_LIST_PAGE_SIZE.toLong())
-                !!
-            )
-        }.flow
-    }
-
-    override fun getCategoriesList(): Flow<PagingData<CategoryModel>> {
-        return Pager(
-            config = PagingConfig(
-                pageSize = NEWS_CATEGORY_LIST_PAGE_SIZE
+                pageSize  = limit
             )
         ) {
             NewsCategoryListPagingSource(
                 categoriesColRef
                     ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                    ?.limit(NEWS_CATEGORY_LIST_PAGE_SIZE.toLong())
+                    ?.limit(limit.toLong())
                 !!
             )
         }.flow
@@ -237,45 +219,52 @@ class NewsRepositoryImpl(
     override fun onSearch(
         query: String,
         currentSelectedCategory: String?,
-    ): Flow<NewsState<List<NewsModel>>> =
-        callbackFlow {
+    ): Flow<PagingData<NewsModel>> {
 
-            trySend(NewsState.Loading)
+        val newsQuery = newsColRef
+            ?.limit(NEWS_LIST_PAGE_SIZE.toLong())
 
-            val listener = newsColRef
-                ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                ?.get()
-                ?.addOnSuccessListener { documents ->
-                    if (documents != null) {
-
-                        val news = documents.filter {
-                            it.getString("title").toString()
-                                .contains(query, ignoreCase = true)
-                                    ||
-                                    it.getString("description").toString()
-                                        .contains(query, ignoreCase = true)
-                        }.filter {
-                            currentSelectedCategory?.let { category ->
-                                it.getString("category").toString() == category
-                            } ?: true
-                        }
-                            .map {
-                                it.toObject(NewsModel::class.java)
-                            }
-
-                        trySend(NewsState.Success(news))
-                    }
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(NewsState.Failed(error))
-                }
-
-            awaitClose {
-                listener?.addOnCanceledListener {
-
-                }
+        return Pager(
+            config = PagingConfig(
+                pageSize = NEWS_LIST_PAGE_SIZE
+            ),
+            pagingSourceFactory = {
+                SearchListPagingSource(
+                    newsQuery = newsQuery!!,
+                    query = query,
+                    currentCategory = currentSelectedCategory
+                )
             }
-        }
+        ).flow
+
+
+//            val listener = newsColRef
+//                ?.orderBy("timestamp", Query.Direction.DESCENDING)
+//                ?.get()
+//                ?.addOnSuccessListener { documents ->
+//                    if (documents != null) {
+//
+//                        val news = documents.filter {
+//                            it.getString("title").toString()
+//                                .contains(query, ignoreCase = true)
+//                                    ||
+//                                    it.getString("description").toString()
+//                                        .contains(query, ignoreCase = true)
+//                        }.filter {
+//                            currentSelectedCategory?.let { category ->
+//                                it.getString("category").toString() == category
+//                            } ?: true
+//                        }
+//                            .map {
+//                                it.toObject(NewsModel::class.java)
+//                            }
+//
+//                        trySend(NewsState.Success(news))
+//                    }
+//                }
+//                ?.addOnFailureListener { error ->
+//                }
+    }
 
     override fun setupPeriodicNewsWorkRequest() {
         val constraints = Constraints.Builder()

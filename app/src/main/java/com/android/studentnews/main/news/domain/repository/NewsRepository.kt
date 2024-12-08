@@ -17,11 +17,8 @@ interface NewsRepository {
     val categoriesColRef: CollectionReference?
     val savedNewsColRef: CollectionReference?
 
-    var lastNewsListVisibleItem: DocumentSnapshot?
-    var isNewsListEndReached: Boolean
-
     // News
-    fun getNewsList(): Flow<PagingData<NewsModel>>
+    fun getNewsList(category: String?): Flow<PagingData<NewsModel>>
     suspend fun getNewsUpdates(): NewsModel?
     fun onNewsSave(news: NewsModel): Flow<NewsState<String>>
     fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>>
@@ -30,11 +27,10 @@ interface NewsRepository {
     fun getLikedNewsList(): Flow<NewsState<List<NewsModel>>>
 
     // Category
-    fun getNewsListByCategory(category: String): Flow<PagingData<NewsModel>>
-    fun getCategoriesList(): Flow<PagingData<CategoryModel>>
+    fun getCategoriesList(limit: Int): Flow<PagingData<CategoryModel>>
 
     // Search
-    fun onSearch(query: String, currentSelectedCategory: String?): Flow<NewsState<List<NewsModel>>>
+    fun onSearch(query: String, currentSelectedCategory: String?): Flow<PagingData<NewsModel>>
 
     fun setupPeriodicNewsWorkRequest()
     fun cancelPeriodicNewsWorkRequest()
