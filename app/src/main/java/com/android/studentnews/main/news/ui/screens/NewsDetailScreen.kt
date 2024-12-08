@@ -97,6 +97,7 @@ import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
+import com.android.studentnews.ui.theme.ItemBackgroundColor
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.google.firebase.Timestamp
@@ -554,7 +555,7 @@ fun NewsDetailScreen(
                             .fillMaxSize()
                             .padding(bottom = 100.dp)
                             .background(
-                                color = Green.copy(0.1f)/*LightGray.copy(0.3f)*/,
+                                color = ItemBackgroundColor,
                                 shape = RoundedCornerShape(
                                     topStart = 20.dp,
                                     topEnd = 20.dp,

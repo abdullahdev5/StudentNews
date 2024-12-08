@@ -1,5 +1,6 @@
 package com.android.studentnews.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.graphics.Color
 
 val Purple80 = Color(0xFFD0BCFF)
@@ -21,3 +22,6 @@ val Green = Color(0xff2B922F)
 //val Green = Color.Blue
 val Red = Color.Red
 val DarkBackgroundColor = Color(0xff181717)
+val DropDownMenuColorLight = White
+val ItemBackgroundColor = Green.copy(0.1f)
+val DialogBackgroundColorDark = DarkGray

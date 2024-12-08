@@ -13,6 +13,8 @@ import com.android.studentnews.auth.domain.repository.AuthRepository
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.main.account.domain.repository.AccountRepository
+import com.android.studentnews.main.account.domain.resource.AccountState
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnews.news.domain.resource.NewsState
@@ -26,7 +28,7 @@ import kotlinx.coroutines.launch
 
 class EventsViewModel(
     private val eventsRepository: EventsRepository,
-    private val authRepository: AuthRepository,
+    private val accountRepository: AccountRepository,
     private val notificationManager: NotificationManagerCompat
 ) : ViewModel() {
 
@@ -246,11 +248,11 @@ class EventsViewModel(
 
     fun getCurrentUser() {
         viewModelScope.launch {
-            authRepository
+            accountRepository
                 .getCurrentUser()
                 .collectLatest { result ->
                     when (result) {
-                        is NewsState.Success -> {
+                        is AccountState.Success -> {
                             _currentUser.value = result.data
                         }
 

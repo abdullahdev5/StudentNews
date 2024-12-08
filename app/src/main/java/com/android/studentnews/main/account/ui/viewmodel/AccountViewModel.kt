@@ -20,7 +20,6 @@ import kotlinx.coroutines.launch
 
 class AccountViewModel(
     private val accountRepository: AccountRepository,
-    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     // Current User
@@ -37,12 +36,12 @@ class AccountViewModel(
 
     fun getCurrentUser() {
         viewModelScope.launch {
-            authRepository
+            accountRepository
                 .getCurrentUser()
                 .collect { result ->
                     when (result) {
-                        is NewsState.Success<*> -> {
-                            _currentUser.value = result.data as UserModel
+                        is AccountState.Success -> {
+                            _currentUser.value = result.data
                         }
 
                         else -> {}

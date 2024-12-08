@@ -66,6 +66,7 @@ import com.android.studentnews.news.ui.CategoryStatusText
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
+import com.android.studentnews.ui.theme.ItemBackgroundColor
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
@@ -121,7 +122,7 @@ fun EventsScreen(
                                 modifier = Modifier.padding(start = 5.dp, end = 5.dp),
                                 colors = SegmentedButtonDefaults.colors(
                                     activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                    inactiveContainerColor = Color.Transparent,
+                                    inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
                                     activeContentColor = if (isSystemInDarkTheme()) Black else White,
                                     inactiveContentColor = LocalContentColor.current
                                 ),
@@ -147,7 +148,7 @@ fun EventsScreen(
             ) {
 
                 item {
-                    Column(
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(start = 5.dp, top = 5.dp),
@@ -165,7 +166,7 @@ fun EventsScreen(
                                     modifier = Modifier.padding(start = 5.dp, end = 5.dp),
                                     colors = SegmentedButtonDefaults.colors(
                                         activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                        inactiveContainerColor = Color.Transparent,
+                                        inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
                                         activeContentColor = if (isSystemInDarkTheme()) Black else White,
                                         inactiveContentColor = LocalContentColor.current
                                     ),
@@ -238,7 +239,7 @@ fun EventsItem(
                 onItemClick(item?.eventId ?: "")
             },
         colors = CardDefaults.cardColors(
-            containerColor = Green.copy(0.1f) // LightGray.copy(alpha = 0.3f)
+            containerColor = ItemBackgroundColor
         )
     ) {
         Row(

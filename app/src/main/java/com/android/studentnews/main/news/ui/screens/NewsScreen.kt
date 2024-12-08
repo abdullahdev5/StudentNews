@@ -14,7 +14,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -23,7 +22,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -139,8 +137,10 @@ import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.DropDownMenuColorLight
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
+import com.android.studentnews.ui.theme.ItemBackgroundColor
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.delay
@@ -273,7 +273,9 @@ fun NewsScreen(
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope,
                         onAccountClick = {
-                            navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
+                            currentUser?.let {
+                                navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
+                            }
                         },
                         onSearchClick = {
                             navHostController.navigate(MainDestination.SEARCH_SCREEN)
@@ -529,10 +531,13 @@ fun NewsScreen(
                                                         .forEachIndexed { index, item ->
                                                             CategoryListItem(
                                                                 categoryName = item.name ?: "",
-                                                                modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                                                                modifier = Modifier.padding(
+                                                                    start = 5.dp,
+                                                                    end = 5.dp
+                                                                ),
                                                                 colors = SegmentedButtonDefaults.colors(
                                                                     activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                                                    inactiveContainerColor = Color.Transparent,
+                                                                    inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
                                                                     activeContentColor = if (isSystemInDarkTheme()) Black else White,
                                                                     inactiveContentColor = LocalContentColor.current
                                                                 ),
@@ -738,7 +743,7 @@ fun NewsItem(
                     renderInOverlayDuringTransition = true
                 ),
             colors = CardDefaults.cardColors(
-                containerColor = Green.copy(0.1f) // LightGray.copy(alpha = 0.3f)
+                containerColor = ItemBackgroundColor
             )
         ) {
 
@@ -1247,12 +1252,7 @@ fun MoreDropDownMenu(
             dismissOnBackPress = true
         ),
         modifier = Modifier
-            .background(color = if (isSystemInDarkTheme()) DarkColor else White)
-            .border(
-                width = 1.dp,
-                color = if (isSystemInDarkTheme()) White else Black,
-                shape = RoundedCornerShape(5.dp)
-            ),
+            .background(color = if (isSystemInDarkTheme()) DarkGray else DropDownMenuColorLight)
     ) {
         // Saved Item
         DropdownMenuItem(
@@ -1266,10 +1266,9 @@ fun MoreDropDownMenu(
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.BookmarkBorder,
-                    contentDescription = "Icon fro Saved"
+                    contentDescription = "Icon for Saved"
                 )
             },
-            contentPadding = PaddingValues(10.dp),
         )
         // Liked Item
         DropdownMenuItem(
@@ -1286,7 +1285,6 @@ fun MoreDropDownMenu(
                     contentDescription = "Icon fro Liked"
                 )
             },
-            contentPadding = PaddingValues(10.dp)
         )
 
         // Registered Events Item
@@ -1304,7 +1302,6 @@ fun MoreDropDownMenu(
                     contentDescription = "Icon fro Registered Events"
                 )
             },
-            contentPadding = PaddingValues(10.dp)
         )
     }
 }

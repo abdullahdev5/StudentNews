@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.auth.domain.repository.AuthRepository
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.main.account.domain.repository.AccountRepository
+import com.android.studentnews.main.account.domain.resource.AccountState
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -24,6 +26,7 @@ import kotlinx.coroutines.launch
 class NewsViewModel(
     private val newsRepository: NewsRepository,
     private val authRepository: AuthRepository,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val _newsList = MutableStateFlow<List<NewsModel>>(emptyList())
@@ -128,11 +131,11 @@ class NewsViewModel(
     // currentUser
     fun getCurrentUser() {
         viewModelScope.launch {
-            authRepository
+            accountRepository
                 .getCurrentUser()
                 .collectLatest { result ->
                     when (result) {
-                        is NewsState.Success -> {
+                        is AccountState.Success -> {
                             _currentUser.value = result.data
                         }
 
