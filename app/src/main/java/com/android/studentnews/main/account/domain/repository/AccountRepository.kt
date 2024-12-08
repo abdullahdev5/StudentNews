@@ -19,6 +19,4 @@ interface AccountRepository {
 
     fun onUsernameSave(username: String)
 
-    suspend fun getCurrentUser(): Flow<AccountState<UserModel?>>
-
 }

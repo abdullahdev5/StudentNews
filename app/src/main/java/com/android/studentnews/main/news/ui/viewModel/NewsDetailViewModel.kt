@@ -27,7 +27,7 @@ import java.io.File
 class NewsDetailViewModel(
     private val newsDetailRepository: NewsDetailRepository,
     private val newsRepository: NewsRepository,
-    private val accountRepository: AccountRepository,
+    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _newsById = MutableStateFlow<NewsModel?>(null)
@@ -204,7 +204,7 @@ class NewsDetailViewModel(
 
     fun getCurrentUser() {
         viewModelScope.launch {
-            accountRepository
+            authRepository
                 .getCurrentUser()
                 .collectLatest { result ->
                     when (result) {

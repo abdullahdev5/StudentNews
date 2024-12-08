@@ -26,7 +26,6 @@ import kotlinx.coroutines.launch
 class NewsViewModel(
     private val newsRepository: NewsRepository,
     private val authRepository: AuthRepository,
-    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val _newsList = MutableStateFlow<List<NewsModel>>(emptyList())
@@ -131,7 +130,7 @@ class NewsViewModel(
     // currentUser
     fun getCurrentUser() {
         viewModelScope.launch {
-            accountRepository
+            authRepository
                 .getCurrentUser()
                 .collectLatest { result ->
                     when (result) {

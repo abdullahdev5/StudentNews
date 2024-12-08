@@ -28,7 +28,7 @@ import kotlinx.coroutines.launch
 
 class EventsViewModel(
     private val eventsRepository: EventsRepository,
-    private val accountRepository: AccountRepository,
+    private val authRepository: AuthRepository,
     private val notificationManager: NotificationManagerCompat
 ) : ViewModel() {
 
@@ -248,7 +248,7 @@ class EventsViewModel(
 
     fun getCurrentUser() {
         viewModelScope.launch {
-            accountRepository
+            authRepository
                 .getCurrentUser()
                 .collectLatest { result ->
                     when (result) {
