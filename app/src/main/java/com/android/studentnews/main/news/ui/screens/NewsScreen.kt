@@ -216,7 +216,7 @@ fun NewsScreen(
     LaunchedEffect(tabPagerState.currentPage) {
         if (tabPagerState.currentPage == 1) {
             if (eventsListGettingCount < 1) {
-                eventsViewModel.getEventsList()
+                eventsViewModel.getEventsList(null)
                 eventsListGettingCount++
             }
         }
@@ -236,11 +236,10 @@ fun NewsScreen(
                     }
                 }
                 if (tabPagerState.currentPage == 1) {
-                    eventsViewModel.getEventsList()
+                    eventsViewModel.getEventsList(null)
                     eventsViewModel.selectedCategoryIndex?.let {
                         eventsViewModel.selectedCategoryIndex = null
                     }
-                    eventsViewModel.isEndReached = true
                 }
             }
         } else {
@@ -632,30 +631,35 @@ fun NewsScreen(
                                                 )
                                             }
 
-                                            items(
-                                                count = newsList.itemCount,
-                                                key = newsList.itemKey {
-                                                    it.newsId ?: ""
-                                                }
-                                            ) { index ->
-                                                val item = newsList[index]
+                                            if (newsList.loadState.refresh is LoadState.NotLoading) {
+                                                items(
+                                                    count = newsList.itemCount,
+                                                    key = newsList.itemKey {
+                                                        it.newsId ?: ""
+                                                    }
+                                                ) { index ->
+                                                    val item = newsList[index]
 
-                                                NewsItem(
-                                                    item = item,
-                                                    onItemClick = { newsId ->
-                                                        navHostController.navigate(
-                                                            NewsDestination.NEWS_DETAIL_SCREEN(
-                                                                newsId
+                                                    NewsItem(
+                                                        item = item,
+                                                        onItemClick = { newsId ->
+                                                            navHostController.navigate(
+                                                                NewsDestination.NEWS_DETAIL_SCREEN(
+                                                                    newsId
+                                                                )
                                                             )
-                                                        )
-                                                    },
-                                                    context = context,
-                                                    animatedVisibilityScope = animatedVisibilityScope,
-                                                    sharedTransitionScope = sharedTransitionScope,
-                                                )
+                                                        },
+                                                        context = context,
+                                                        animatedVisibilityScope = animatedVisibilityScope,
+                                                        sharedTransitionScope = sharedTransitionScope,
+                                                    )
+                                                }
                                             }
 
-                                            if (newsList.loadState.append is LoadState.Loading) {
+                                            if (
+                                                newsList.loadState.append is LoadState.Loading
+                                                || newsList.loadState.refresh is LoadState.Loading
+                                            ) {
                                                 item {
                                                     Row(
                                                         horizontalArrangement = Arrangement.Center,
@@ -715,10 +719,6 @@ fun NewsScreen(
 
                     }
 
-                }
-
-                if (newsList.loadState.refresh is LoadState.Loading) {
-                    LoadingDialog()
                 }
 
             }

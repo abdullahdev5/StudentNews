@@ -35,7 +35,7 @@ class SearchViewModel(
     fun onSearch(query: String, currentSelectedCategory: String?) {
         viewModelScope.launch {
             newsRepository
-                .onSearch(query, currentSelectedCategory)
+                .onSearch(query, currentSelectedCategory, NEWS_LIST_PAGE_SIZE)
                 .cachedIn(viewModelScope)
                 .collectLatest { pagingData ->
                     _searchNewsList.value = pagingData

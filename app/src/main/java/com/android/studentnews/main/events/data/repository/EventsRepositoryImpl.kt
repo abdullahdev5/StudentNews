@@ -1,5 +1,8 @@
 package com.android.studentnews.main.events.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.work.BackoffPolicy
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
@@ -7,6 +10,8 @@ import androidx.work.WorkManager
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.events.EventsWorker
+import com.android.studentnews.main.events.IS_AVAILABLE
+import com.android.studentnews.main.events.data.paging_sources.EventsListPagingSource
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnewsadmin.core.domain.resource.EventsState
@@ -24,6 +29,8 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+
+const val EVENTS_LIST_PAGE_SIZE = 4
 
 class EventsRepositoryImpl(
     private val auth: FirebaseAuth,
@@ -43,37 +50,30 @@ class EventsRepositoryImpl(
         get() = userDocRef?.collection(FirestoreNodes.SAVED_EVENTS)
 
 
-    override var lastEventsVisibleItem: DocumentSnapshot? = null
+    override fun getEventsList(
+        availableStatus: Boolean?,
+        limit: Int
+    ): Flow<PagingData<EventsModel>> {
 
-    override var isEventsListEndReached: Boolean = false
-
-
-    override fun getEventsList(): Flow<EventsState<List<EventsModel?>>> {
-        return callbackFlow {
-
-            trySend(EventsState.Loading)
-
+        val query = availableStatus?.let { available ->
             eventsColRef
-                ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                ?.limit(4)
-                ?.get()
-                ?.addOnSuccessListener { documents ->
+                ?.whereEqualTo(IS_AVAILABLE, available)
+                ?.limit(limit.toLong())
+        } ?: eventsColRef
+            ?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.limit(limit.toLong())
 
-                    lastEventsVisibleItem = documents.documents[documents.size() - 1]
-
-                    val eventsList = documents.map {
-                        it.toObject(EventsModel::class.java)
-                    }
-                    trySend(EventsState.Success(eventsList))
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(EventsState.Failed(error))
-                }
-
-            awaitClose {
-                close()
+        return Pager(
+            config = PagingConfig(
+                pageSize = limit
+            ),
+            pagingSourceFactory = {
+                EventsListPagingSource(
+                    query!!
+                )
             }
-        }
+        ).flow
+
     }
 
     override fun getEventById(eventId: String): Flow<EventsState<EventsModel?>> {

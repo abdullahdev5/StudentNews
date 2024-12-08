@@ -53,8 +53,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
@@ -88,7 +92,7 @@ fun EventsScreen(
 
     val context = LocalContext.current
 
-    val eventsList by eventsViewModel.eventsList.collectAsState()
+    val eventsList = eventsViewModel.eventsList.collectAsLazyPagingItems()
 
     var categoryList = listOf(
         EventsCategoryList.AVAILABLE,
@@ -126,9 +130,9 @@ fun EventsScreen(
                             onClick = { index, category ->
                                 eventsViewModel.selectedCategoryIndex = index
                                 if (eventsViewModel.selectedCategoryIndex == 0) {
-                                    eventsViewModel.getEventsListByAvailableStatus(true)
+                                    eventsViewModel.getEventsList(true)
                                 } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                    eventsViewModel.getEventsListByAvailableStatus(false)
+                                    eventsViewModel.getEventsList(false)
                                 }
                             }
                         )
@@ -170,9 +174,9 @@ fun EventsScreen(
                                 onClick = { index, _ ->
                                     eventsViewModel.selectedCategoryIndex = index
                                     if (eventsViewModel.selectedCategoryIndex == 0) {
-                                        eventsViewModel.getEventsListByAvailableStatus(true)
+                                        eventsViewModel.getEventsList(true)
                                     } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                        eventsViewModel.getEventsListByAvailableStatus(false)
+                                        eventsViewModel.getEventsList(false)
                                     }
                                 }
                             )
@@ -180,24 +184,33 @@ fun EventsScreen(
                 }
             }
 
-            items(eventsList.size) { index ->
-                val item = eventsList[index]
+            if (eventsList.loadState.refresh is LoadState.NotLoading) {
+                items(
+                    count = eventsList.itemCount,
+                    key = eventsList.itemKey {
+                        it.eventId ?: ""
+                    }
+                ) { index ->
+                    val item = eventsList[index]
 
-                EventsItem(
-                    item = item,
-                    context = context,
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    sharedTransitionScope = sharedTransitionScope,
-                    onItemClick = { clickedEventId ->
-                        navHostController.navigate(
-                            EventsDestination.EVENTS_DETAIL_SCREEN(clickedEventId)
-                        )
-                    },
-                )
+                    EventsItem(
+                        item = item,
+                        context = context,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                        sharedTransitionScope = sharedTransitionScope,
+                        onItemClick = { clickedEventId ->
+                            navHostController.navigate(
+                                EventsDestination.EVENTS_DETAIL_SCREEN(clickedEventId)
+                            )
+                        },
+                    )
+                }
             }
 
-
-            if (eventsViewModel.eventsListStatus == Status.Loading) {
+            if (
+                eventsList.loadState.append is LoadState.Loading
+                || eventsList.loadState.refresh is LoadState.Loading
+            ) {
                 item {
                     Row(
                         horizontalArrangement = Arrangement.Center,
@@ -208,17 +221,35 @@ fun EventsScreen(
                     }
                 }
             }
+
+            if (eventsList.loadState.refresh is LoadState.Error) {
+                item {
+                    ErrorMessageContainer(
+                        errorMessage = (eventsList.loadState.refresh as LoadState.Error).error.localizedMessage
+                            ?: "",
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    )
+                }
+            }
         }
     }
 
-    if (eventsViewModel.eventsListStatus != Status.Loading) {
+    if (
+        eventsList.loadState.refresh is LoadState.Error
+        || eventsList.loadState.refresh is LoadState.NotLoading
+    ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            if (eventsViewModel.eventsListErrorMsg.isNotEmpty()) {
-                Text(text = eventsViewModel.eventsListErrorMsg)
+            if (eventsList.loadState.refresh is LoadState.Error) {
+                Text(
+                    text = (eventsList.loadState.refresh as LoadState.Error).error.localizedMessage
+                        ?: ""
+                )
             } else {
                 Text(text = "No Events Available")
             }

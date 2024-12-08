@@ -30,7 +30,11 @@ interface NewsRepository {
     fun getCategoriesList(limit: Int): Flow<PagingData<CategoryModel>>
 
     // Search
-    fun onSearch(query: String, currentSelectedCategory: String?): Flow<PagingData<NewsModel>>
+    fun onSearch(
+        query: String,
+        currentSelectedCategory: String?,
+        limit: Int,
+    ): Flow<PagingData<NewsModel>>
 
     fun setupPeriodicNewsWorkRequest()
     fun cancelPeriodicNewsWorkRequest()

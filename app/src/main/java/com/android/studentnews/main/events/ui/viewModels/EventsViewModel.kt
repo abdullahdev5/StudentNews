@@ -8,11 +8,14 @@ import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.auth.domain.repository.AuthRepository
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.main.events.data.repository.EVENTS_LIST_PAGE_SIZE
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnews.news.domain.resource.NewsState
@@ -20,6 +23,7 @@ import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -33,19 +37,8 @@ class EventsViewModel(
     private val _currentUser = MutableStateFlow<UserModel?>(null)
     val currentUser = _currentUser.asStateFlow()
 
-    private val _eventsList = MutableStateFlow<List<EventsModel?>>(emptyList())
-    val eventsList = _eventsList.asStateFlow()
-    var eventsListStatus by mutableStateOf("")
-        private set
-    var isEndReached
-        get() = eventsRepository.isEventsListEndReached
-        set(value) { value }
-
-    val lastEventsListItem
-        get() = eventsRepository.lastEventsVisibleItem
-
-    var eventsListErrorMsg by mutableStateOf("")
-        private set
+    private val _eventsList = MutableStateFlow<PagingData<EventsModel>>(PagingData.empty())
+    val eventsList: StateFlow<PagingData<EventsModel>> = _eventsList
 
     private val _eventById = MutableStateFlow<EventsModel?>(null)
     val eventById = _eventById.asStateFlow()
@@ -67,33 +60,21 @@ class EventsViewModel(
 
 
     init {
-//        getEventsList()
         getCurrentUser()
         startEventsWorker()
 //        cancelEventsWorker()
     }
 
 
-    fun getEventsList() {
+    fun getEventsList(
+        availableStatus: Boolean?
+    ) {
         viewModelScope.launch {
-            eventsListStatus = Status.Loading
-            delay(500L)
             eventsRepository
-                .getEventsList()
-                .collectLatest { result ->
-                    when (result) {
-                        is EventsState.Success -> {
-                            _eventsList.value = result.data
-                            eventsListStatus = Status.SUCCESS
-                        }
-
-                        is EventsState.Failed -> {
-                            eventsListStatus = Status.FAILED
-                            eventsListErrorMsg = result.error.localizedMessage ?: ""
-                        }
-
-                        else -> {}
-                    }
+                .getEventsList(availableStatus, EVENTS_LIST_PAGE_SIZE)
+                .cachedIn(viewModelScope)
+                .collectLatest { pagingData ->
+                    _eventsList.value = pagingData
                 }
         }
     }
@@ -113,30 +94,6 @@ class EventsViewModel(
                         is EventsState.Failed -> {
                             eventsByIdStatus = Status.FAILED
                             eventsByIdErrorMsg = result.error.localizedMessage ?: ""
-                        }
-
-                        else -> {}
-                    }
-                }
-        }
-    }
-
-    fun getEventsListByAvailableStatus(availableStatus: Boolean) {
-        viewModelScope.launch {
-            eventsListStatus = Status.Loading
-            delay(500L)
-            eventsRepository
-                .getEventsListByAvailableStatus(availableStatus)
-                .collectLatest { result ->
-                    when (result) {
-                        is EventsState.Success -> {
-                            _eventsList.value = result.data
-                            eventsListStatus = Status.SUCCESS
-                        }
-
-                        is EventsState.Failed -> {
-                            eventsListStatus = Status.FAILED
-                            eventsListErrorMsg = result.error.localizedMessage ?: ""
                         }
 
                         else -> {}

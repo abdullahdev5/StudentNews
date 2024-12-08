@@ -1,5 +1,6 @@
 package com.android.studentnews.main.events.domain.repository
 
+import androidx.paging.PagingData
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
@@ -14,11 +15,11 @@ interface EventsRepository {
     val eventsColRef: CollectionReference?
     val savedEventsColRef: CollectionReference?
 
-    var lastEventsVisibleItem: DocumentSnapshot?
-    var isEventsListEndReached: Boolean
 
-
-    fun getEventsList(): Flow<EventsState<List<EventsModel?>>>
+    fun getEventsList(
+        availableStatus: Boolean?,
+        limit: Int
+    ): Flow<PagingData<EventsModel>>
 
     fun getEventById(eventId: String): Flow<EventsState<EventsModel?>>
 

@@ -201,7 +201,7 @@ class NewsRepositoryImpl(
     override fun getCategoriesList(limit: Int): Flow<PagingData<CategoryModel>> {
         return Pager(
             config = PagingConfig(
-                pageSize  = limit
+                pageSize = limit
             )
         ) {
             NewsCategoryListPagingSource(
@@ -219,14 +219,15 @@ class NewsRepositoryImpl(
     override fun onSearch(
         query: String,
         currentSelectedCategory: String?,
+        limit: Int,
     ): Flow<PagingData<NewsModel>> {
 
         val newsQuery = newsColRef
-            ?.limit(NEWS_LIST_PAGE_SIZE.toLong())
+            ?.limit(limit.toLong())
 
         return Pager(
             config = PagingConfig(
-                pageSize = NEWS_LIST_PAGE_SIZE
+                pageSize = limit
             ),
             pagingSourceFactory = {
                 SearchListPagingSource(
@@ -238,32 +239,21 @@ class NewsRepositoryImpl(
         ).flow
 
 
-//            val listener = newsColRef
-//                ?.orderBy("timestamp", Query.Direction.DESCENDING)
-//                ?.get()
-//                ?.addOnSuccessListener { documents ->
-//                    if (documents != null) {
-//
-//                        val news = documents.filter {
-//                            it.getString("title").toString()
-//                                .contains(query, ignoreCase = true)
-//                                    ||
-//                                    it.getString("description").toString()
-//                                        .contains(query, ignoreCase = true)
-//                        }.filter {
-//                            currentSelectedCategory?.let { category ->
-//                                it.getString("category").toString() == category
-//                            } ?: true
-//                        }
-//                            .map {
-//                                it.toObject(NewsModel::class.java)
-//                            }
-//
-//                        trySend(NewsState.Success(news))
-//                    }
-//                }
-//                ?.addOnFailureListener { error ->
-//                }
+//        val news = documents.filter {
+//            it.getString("title").toString()
+//                .contains(query, ignoreCase = true)
+//                    ||
+//                    it.getString("description").toString()
+//                        .contains(query, ignoreCase = true)
+//        }.filter {
+//            currentSelectedCategory?.let { category ->
+//                it.getString("category").toString() == category
+//            } ?: true
+//        }
+//            .map {
+//                it.toObject(NewsModel::class.java)
+//            }
+
     }
 
     override fun setupPeriodicNewsWorkRequest() {

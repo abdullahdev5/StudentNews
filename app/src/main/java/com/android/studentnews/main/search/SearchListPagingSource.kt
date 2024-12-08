@@ -29,8 +29,8 @@ class SearchListPagingSource(
             delay(2000)
 
             val currentPage = params.key ?: newsQuery.get().await()
-            val lastItem = currentPage.documents[currentPage.size() - 1]
-            val nextPage = newsQuery.startAfter(lastItem).get().await()
+            val lastPage = currentPage.documents[currentPage.size() - 1]
+            val nextPage = newsQuery.startAfter(lastPage).get().await()
 
             val filteredList = currentPage.filter {
                 it.getString(TITLE).toString().contains(query, ignoreCase = true)
