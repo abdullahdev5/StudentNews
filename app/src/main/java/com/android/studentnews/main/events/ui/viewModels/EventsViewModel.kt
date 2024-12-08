@@ -72,7 +72,7 @@ class EventsViewModel(
         viewModelScope.launch {
             eventsRepository
                 .getEventsList(availableStatus, EVENTS_LIST_PAGE_SIZE)
-                .cachedIn(viewModelScope)
+                .cachedIn(this)
                 .collectLatest { pagingData ->
                     _eventsList.value = pagingData
                 }

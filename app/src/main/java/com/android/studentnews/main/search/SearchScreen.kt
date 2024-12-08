@@ -308,7 +308,8 @@ fun SearchScreen(
 
                 if (
                     (searchCount == 0 || searchResultNotFound)
-                    && searchNewsList.loadState.refresh != LoadState.Loading
+                    && searchNewsList.loadState.refresh is LoadState.NotLoading
+                    && searchNewsList.loadState.append is LoadState.NotLoading
                 ) {
                     Box(
                         modifier = Modifier

@@ -14,7 +14,6 @@ import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.news.NewsWorker
 import com.android.studentnews.main.news.data.paging_sources.NewsCategoryListPagingSource
 import com.android.studentnews.main.news.domain.model.CategoryModel
-import com.android.studentnews.main.search.SearchListPagingSource
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.domain.resource.NewsState
@@ -31,6 +30,9 @@ import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 const val NEWS_LIST_PAGE_SIZE = 4
+const val SAVED_NEWS_LIST_PAGE_SIZE = 4
+const val LIKED_NEWS_LIST_PAGE_SIZE = 4
+
 const val NEWS_CATEGORY_LIST_PAGE_SIZE = 2
 
 
@@ -135,64 +137,67 @@ class NewsRepositoryImpl(
         }
     }
 
-    override fun getSavedNewsList(): Flow<NewsState<List<NewsModel>>> {
-        return callbackFlow {
+    override fun getSavedNewsList(limit: Int): Flow<PagingData<NewsModel>> {
 
-            trySend(NewsState.Loading)
+        val query = savedNewsColRef
+            ?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.limit(limit.toLong())
 
-            val listener = savedNewsColRef
-                ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                ?.addSnapshotListener { value, error ->
-                    if (error != null) {
-                        trySend(NewsState.Failed(error))
-                    }
-
-                    if (value != null) {
-                        val savedNews = value.map {
-                            it.toObject(NewsModel::class.java)
-                        }
-                        trySend(NewsState.Success(savedNews))
-                    }
-                }
-
-            awaitClose {
-                listener?.remove()
+        return Pager(
+            config = PagingConfig(
+                pageSize = limit
+            ),
+            pagingSourceFactory = {
+                NewsListPagingSource(
+                    query = query!!
+                )
             }
-        }
+        ).flow
+
     }
 
     // Liked News
-    override fun getLikedNewsList(): Flow<NewsState<List<NewsModel>>> {
-        return callbackFlow {
+    override fun getLikedNewsList(limit: Int): Flow<PagingData<NewsModel>> {
 
-            trySend(NewsState.Loading)
+        val query = newsColRef
+            ?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.limit(limit.toLong())
 
-            newsColRef
-                ?.get()
-                ?.addOnSuccessListener { documents ->
-
-                    val likedNewsList = documents.filter {
-                        val userIdsFromLikes = it.toObject(NewsModel::class.java).likes?.map {
-                            it
-                        }
-                        if (userIdsFromLikes?.contains(auth.currentUser?.uid.toString())!!)
-                            return@filter true
-                        else return@filter false
-                    }
-                        .map {
-                            it.toObject(NewsModel::class.java)
-                        }
-                    trySend(NewsState.Success(likedNewsList))
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(NewsState.Failed(error))
-                }
-
-
-            awaitClose {
-                close()
+        return Pager(
+            config = PagingConfig(
+                pageSize = limit
+            ),
+            pagingSourceFactory = {
+                NewsListPagingSource(
+                    query = query!!,
+                    currentUid = auth.currentUser?.uid.toString(),
+                    isForLikedNews = true
+                )
             }
-        }
+        ).flow
+
+//            newsColRef
+//                ?.get()
+//                ?.addOnSuccessListener { documents ->
+//
+//                    val likedNewsList = documents.filter {
+//                        val userIdsFromLikes = it.toObject(NewsModel::class.java).likes?.map {
+//                            it
+//                        }
+//                        if (userIdsFromLikes?.contains(auth.currentUser?.uid.toString())!!)
+//                            return@filter true
+//                        else return@filter false
+//                    }
+//                        .map {
+//                            it.toObject(NewsModel::class.java)
+//                        }
+//                    trySend(NewsState.Success(likedNewsList))
+//                }
+//                ?.addOnFailureListener { error ->
+//                    trySend(NewsState.Failed(error))
+//                }
+
+
     }
 
 
@@ -230,10 +235,11 @@ class NewsRepositoryImpl(
                 pageSize = limit
             ),
             pagingSourceFactory = {
-                SearchListPagingSource(
-                    newsQuery = newsQuery!!,
-                    query = query,
-                    currentCategory = currentSelectedCategory
+                NewsListPagingSource(
+                    query = newsQuery!!,
+                    searchQuery = query,
+                    currentCategory = currentSelectedCategory,
+                    isForSearchNews = true,
                 )
             }
         ).flow

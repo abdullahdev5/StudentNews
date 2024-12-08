@@ -675,11 +675,12 @@ fun NewsScreen(
                                                 item {
                                                     ErrorMessageContainer(
                                                         errorMessage =
-                                                        (newsList.loadState.refresh as LoadState.Error).error.localizedMessage
-                                                            ?: "",
+                                                        (newsList.loadState.refresh as LoadState.Error
+                                                                ).error.localizedMessage ?: "",
                                                         modifier = Modifier
-                                                            .fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.Center
+                                                            .fillMaxWidth()
+                                                            .padding(all = 20.dp),
+                                                        horizontalArrangement = Arrangement.spacedBy(20.dp),
                                                     )
                                                 }
                                             }

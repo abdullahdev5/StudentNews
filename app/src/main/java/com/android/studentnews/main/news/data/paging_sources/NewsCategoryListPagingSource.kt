@@ -9,7 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 
 class NewsCategoryListPagingSource(
-    private val categoryQuery: Query,
+    private val query: Query,
 ) : PagingSource<QuerySnapshot, CategoryModel>() {
 
     override fun getRefreshKey(state: PagingState<QuerySnapshot, CategoryModel>): QuerySnapshot? =
@@ -21,9 +21,9 @@ class NewsCategoryListPagingSource(
 
             delay(2000)
 
-            val currentPage = params.key ?: categoryQuery.get().await()
+            val currentPage = params.key ?: this@NewsCategoryListPagingSource.query.get().await()
             val lastPage = currentPage.documents[currentPage.size() - 1]
-            val nextPage = categoryQuery.startAfter(lastPage).get().await()
+            val nextPage = this@NewsCategoryListPagingSource.query.startAfter(lastPage).get().await()
 
             return LoadResult.Page(
                 data = currentPage.toObjects(CategoryModel::class.java),

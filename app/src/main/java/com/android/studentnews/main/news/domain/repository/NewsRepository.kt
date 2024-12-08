@@ -22,9 +22,9 @@ interface NewsRepository {
     suspend fun getNewsUpdates(): NewsModel?
     fun onNewsSave(news: NewsModel): Flow<NewsState<String>>
     fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>>
-    fun getSavedNewsList(): Flow<NewsState<List<NewsModel>>>
+    fun getSavedNewsList(limit: Int): Flow<PagingData<NewsModel>>
     // Liked News
-    fun getLikedNewsList(): Flow<NewsState<List<NewsModel>>>
+    fun getLikedNewsList(limit: Int): Flow<PagingData<NewsModel>>
 
     // Category
     fun getCategoriesList(limit: Int): Flow<PagingData<CategoryModel>>

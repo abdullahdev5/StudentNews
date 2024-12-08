@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Timer
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -55,6 +56,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.studentnews.core.domain.common.formatDateToString
@@ -91,7 +95,7 @@ fun SavedEventsScreen(
     val context = LocalContext.current
     val density = LocalDensity.current
 
-    val savedEventsList by savedEventsViewModel.savedEventsList.collectAsStateWithLifecycle()
+    val savedEventsList = savedEventsViewModel.savedEventsList.collectAsLazyPagingItems()
 
 
     Surface(
@@ -99,49 +103,71 @@ fun SavedEventsScreen(
             .fillMaxSize(),
     ) {
 
-        if (savedEventsList.size != 0) {
+        if (
+            savedEventsList.itemCount != 0
+            || savedEventsList.loadState.refresh is LoadState.Loading
+        ) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                items(
-                    count = savedEventsList.size,
-                    key = { index ->
-                        savedEventsList[index]?.eventId ?: ""
-                    }
-                ) { index ->
-                    val item = savedEventsList[index]
-
-                    SavedEventsItem(
-                        item = item,
-                        context = context,
-                        density = density,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        sharedTransitionScope = sharedTransitionScope,
-                        onItemClick = { thisNewsId ->
-                            navHostController.navigate(
-                                EventsDestination.EVENTS_DETAIL_SCREEN(thisNewsId)
-                            )
-                        },
-                        onEventRemoveFromSaveList = { thisItem ->
-                            savedEventsViewModel.onEventRemoveFromSaveList(thisItem)
+                if (savedEventsList.loadState.refresh is LoadState.NotLoading) {
+                    items(
+                        count = savedEventsList.itemCount,
+                        key = savedEventsList.itemKey {
+                            it.eventId ?: ""
                         }
-                    )
+                    ) { index ->
+                        val item = savedEventsList[index]
+
+                        SavedEventsItem(
+                            item = item,
+                            context = context,
+                            density = density,
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            sharedTransitionScope = sharedTransitionScope,
+                            onItemClick = { thisNewsId ->
+                                navHostController.navigate(
+                                    EventsDestination.EVENTS_DETAIL_SCREEN(thisNewsId)
+                                )
+                            },
+                            onEventRemoveFromSaveList = { thisItem ->
+                                savedEventsViewModel.onEventRemoveFromSaveList(thisItem)
+                            }
+                        )
+                    }
                 }
+
+                if (
+                    savedEventsList.loadState.append is LoadState.Loading
+                    || savedEventsList.loadState.refresh is LoadState.Loading
+                ) {
+                    item {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
+
             }
-        } else {
+        }
+
+        if (
+            savedEventsList.itemCount == 0
+            && savedEventsList.loadState.refresh is LoadState.NotLoading
+            && savedEventsList.loadState.append is LoadState.NotLoading
+        ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Text(text = "No Save Events")
+                Text(text = "No Save Events!")
             }
-        }
-
-
-        if (savedEventsViewModel.savedEventsListStatus == Status.Loading) {
-            LoadingDialog()
         }
 
     }
