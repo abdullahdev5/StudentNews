@@ -1,8 +1,8 @@
 package com.android.studentnews.news.ui.viewModel
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
@@ -10,10 +10,15 @@ import androidx.paging.cachedIn
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.auth.domain.repository.AuthRepository
 import com.android.studentnews.news.data.repository.NEWS_CATEGORY_LIST_PAGE_SIZE
+import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.main.account.domain.repository.AccountRepository
+import com.android.studentnews.main.account.domain.resource.AccountState
+import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.domain.resource.NewsState
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,6 +30,7 @@ import kotlinx.coroutines.launch
 class NewsViewModel(
     private val newsRepository: NewsRepository,
     private val authRepository: AuthRepository,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val _newsList = MutableStateFlow<PagingData<NewsModel>>(PagingData.empty())
@@ -61,11 +67,11 @@ class NewsViewModel(
     // currentUser
     fun getCurrentUser() {
         viewModelScope.launch {
-            authRepository
+            accountRepository
                 .getCurrentUser()
                 .collectLatest { result ->
                     when (result) {
-                        is NewsState.Success -> {
+                        is AccountState.Success -> {
                             _currentUser.value = result.data
                         }
 

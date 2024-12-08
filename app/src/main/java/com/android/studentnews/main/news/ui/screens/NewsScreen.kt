@@ -18,7 +18,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -35,11 +34,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PageSize
 import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerSnapDistance
 import androidx.compose.foundation.pager.PagerState
@@ -150,11 +147,14 @@ import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
+import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.DropDownMenuColorLight
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
+import com.android.studentnews.ui.theme.ItemBackgroundColor
+import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
 
@@ -285,7 +285,9 @@ fun NewsScreen(
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope,
                         onAccountClick = {
-                            navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
+                            currentUser?.let {
+                                navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
+                            }
                         },
                         onSearchClick = {
                             navHostController.navigate(MainDestination.SEARCH_SCREEN)
@@ -754,7 +756,7 @@ fun NewsItem(
                     renderInOverlayDuringTransition = true
                 ),
             colors = CardDefaults.cardColors(
-                containerColor = Green.copy(0.1f) // LightGray.copy(alpha = 0.3f)
+                containerColor = ItemBackgroundColor
             )
         ) {
 
@@ -1263,12 +1265,7 @@ fun MoreDropDownMenu(
             dismissOnBackPress = true
         ),
         modifier = Modifier
-            .background(color = if (isSystemInDarkTheme()) DarkColor else White)
-            .border(
-                width = 1.dp,
-                color = if (isSystemInDarkTheme()) White else Black,
-                shape = RoundedCornerShape(5.dp)
-            ),
+            .background(color = if (isSystemInDarkTheme()) DarkGray else DropDownMenuColorLight)
     ) {
         // Saved Item
         DropdownMenuItem(
@@ -1282,10 +1279,9 @@ fun MoreDropDownMenu(
             trailingIcon = {
                 Icon(
                     imageVector = Icons.Default.BookmarkBorder,
-                    contentDescription = "Icon fro Saved"
+                    contentDescription = "Icon for Saved"
                 )
             },
-            contentPadding = PaddingValues(10.dp),
         )
         // Liked Item
         DropdownMenuItem(
@@ -1302,7 +1298,6 @@ fun MoreDropDownMenu(
                     contentDescription = "Icon fro Liked"
                 )
             },
-            contentPadding = PaddingValues(10.dp)
         )
 
         // Registered Events Item
@@ -1320,7 +1315,6 @@ fun MoreDropDownMenu(
                     contentDescription = "Icon fro Registered Events"
                 )
             },
-            contentPadding = PaddingValues(10.dp)
         )
     }
 }

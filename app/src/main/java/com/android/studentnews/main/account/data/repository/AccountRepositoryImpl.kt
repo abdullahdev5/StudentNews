@@ -1,6 +1,8 @@
 package com.android.studentnews.main.account.data.repository
 
 import android.graphics.Bitmap
+import com.android.studentnews.auth.domain.models.UserModel
+import com.android.studentnews.auth.domain.repository.AuthRepository
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.core.domain.constants.StorageNodes
 import com.android.studentnews.main.account.domain.repository.AccountRepository
@@ -12,13 +14,17 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import java.io.ByteArrayOutputStream
 
 class AccountRepositoryImpl(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
     private val storage: FirebaseStorage,
+    private val authRepository: AuthRepository,
 ): AccountRepository {
 
 
@@ -27,7 +33,6 @@ class AccountRepositoryImpl(
 
     override val userDocRef: DocumentReference?
         get() = firestore.collection(FirestoreNodes.USERS_COL).document(auth.currentUser?.uid.toString())
-
 
 
     override fun onUserImageSave(imageBitmap: Bitmap): Flow<AccountState<String>> =
@@ -86,6 +91,27 @@ class AccountRepositoryImpl(
     override fun onUsernameSave(username: String) {
         userDocRef
             ?.update("registrationData.name", username)
+    }
+
+    override suspend fun getCurrentUser(): Flow<AccountState<UserModel?>> {
+        return callbackFlow {
+
+            val result = authRepository
+                .getCurrentUser()
+                .first()
+
+            when (result) {
+                is AccountState.Success -> {
+                    trySend(AccountState.Success(result.data))
+                }
+
+                else -> null
+            }
+
+            awaitClose {
+                close()
+            }
+        }
     }
 
 

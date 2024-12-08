@@ -8,6 +8,7 @@ import com.android.studentnews.auth.domain.repository.AuthRepository
 import com.android.studentnews.auth.domain.resource.UserState
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.core.domain.constants.FirestoreNodes.Companion.USERS_COL
+import com.android.studentnews.main.account.domain.resource.AccountState
 import com.android.studentnews.news.domain.resource.NewsState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -101,7 +102,7 @@ class AuthRepositoryImpl(
     }
 
 
-    override fun getCurrentUser(): Flow<NewsState<UserModel?>> =
+    override fun getCurrentUser(): Flow<AccountState<UserModel?>> =
         callbackFlow {
 
             val snapshotListener = userDocRef
@@ -109,7 +110,7 @@ class AuthRepositoryImpl(
 
                     if (snapshot != null) {
                         val currentUser = snapshot.toObject(UserModel::class.java)
-                        trySend(NewsState.Success(currentUser))
+                        trySend(AccountState.Success(currentUser))
                     }
                 }
 

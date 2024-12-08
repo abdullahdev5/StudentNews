@@ -12,6 +12,8 @@ import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.main.account.domain.repository.AccountRepository
+import com.android.studentnews.main.account.domain.resource.AccountState
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -25,7 +27,7 @@ import java.io.File
 class NewsDetailViewModel(
     private val newsDetailRepository: NewsDetailRepository,
     private val newsRepository: NewsRepository,
-    private val authRepository: AuthRepository,
+    private val accountRepository: AccountRepository,
 ) : ViewModel() {
 
     private val _newsById = MutableStateFlow<NewsModel?>(null)
@@ -203,11 +205,11 @@ class NewsDetailViewModel(
 
     fun getCurrentUser() {
         viewModelScope.launch {
-            authRepository
+            accountRepository
                 .getCurrentUser()
                 .collectLatest { result ->
                     when (result) {
-                        is NewsState.Success -> {
+                        is AccountState.Success -> {
                             _currentUser.value = result.data
                         }
 

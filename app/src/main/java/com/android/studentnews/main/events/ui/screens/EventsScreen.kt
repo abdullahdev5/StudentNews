@@ -68,7 +68,10 @@ import com.android.studentnews.core.domain.common.formatDateToString
 import com.android.studentnews.core.domain.common.formatTimeToString
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.ui.theme.Black
+import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
+import com.android.studentnews.ui.theme.ItemBackgroundColor
+import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 
@@ -116,56 +119,12 @@ fun EventsScreen(
                     }
                     .forEach { item ->
 
-                        CategoryListItem(
-                            categoryName = item.category,
-                            modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                            colors = SegmentedButtonDefaults.colors(
-                                activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                inactiveContainerColor = Color.Transparent,
-                                activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                inactiveContentColor = LocalContentColor.current
-                            ),
-                            index = item.index,
-                            selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                            onClick = { index, category ->
-                                eventsViewModel.selectedCategoryIndex = index
-                                if (eventsViewModel.selectedCategoryIndex == 0) {
-                                    eventsViewModel.getEventsList(true)
-                                } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                    eventsViewModel.getEventsList(false)
-                                }
-                            }
-                        )
-                    }
-            }
-        }
-
-        LazyColumn(
-            state = eventsViewModel.lazyListState,
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 5.dp, top = 5.dp),
-                ) {
-                    // Category
-                    categoryList
-                        .sortedByDescending {
-                            eventsViewModel.selectedCategoryIndex != null
-                                    && eventsViewModel.selectedCategoryIndex == it.index
-                        }
-                        .forEach { item ->
-
                             CategoryListItem(
                                 categoryName = item.category,
                                 modifier = Modifier.padding(start = 5.dp, end = 5.dp),
                                 colors = SegmentedButtonDefaults.colors(
                                     activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                    inactiveContainerColor = Color.Transparent,
+                                    inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
                                     activeContentColor = if (isSystemInDarkTheme()) Black else White,
                                     inactiveContentColor = LocalContentColor.current
                                 ),
@@ -183,6 +142,50 @@ fun EventsScreen(
                         }
                 }
             }
+
+            LazyColumn(
+                state = eventsViewModel.lazyListState,
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+
+                item {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 5.dp, top = 5.dp),
+                    ) {
+                        // Category
+                        categoryList
+                            .sortedByDescending {
+                                eventsViewModel.selectedCategoryIndex != null
+                                        && eventsViewModel.selectedCategoryIndex == it.index
+                            }
+                            .forEach { item ->
+
+                                CategoryListItem(
+                                    categoryName = item.category,
+                                    modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                        inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                        activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                        inactiveContentColor = LocalContentColor.current
+                                    ),
+                                    index = item.index,
+                                    selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
+                                    onClick = { index, _ ->
+                                        eventsViewModel.selectedCategoryIndex = index
+                                        if (eventsViewModel.selectedCategoryIndex == 0) {
+                                            eventsViewModel.getEventsList(true)
+                                        } else if (eventsViewModel.selectedCategoryIndex == 1) {
+                                            eventsViewModel.getEventsList(false)
+                                        }
+                                    }
+                                )
+                            }
+                    }
+                }
 
             if (eventsList.loadState.refresh is LoadState.NotLoading) {
                 items(
@@ -278,7 +281,7 @@ fun EventsItem(
                 onItemClick(item?.eventId ?: "")
             },
         colors = CardDefaults.cardColors(
-            containerColor = Green.copy(0.1f) // LightGray.copy(alpha = 0.3f)
+            containerColor = ItemBackgroundColor
         )
     ) {
         Row(

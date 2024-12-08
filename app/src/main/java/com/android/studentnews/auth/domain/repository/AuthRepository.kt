@@ -3,6 +3,7 @@ package com.android.studentnews.auth.domain.repository
 import com.android.studentnews.auth.domain.models.RegistrationData
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.auth.domain.resource.UserState
+import com.android.studentnews.main.account.domain.resource.AccountState
 import com.android.studentnews.news.domain.resource.NewsState
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.DocumentReference
@@ -29,7 +30,7 @@ interface AuthRepository {
     fun signOut()
 
 
-    fun getCurrentUser(): Flow<NewsState<UserModel?>>
+    fun getCurrentUser(): Flow<AccountState<UserModel?>>
 
 
 }

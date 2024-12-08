@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.android.studentnews.ui.theme.DarkColor
+import com.android.studentnews.ui.theme.DialogBackgroundColorDark
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.White
 
@@ -39,7 +40,7 @@ fun ImagePickerDialog(
                     .fillMaxWidth()
                     .padding(all = 20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isSystemInDarkTheme()) DarkColor else White
+                    containerColor = if (isSystemInDarkTheme()) DialogBackgroundColorDark else White
                 )
             ) {
                 Column(
