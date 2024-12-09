@@ -17,15 +17,19 @@ import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.domain.resource.NewsState
+import com.google.android.gms.tasks.CancellationToken
+import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import okio.IOException
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
@@ -121,15 +125,20 @@ class NewsRepositoryImpl(
     override fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>> {
         return callbackFlow {
 
-            savedNewsColRef
-                ?.document(news.newsId.toString())
-                ?.delete()
-                ?.addOnSuccessListener { document ->
-                    trySend(NewsState.Success("News Removed from Saved List"))
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(NewsState.Failed(error))
-                }
+            try {
+                savedNewsColRef
+                    ?.document(news.newsId.toString())
+                    ?.delete()
+                    ?.addOnSuccessListener {
+                        trySend(NewsState.Success("News Removed from Saved List"))
+                    }
+                    ?.addOnCanceledListener {
+                        trySend(NewsState.Failed(error("Canceled to Removing News from Saved List!")))
+                    }
+
+            } catch (e: Exception) {
+                trySend(NewsState.Failed(e))
+            }
 
             awaitClose {
                 close()

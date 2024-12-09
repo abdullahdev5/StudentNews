@@ -37,37 +37,36 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.FontSize
-import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
@@ -79,7 +78,6 @@ import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.let
 import kotlin.math.roundToInt
@@ -94,7 +92,10 @@ fun SavedNewsScreen(
 ) {
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    val configuration = LocalConfiguration.current
+    val maxWidth by remember { mutableStateOf(250.dp) }
 
 
     val savedNewsList = savedNewsViewModel.savedNewsList.collectAsLazyPagingItems()
@@ -116,6 +117,12 @@ fun SavedNewsScreen(
                     }
                 ) { index ->
                     val item = savedNewsList[index]
+
+                    var offsetX = remember { Animatable(0f) }
+                    var isDragging by remember { mutableStateOf(false) }
+                    var itemHeight by remember { mutableStateOf(0.dp) }
+
+
                     SavedNewsItem(
                         item = item,
                         context = context,
@@ -125,7 +132,49 @@ fun SavedNewsScreen(
                         },
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope,
-                        onRemoveFromSavedList = { thisNews ->
+                        offsetX = offsetX.value,
+                        onDragStart = {
+                            isDragging = true
+                        },
+                        onDragEnd = {
+                            if (offsetX.value.dp > maxWidth) {
+                                scope.launch {
+                                    offsetX.animateTo(maxWidth.value.toFloat())
+                                }
+                            } else {
+                                isDragging = false
+                                scope.launch {
+                                    offsetX.animateTo(0f)
+                                }
+                            }
+                        },
+                        onHorizontalDrag = { change, dragAmount ->
+                            change.consume()
+                            val newOffsetX = dragAmount
+                            val incrementedOffsetX = (offsetX.value) + newOffsetX
+                            scope.launch {
+                                with(density) {
+                                    offsetX.snapTo(
+                                        incrementedOffsetX.coerceIn(
+                                            minimumValue = 0f,
+                                            maximumValue = maxWidth.toPx()
+                                        )
+                                    )
+                                }
+                            }
+                        },
+                        onGloballyPositioned = { coordinates ->
+                            itemHeight = with(density) { coordinates.size.height.toDp() }
+                        },
+                        itemHeight = itemHeight,
+                        maxWidth = { maxWidth },
+                        isDragging = isDragging,
+                        onRemoveFromSavedListClick = { thisNews ->
+                            scope.launch {
+                                with(density) {
+                                    offsetX.animateTo(configuration.screenWidthDp.dp.toPx())
+                                }
+                            }
                             savedNewsViewModel.onNewsRemoveFromSave(thisNews)
                         },
                     )
@@ -171,17 +220,18 @@ fun SavedNewsItem(
     context: Context,
     density: Density,
     onItemClick: (String) -> Unit,
-    onRemoveFromSavedList: (NewsModel) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
+    offsetX: Float,
+    onDragStart: () -> Unit,
+    onDragEnd: () -> Unit,
+    onHorizontalDrag: (change: PointerInputChange, dragAmount: Float) -> Unit,
+    onGloballyPositioned: (coordinates: LayoutCoordinates) -> Unit,
+    itemHeight: Dp,
+    maxWidth: () -> Dp,
+    isDragging: Boolean,
+    onRemoveFromSavedListClick: (NewsModel) -> Unit,
 ) {
-
-    var offsetX = remember { Animatable(0f) }
-    var scope = rememberCoroutineScope()
-    var isDragging by remember { mutableStateOf(false) }
-    var maxWidth = 250.dp
-    var itemHeight by remember { mutableStateOf(0.dp) }
-
 
     Column {
 
@@ -193,19 +243,26 @@ fun SavedNewsItem(
             if (isDragging) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .then(
+                            with(density) {
+                                Modifier
+                                    .width((maxWidth().toPx() - 100.dp.toPx()).toDp())
+                            }
+                        )
                         .height(itemHeight)
                         .background(color = Black)
+                        .clickable {
+                            item?.let {
+                                onRemoveFromSavedListClick(it)
+                            }
+                        }
                 ) {
                     AnimatedContent(
-                        targetState = (offsetX.value).dp > maxWidth
-                                || (-offsetX.value).dp > maxWidth,
+                        targetState = (offsetX).dp > maxWidth()
+                                || (offsetX).dp == maxWidth(),
                         label = "delete_from_save",
                         modifier = Modifier
-                            .align(
-                                if ((offsetX.value.toString()).startsWith("-"))
-                                    Alignment.CenterEnd else Alignment.CenterStart
-                            ),
+                            .align(Alignment.CenterStart),
                     ) { targetState ->
                         Icon(
                             imageVector = if (targetState)
@@ -221,71 +278,45 @@ fun SavedNewsItem(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            onItemClick.invoke(item?.newsId ?: "")
-                        }
                         .sharedElement(
                             state = rememberSharedContentState(key = "container/${item?.newsId}"),
                             animatedVisibilityScope = animatedVisibilityScope,
                         )
                         .offset {
                             androidx.compose.ui.unit.IntOffset(
-                                (offsetX.value).roundToInt(),
+                                offsetX.roundToInt(),
                                 0
                             )
                         }
                         .pointerInput(true) {
                             detectHorizontalDragGestures(
                                 onDragStart = {
-                                    isDragging = true
+                                    onDragStart()
                                 },
-                                onDragEnd = {
-                                    if ((offsetX.value).dp > maxWidth || (-offsetX.value).dp > maxWidth) {
-                                        item?.let { thisItem ->
-                                            scope.launch {
-                                                if ((offsetX.value.toString()).startsWith("-")) {
-                                                    offsetX.animateTo(offsetX.value + -500f)
-                                                } else {
-                                                    offsetX.animateTo(offsetX.value + 500f)
-                                                }
-                                                delay(100)
-                                                onRemoveFromSavedList.invoke(thisItem)
-                                                isDragging = false
-                                                offsetX.snapTo(0f)
-                                            }
-                                        }
-                                    } else {
-                                        isDragging = false
-                                        scope.launch {
-                                            offsetX.animateTo(0f)
-                                        }
-                                    }
-                                },
+                                onDragEnd = onDragEnd,
                                 onHorizontalDrag = { change, dragAmount ->
-                                    change.consume()
-                                    val newOffsetX = dragAmount
-                                    val incrementedOffsetX = (offsetX.value) + newOffsetX
-                                    scope.launch {
-                                        offsetX.snapTo(incrementedOffsetX)
-                                    }
+                                    onHorizontalDrag(change, dragAmount)
                                 }
                             )
                         }
                         .background(
-                            color = if (offsetX.value != 0f) {
+                            color = if (offsetX.dp > maxWidth()) {
                                 if (isSystemInDarkTheme()) DarkGray else LightGray
                             } else {
                                 if (isSystemInDarkTheme()) DarkColor else White
                             }
                         )
                         .onGloballyPositioned { coordinates ->
-                            itemHeight = with(density) { coordinates.size.height.toDp() }
+                            onGloballyPositioned(coordinates)
                         },
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(all = 20.dp)
+                            .clickable {
+                                onItemClick.invoke(item?.newsId ?: "")
+                            }
                     ) {
                         Column(
                             modifier = Modifier
