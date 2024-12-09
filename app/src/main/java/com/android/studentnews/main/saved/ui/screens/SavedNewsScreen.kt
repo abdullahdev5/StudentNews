@@ -41,6 +41,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -249,6 +250,8 @@ fun SavedNewsItem(
                                                 }
                                                 delay(100)
                                                 onRemoveFromSavedList.invoke(thisItem)
+                                                isDragging = false
+                                                offsetX.snapTo(0f)
                                             }
                                         }
                                     } else {
@@ -269,7 +272,7 @@ fun SavedNewsItem(
                             )
                         }
                         .background(
-                            color = if (isDragging) {
+                            color = if (offsetX.value != 0f) {
                                 if (isSystemInDarkTheme()) DarkGray else LightGray
                             } else {
                                 if (isSystemInDarkTheme()) DarkColor else White

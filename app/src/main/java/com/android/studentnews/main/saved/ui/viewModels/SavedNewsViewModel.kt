@@ -8,6 +8,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.filter
+import androidx.paging.insertFooterItem
+import androidx.paging.insertHeaderItem
+import androidx.paging.map
 import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
@@ -20,18 +24,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 
 class SavedNewsViewModel(
-    private val newsRepository: NewsRepository
-): ViewModel() {
+    private val newsRepository: NewsRepository,
+) : ViewModel() {
 
     private val _savedNewsList = MutableStateFlow<PagingData<NewsModel>>(PagingData.empty())
     val savedNewsList: StateFlow<PagingData<NewsModel>> = _savedNewsList
 
     var newsRemoveFromSaveStatus by mutableStateOf("")
         private set
-
 
     init {
         getSavedNewsList()
@@ -50,7 +58,6 @@ class SavedNewsViewModel(
     }
 
 
-
     fun onNewsRemoveFromSave(news: NewsModel) {
         viewModelScope.launch {
             newsRemoveFromSaveStatus = Status.Loading
@@ -59,46 +66,23 @@ class SavedNewsViewModel(
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Success -> {
+                            _savedNewsList.update {
+                                it.filter { data ->
+                                    news != data
+                                }
+                            }
                             newsRemoveFromSaveStatus = Status.SUCCESS
                             SnackBarController
                                 .sendEvent(
                                     SnackBarEvents(
                                         message = result.data,
                                         duration = SnackbarDuration.Long,
-                                        action = SnackBarActions(
-                                            label = "Undo",
-                                            action = {
-                                                onNewsRemoveFromSaveUndo(news)
-                                            }
-                                        )
                                     )
                                 )
                         }
 
                         is NewsState.Failed -> {
                             newsRemoveFromSaveStatus = Status.FAILED
-                            SnackBarController
-                                .sendEvent(
-                                    SnackBarEvents(
-                                        message = result.error.localizedMessage ?: "",
-                                        duration = SnackbarDuration.Long
-                                    )
-                                )
-                        }
-
-                        else -> {}
-                    }
-                }
-        }
-    }
-
-    fun onNewsRemoveFromSaveUndo(news: NewsModel) {
-        viewModelScope.launch {
-            newsRepository
-                .onNewsSave(news)
-                .collectLatest { result ->
-                    when (result) {
-                        is NewsState.Failed -> {
                             SnackBarController
                                 .sendEvent(
                                     SnackBarEvents(

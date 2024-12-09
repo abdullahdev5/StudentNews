@@ -59,36 +59,9 @@ class SavedEventsViewModel(
                                     SnackBarEvents(
                                         message = result.data,
                                         duration = SnackbarDuration.Long,
-                                        action = SnackBarActions(
-                                            label = "Undo",
-                                            action = {
-                                                onEventRemoveFromSaveListUndo(event)
-                                            }
-                                        )
                                     )
                                 )
                         }
-                        is EventsState.Failed -> {
-                            SnackBarController
-                                .sendEvent(
-                                    SnackBarEvents(
-                                        message = result.error.localizedMessage ?: "",
-                                        duration = SnackbarDuration.Long,
-                                    )
-                                )
-                        }
-                        else -> {}
-                    }
-                }
-        }
-    }
-
-    fun onEventRemoveFromSaveListUndo(event: EventsModel) {
-        viewModelScope.launch {
-            eventsRepository
-                .onEventSave(event)
-                .collectLatest { result ->
-                    when (result) {
                         is EventsState.Failed -> {
                             SnackBarController
                                 .sendEvent(
