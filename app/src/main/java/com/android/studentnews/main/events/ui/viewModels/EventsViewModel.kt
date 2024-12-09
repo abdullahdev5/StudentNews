@@ -2,8 +2,8 @@ package com.android.studentnews.main.events.ui.viewModels
 
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.ViewModel
@@ -15,14 +15,12 @@ import com.android.studentnews.auth.domain.repository.AuthRepository
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.main.account.domain.repository.AccountRepository
+import com.android.studentnews.main.account.domain.resource.AccountState
 import com.android.studentnews.main.events.data.repository.EVENTS_LIST_PAGE_SIZE
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.events.domain.repository.EventsRepository
-import com.android.studentnews.news.domain.resource.NewsState
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,7 +29,7 @@ import kotlinx.coroutines.launch
 
 class EventsViewModel(
     private val eventsRepository: EventsRepository,
-    private val accountRepository: AccountRepository,
+    private val authRepository: AuthRepository,
     private val notificationManager: NotificationManagerCompat
 ) : ViewModel() {
 
@@ -212,7 +210,7 @@ class EventsViewModel(
 
     fun getCurrentUser() {
         viewModelScope.launch {
-            accountRepository
+            authRepository
                 .getCurrentUser()
                 .collectLatest { result ->
                     when (result) {

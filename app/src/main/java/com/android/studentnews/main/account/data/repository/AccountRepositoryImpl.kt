@@ -24,7 +24,6 @@ class AccountRepositoryImpl(
     private val auth: FirebaseAuth,
     private val firestore: FirebaseFirestore,
     private val storage: FirebaseStorage,
-    private val authRepository: AuthRepository,
 ): AccountRepository {
 
 
@@ -91,27 +90,6 @@ class AccountRepositoryImpl(
     override fun onUsernameSave(username: String) {
         userDocRef
             ?.update("registrationData.name", username)
-    }
-
-    override suspend fun getCurrentUser(): Flow<AccountState<UserModel?>> {
-        return callbackFlow {
-
-            val result = authRepository
-                .getCurrentUser()
-                .first()
-
-            when (result) {
-                is AccountState.Success -> {
-                    trySend(AccountState.Success(result.data))
-                }
-
-                else -> null
-            }
-
-            awaitClose {
-                close()
-            }
-        }
     }
 
 
