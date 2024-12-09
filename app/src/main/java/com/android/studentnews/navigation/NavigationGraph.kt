@@ -117,12 +117,14 @@ fun NavigationGraph(
                 ) {
                     composable<NewsDestination.NEWS_SCREEN>() {
                         val newsViewModel = koinViewModel<NewsViewModel>()
+                        val accountViewModel = koinViewModel<AccountViewModel>()
                         val eventsViewModel = koinViewModel<EventsViewModel>()
 
                         NewsScreen(
                             navHostController = navHostController,
                             newsViewModel = newsViewModel,
                             eventsViewModel = eventsViewModel,
+                            accountViewModel = accountViewModel,
                             animatedVisibilityScope = this,
                             sharedTransitionScope = this@SharedTransitionLayout
                         )
@@ -137,11 +139,13 @@ fun NavigationGraph(
                     ) {
                         val arguments = it.toRoute<NewsDestination.NEWS_DETAIL_SCREEN>()
                         val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
+                        val accountViewModel = koinViewModel<AccountViewModel>()
 
                         NewsDetailScreen(
                             newsId = arguments.newsId,
                             navHostController = navHostController,
                             newsDetailViewModel = newsDetailViewModel,
+                            accountViewModel = accountViewModel,
                             animatedVisibilityScope = this,
                             sharedTransitionScope = this@SharedTransitionLayout
                         )
@@ -187,6 +191,7 @@ fun NavigationGraph(
 
                         val arguments = it.toRoute<EventsDestination.EVENTS_DETAIL_SCREEN>()
                         val eventsViewModel = koinViewModel<EventsViewModel>()
+                        val accountViewModel = koinViewModel<AccountViewModel>()
 
                         EventsDetailScreen(
                             eventId = arguments.eventId,
@@ -194,6 +199,7 @@ fun NavigationGraph(
                             notificationId = arguments.notificationId,
                             navHostController = navHostController,
                             eventsViewModel = eventsViewModel,
+                            accountViewModel = accountViewModel,
                             animatedVisibilityScope = this,
                             sharedTransitionScope = this@SharedTransitionLayout
                         )

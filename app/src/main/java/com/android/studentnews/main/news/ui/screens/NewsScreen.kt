@@ -134,6 +134,7 @@ import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.NavigationBarItems
+import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
 import com.android.studentnews.main.events.ui.screens.EventsScreen
@@ -167,6 +168,7 @@ fun NewsScreen(
     navHostController: NavHostController,
     newsViewModel: NewsViewModel,
     eventsViewModel: EventsViewModel,
+    accountViewModel: AccountViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
 ) {
@@ -194,7 +196,7 @@ fun NewsScreen(
 
     val newsList = newsViewModel.newsList.collectAsLazyPagingItems()
     val categoriesList = newsViewModel.categoriesList.collectAsLazyPagingItems()
-    val currentUser by newsViewModel.currentUser.collectAsStateWithLifecycle()
+    val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
 
     val categoryPagerState = rememberPagerState(
         pageCount = {
@@ -546,7 +548,7 @@ fun NewsScreen(
                                                             ),
                                                             colors = SegmentedButtonDefaults.colors(
                                                                 activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                                                inactiveContainerColor = Color.Transparent,
+                                                                inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
                                                                 activeContentColor = if (isSystemInDarkTheme()) Black else White,
                                                                 inactiveContentColor = LocalContentColor.current
                                                             ),

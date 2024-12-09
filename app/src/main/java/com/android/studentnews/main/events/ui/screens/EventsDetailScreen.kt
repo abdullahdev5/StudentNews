@@ -115,6 +115,7 @@ import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
+import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Gray
@@ -132,6 +133,7 @@ fun EventsDetailScreen(
     notificationId: Int?,
     navHostController: NavHostController,
     eventsViewModel: EventsViewModel,
+    accountViewModel: AccountViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
 ) {
@@ -148,7 +150,7 @@ fun EventsDetailScreen(
     )
 
     val eventById by eventsViewModel.eventById.collectAsStateWithLifecycle()
-    val currentUser by eventsViewModel.currentUser.collectAsStateWithLifecycle()
+    val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
     val savedEventById by eventsViewModel.savedEventById.collectAsStateWithLifecycle()
 
     val pagerState = rememberPagerState(pageCount = { eventById?.urlList?.size ?: 0 })

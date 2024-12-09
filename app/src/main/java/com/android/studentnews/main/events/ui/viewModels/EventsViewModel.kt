@@ -29,12 +29,8 @@ import kotlinx.coroutines.launch
 
 class EventsViewModel(
     private val eventsRepository: EventsRepository,
-    private val authRepository: AuthRepository,
     private val notificationManager: NotificationManagerCompat
 ) : ViewModel() {
-
-    private val _currentUser = MutableStateFlow<UserModel?>(null)
-    val currentUser = _currentUser.asStateFlow()
 
     private val _eventsList = MutableStateFlow<PagingData<EventsModel>>(PagingData.empty())
     val eventsList: StateFlow<PagingData<EventsModel>> = _eventsList
@@ -59,8 +55,6 @@ class EventsViewModel(
 
 
     init {
-//        getEventsList()
-        getCurrentUser()
         startEventsWorker()
 //        cancelEventsWorker()
     }
@@ -199,23 +193,6 @@ class EventsViewModel(
                     when (result) {
                         is EventsState.Success -> {
                             _savedEventById.value = result.data
-                        }
-
-                        else -> {}
-                    }
-                }
-        }
-    }
-
-
-    fun getCurrentUser() {
-        viewModelScope.launch {
-            authRepository
-                .getCurrentUser()
-                .collectLatest { result ->
-                    when (result) {
-                        is AccountState.Success -> {
-                            _currentUser.value = result.data
                         }
 
                         else -> {}

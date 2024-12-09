@@ -89,6 +89,7 @@ import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.common.isInternetAvailable
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.ui.common.ButtonColors
+import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.news.domain.model.NewsModel
@@ -110,6 +111,7 @@ fun NewsDetailScreen(
     newsId: String,
     navHostController: NavHostController,
     newsDetailViewModel: NewsDetailViewModel,
+    accountViewModel: AccountViewModel,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
 ) {
@@ -121,7 +123,7 @@ fun NewsDetailScreen(
 
     val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
     val savedNewsById by newsDetailViewModel.savedNewsById.collectAsStateWithLifecycle()
-    val currentUser by newsDetailViewModel.currentUser.collectAsStateWithLifecycle()
+    val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
 
     var isSaved by remember(savedNewsById) {
         mutableStateOf(savedNewsById != null)

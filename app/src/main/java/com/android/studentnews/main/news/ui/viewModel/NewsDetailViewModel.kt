@@ -27,7 +27,6 @@ import java.io.File
 class NewsDetailViewModel(
     private val newsDetailRepository: NewsDetailRepository,
     private val newsRepository: NewsRepository,
-    private val authRepository: AuthRepository,
 ) : ViewModel() {
 
     private val _newsById = MutableStateFlow<NewsModel?>(null)
@@ -37,15 +36,6 @@ class NewsDetailViewModel(
     val savedNewsById = _savedNewsById.asStateFlow()
 
     val newsByIdStatus = mutableStateOf("")
-
-    private val _currentUser = MutableStateFlow<UserModel?>(null)
-    val currentUser = _currentUser.asStateFlow()
-
-
-    init {
-        getCurrentUser()
-    }
-
 
 
     fun getNewsById(newsId: String) {
@@ -200,24 +190,6 @@ class NewsDetailViewModel(
 
 
     fun storeShareCount(newsId: String) = newsDetailRepository.storeShareCount(newsId)
-
-
-
-    fun getCurrentUser() {
-        viewModelScope.launch {
-            authRepository
-                .getCurrentUser()
-                .collectLatest { result ->
-                    when (result) {
-                        is AccountState.Success -> {
-                            _currentUser.value = result.data
-                        }
-
-                        else -> {}
-                    }
-                }
-        }
-    }
 
 
 }

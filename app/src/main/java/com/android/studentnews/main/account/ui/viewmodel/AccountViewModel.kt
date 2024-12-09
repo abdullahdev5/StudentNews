@@ -2,6 +2,7 @@ package com.android.studentnews.main.account.ui.viewmodel
 
 import android.graphics.Bitmap
 import androidx.compose.material3.SnackbarDuration
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,6 +16,10 @@ import com.android.studentnews.main.account.domain.resource.AccountState
 import com.android.studentnews.news.domain.resource.NewsState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combineLatest
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 
@@ -39,7 +44,7 @@ class AccountViewModel(
         viewModelScope.launch {
             authRepository
                 .getCurrentUser()
-                .collect { result ->
+                .collectLatest { result ->
                     when (result) {
                         is AccountState.Success -> {
                             _currentUser.value = result.data

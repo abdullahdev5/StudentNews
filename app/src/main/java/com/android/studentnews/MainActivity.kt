@@ -28,6 +28,7 @@ import androidx.navigation.compose.rememberNavController
 import com.android.studentnews.auth.ui.viewModel.AuthViewModel
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.ui.ObserverAsEvents
+import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.EVENT_ID
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.navigation.NavigationGraph

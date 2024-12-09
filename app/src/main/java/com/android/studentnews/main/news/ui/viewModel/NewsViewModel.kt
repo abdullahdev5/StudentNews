@@ -43,13 +43,8 @@ class NewsViewModel(
 
     var isRefreshing by mutableStateOf(false)
 
-    // Current User
-    private val _currentUser = MutableStateFlow<UserModel?>(null)
-    val currentUser = _currentUser.asStateFlow()
-
     init {
         getNewsList(null)
-        getCurrentUser()
         setupPeriodicNewsWorkRequest()
 //        cancelPeriodicNewsWorkRequest()
     }
@@ -61,23 +56,6 @@ class NewsViewModel(
                 .cachedIn(this)
                 .collectLatest { pagingData ->
                     _newsList.value = pagingData
-                }
-        }
-    }
-
-    // currentUser
-    fun getCurrentUser() {
-        viewModelScope.launch {
-            authRepository
-                .getCurrentUser()
-                .collectLatest { result ->
-                    when (result) {
-                        is AccountState.Success -> {
-                            _currentUser.value = result.data
-                        }
-
-                        else -> {}
-                    }
                 }
         }
     }
