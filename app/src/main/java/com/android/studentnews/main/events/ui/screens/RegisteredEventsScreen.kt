@@ -5,14 +5,18 @@ package com.android.studentnews.main.settings.registered_events
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,6 +35,9 @@ import androidx.compose.ui.platform.LocalFontLoader
 import androidx.compose.ui.platform.LocalScrollCaptureInProgress
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.events.domain.destination.EventsDestination
@@ -47,7 +54,8 @@ fun RegisteredEventsScreen(
 
     val context = LocalContext.current
 
-    val registeredEventsList by registeredEventsViewModel.registeredEventsList.collectAsStateWithLifecycle()
+    val registeredEventsList =
+        registeredEventsViewModel.registeredEventsList.collectAsLazyPagingItems()
 
 
     Scaffold(
@@ -78,14 +86,18 @@ fun RegisteredEventsScreen(
             .fillMaxSize()
     ) { innerPadding ->
 
-        if (registeredEventsList.size != 0) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            ) {
-
-                items(registeredEventsList.size) { index ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            if (registeredEventsList.loadState.refresh is LoadState.NotLoading) {
+                items(
+                    count = registeredEventsList.itemCount,
+                    key = registeredEventsList.itemKey {
+                        it.eventId ?: ""
+                    }
+                ) { index ->
                     val item = registeredEventsList[index]
 
                     EventsItem(
@@ -101,21 +113,36 @@ fun RegisteredEventsScreen(
                         }
                     )
                 }
-
             }
-        } else {
+
+            if (
+                registeredEventsList.loadState.append is LoadState.Loading
+                || registeredEventsList.loadState.refresh is LoadState.Loading
+            ) {
+                item {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+
+        }
+
+        if (registeredEventsList.itemCount == 0
+            && registeredEventsList.loadState.refresh is LoadState.NotLoading
+            && registeredEventsList.loadState.append is LoadState.NotLoading
+        ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Text(text = "No Registered Events")
+                Text(text = "No Saved News!")
             }
-        }
-
-
-        if (registeredEventsViewModel.registeredEventsListStatus == Status.Loading) {
-            LoadingDialog()
         }
 
     }

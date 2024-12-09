@@ -72,6 +72,7 @@ class NewsDetailViewModel(
                             _newsById.value = result.data
                             newsByIdStatus.value = Status.SUCCESS
                         }
+                        else -> {}
                     }
                 }
         }

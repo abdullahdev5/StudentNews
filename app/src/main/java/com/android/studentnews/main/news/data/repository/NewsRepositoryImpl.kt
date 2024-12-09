@@ -1,13 +1,18 @@
 package com.android.studentnews.news.data.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
-import com.android.studentnews.main.news.NewsWorker
+import com.android.studentnews.core.data.paginator.NewsListPagingSource
 import com.android.studentnews.core.domain.constants.FirestoreNodes
+import com.android.studentnews.main.news.NewsWorker
+import com.android.studentnews.main.news.data.paging_sources.NewsCategoryListPagingSource
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -23,6 +28,13 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+
+const val NEWS_LIST_PAGE_SIZE = 4
+const val SAVED_NEWS_LIST_PAGE_SIZE = 4
+const val LIKED_NEWS_LIST_PAGE_SIZE = 4
+
+const val NEWS_CATEGORY_LIST_PAGE_SIZE = 2
+
 
 class NewsRepositoryImpl(
     private val auth: FirebaseAuth,
@@ -47,27 +59,25 @@ class NewsRepositoryImpl(
 
 
     // News
-    override fun getNewsList(): Flow<NewsState<List<NewsModel>>> = callbackFlow {
+    override fun getNewsList(category: String?): Flow<PagingData<NewsModel>> {
 
-        trySend(NewsState.Loading)
+        val query = category?.let {
+            newsColRef?.whereEqualTo("category", category)
+                ?.limit(NEWS_LIST_PAGE_SIZE.toLong())
+        } ?: newsColRef?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.limit(NEWS_LIST_PAGE_SIZE.toLong())
 
-        newsColRef
-            ?.orderBy("timestamp", Query.Direction.DESCENDING)
-            ?.get()
-            ?.addOnSuccessListener { documents -> //, error ->
-                val news = documents.map {
-                    it.toObject(NewsModel::class.java)
-                }
-                trySend(NewsState.Success(news))
+        return Pager(
+            config = PagingConfig(
+                pageSize = NEWS_LIST_PAGE_SIZE,
+            ),
+            pagingSourceFactory = {
+                NewsListPagingSource(
+                    query!!
+                )
             }
-            ?.addOnFailureListener { error ->
-                trySend(NewsState.Failed(error))
-            }
+        ).flow
 
-
-        awaitClose {
-            close()
-        }
     }
 
     override suspend fun getNewsUpdates(): NewsModel? {
@@ -127,166 +137,130 @@ class NewsRepositoryImpl(
         }
     }
 
-    override fun getSavedNewsList(): Flow<NewsState<List<NewsModel>>> {
-        return callbackFlow {
+    override fun getSavedNewsList(limit: Int): Flow<PagingData<NewsModel>> {
 
-            trySend(NewsState.Loading)
+        val query = savedNewsColRef
+            ?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.limit(limit.toLong())
 
-            val listener = savedNewsColRef
-                ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                ?.addSnapshotListener { value, error ->
-                    if (error != null) {
-                        trySend(NewsState.Failed(error))
-                    }
-
-                    if (value != null) {
-                        val savedNews = value.map {
-                            it.toObject(NewsModel::class.java)
-                        }
-                        trySend(NewsState.Success(savedNews))
-                    }
-                }
-
-            awaitClose {
-                listener?.remove()
+        return Pager(
+            config = PagingConfig(
+                pageSize = limit
+            ),
+            pagingSourceFactory = {
+                NewsListPagingSource(
+                    query = query!!
+                )
             }
-        }
+        ).flow
+
     }
 
     // Liked News
-    override fun getLikedNewsList(): Flow<NewsState<List<NewsModel>>> {
-        return callbackFlow {
+    override fun getLikedNewsList(limit: Int): Flow<PagingData<NewsModel>> {
 
-            trySend(NewsState.Loading)
+        val query = newsColRef
+            ?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.limit(limit.toLong())
 
-            newsColRef
-                ?.get()
-                ?.addOnSuccessListener { documents ->
-
-                    val likedNewsList = documents.filter {
-                        val userIdsFromLikes = it.toObject(NewsModel::class.java).likes?.map {
-                            it
-                        }
-                        if (userIdsFromLikes?.contains(auth.currentUser?.uid.toString())!!)
-                            return@filter true
-                        else return@filter false
-                    }
-                        .map {
-                            it.toObject(NewsModel::class.java)
-                        }
-                    trySend(NewsState.Success(likedNewsList))
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(NewsState.Failed(error))
-                }
-
-
-            awaitClose {
-                close()
+        return Pager(
+            config = PagingConfig(
+                pageSize = limit
+            ),
+            pagingSourceFactory = {
+                NewsListPagingSource(
+                    query = query!!,
+                    currentUid = auth.currentUser?.uid.toString(),
+                    isForLikedNews = true
+                )
             }
-        }
+        ).flow
+
+//            newsColRef
+//                ?.get()
+//                ?.addOnSuccessListener { documents ->
+//
+//                    val likedNewsList = documents.filter {
+//                        val userIdsFromLikes = it.toObject(NewsModel::class.java).likes?.map {
+//                            it
+//                        }
+//                        if (userIdsFromLikes?.contains(auth.currentUser?.uid.toString())!!)
+//                            return@filter true
+//                        else return@filter false
+//                    }
+//                        .map {
+//                            it.toObject(NewsModel::class.java)
+//                        }
+//                    trySend(NewsState.Success(likedNewsList))
+//                }
+//                ?.addOnFailureListener { error ->
+//                    trySend(NewsState.Failed(error))
+//                }
+
+
     }
 
 
     // Category
 
-    override fun getNewsListByCategory(category: String): Flow<NewsState<List<NewsModel>>> =
-        callbackFlow {
+    override fun getCategoriesList(limit: Int): Flow<PagingData<CategoryModel>> {
+        return Pager(
+            config = PagingConfig(
+                pageSize = limit
+            )
+        ) {
+            NewsCategoryListPagingSource(
+                categoriesColRef
+                    ?.orderBy("timestamp", Query.Direction.DESCENDING)
+                    ?.limit(limit.toLong())
+                !!
+            )
+        }.flow
 
-            trySend(NewsState.Loading)
-
-            val listener = newsColRef
-                ?.whereEqualTo("category", category)
-                ?.get()
-                ?.addOnSuccessListener { documents ->
-                    if (documents != null) {
-                        val newsListByCategory = documents.map {
-                            it.toObject(NewsModel::class.java)
-                        }
-
-                        trySend(NewsState.Success(newsListByCategory))
-                    }
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(NewsState.Failed(error))
-                }
-
-            awaitClose {
-                listener?.addOnCanceledListener {
-
-                }
-            }
-        }
-
-    override fun getCategoriesList(): Flow<NewsState<List<CategoryModel?>>> =
-        callbackFlow {
-
-            trySend(NewsState.Loading)
-
-            val listener = categoriesColRef
-                ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                ?.get()
-                ?.addOnSuccessListener { documents ->
-                    if (documents != null) {
-                        val categories = documents.toObjects(CategoryModel::class.java)
-                        trySend(NewsState.Success(categories))
-                    }
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(NewsState.Failed(error))
-                }
-
-            awaitClose {
-                listener?.addOnCanceledListener {
-
-                }
-            }
-        }
+    }
 
 
     // Search
     override fun onSearch(
         query: String,
         currentSelectedCategory: String?,
-    ): Flow<NewsState<List<NewsModel>>> =
-        callbackFlow {
+        limit: Int,
+    ): Flow<PagingData<NewsModel>> {
 
-            trySend(NewsState.Loading)
+        val newsQuery = newsColRef
+            ?.limit(limit.toLong())
 
-            val listener = newsColRef
-                ?.orderBy("timestamp", Query.Direction.DESCENDING)
-                ?.get()
-                ?.addOnSuccessListener { documents ->
-                    if (documents != null) {
-
-                        val news = documents.filter {
-                            it.getString("title").toString()
-                                .contains(query, ignoreCase = true)
-                                    ||
-                                    it.getString("description").toString()
-                                        .contains(query, ignoreCase = true)
-                        }.filter {
-                            currentSelectedCategory?.let { category ->
-                                it.getString("category").toString() == category
-                            } ?: true
-                        }
-                            .map {
-                                it.toObject(NewsModel::class.java)
-                            }
-
-                        trySend(NewsState.Success(news))
-                    }
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(NewsState.Failed(error))
-                }
-
-            awaitClose {
-                listener?.addOnCanceledListener {
-
-                }
+        return Pager(
+            config = PagingConfig(
+                pageSize = limit
+            ),
+            pagingSourceFactory = {
+                NewsListPagingSource(
+                    query = newsQuery!!,
+                    searchQuery = query,
+                    currentCategory = currentSelectedCategory,
+                    isForSearchNews = true,
+                )
             }
-        }
+        ).flow
+
+
+//        val news = documents.filter {
+//            it.getString("title").toString()
+//                .contains(query, ignoreCase = true)
+//                    ||
+//                    it.getString("description").toString()
+//                        .contains(query, ignoreCase = true)
+//        }.filter {
+//            currentSelectedCategory?.let { category ->
+//                it.getString("category").toString() == category
+//            } ?: true
+//        }
+//            .map {
+//                it.toObject(NewsModel::class.java)
+//            }
+
+    }
 
     override fun setupPeriodicNewsWorkRequest() {
         val constraints = Constraints.Builder()

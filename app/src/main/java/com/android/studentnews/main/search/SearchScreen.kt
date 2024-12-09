@@ -32,6 +32,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -64,10 +65,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.android.studentnews.core.domain.constants.FontSize
-import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.news.ui.NewsItem
@@ -100,20 +102,14 @@ fun SearchScreen(
 
     var searchCount by rememberSaveable { mutableIntStateOf(0) }
 
-    val searchNewsList by searchViewModel.searchNewsList.collectAsStateWithLifecycle()
-    val categoryList by searchViewModel.categoriesList.collectAsStateWithLifecycle()
+    val searchNewsList = searchViewModel.searchNewsList.collectAsLazyPagingItems()
 
-    var isSearchResultNotFound = remember {
-        derivedStateOf {
-            searchNewsList.isEmpty()
-                    && (searchViewModel.searchingStatus.isNotEmpty()
-                    && searchViewModel.searchingStatus != Status.Loading)
-        }
-    }.value
+    val categoryList = searchViewModel.categoriesList.collectAsLazyPagingItems()
 
-    var isNotSearchedYet = remember {
+    var searchResultNotFound = remember {
         derivedStateOf {
-            searchViewModel.searchingStatus.isEmpty()
+            searchNewsList.loadState.refresh is LoadState.NotLoading
+                    && searchNewsList.itemSnapshotList.items.isEmpty()
         }
     }.value
 
@@ -182,8 +178,7 @@ fun SearchScreen(
                     }
                 }) {
                     Icon(
-                        imageVector = if (searchCount != 0 && query.isEmpty())
-                            Icons.Outlined.SearchOff else Icons.Default.Search,
+                        imageVector = Icons.Default.Search,
                         contentDescription = "Icon for Search"
                     )
                 }
@@ -203,7 +198,7 @@ fun SearchScreen(
             modifier = Modifier
                 .fillMaxWidth()
         ) {
-            if (searchViewModel.searchingStatus == Status.Loading) {
+            if (searchNewsList.loadState.refresh is LoadState.Loading) {
                 LinearProgressIndicator(
                     color = Green,
                     trackColor = Color.Transparent,
@@ -215,45 +210,49 @@ fun SearchScreen(
 
             Scaffold(
                 topBar = {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 5.dp)
-                            .horizontalScroll(rememberScrollState())
-                    ) {
-                        // Category List
-                        categoryList
-                            .forEachIndexed { index, item ->
-                                CategoryListItem(
-                                    categoryName = item.name ?: "",
-                                    modifier = Modifier.padding(all = 5.dp),
-                                    colors = SegmentedButtonDefaults.colors(
-                                        activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                        inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                        activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                        inactiveContentColor = LocalContentColor.current
-                                    ),
-                                    index = index,
-                                    selectedCategoryIndex = selectedCategoryIndex,
-                                    onClick = { thisIndex, categoryName ->
-                                        selectedCategoryIndex = thisIndex
-                                        currentSelectedCategory = categoryName
-                                        focusManager.clearFocus()
-                                        if (query.isNotEmpty()) {
-                                            searchViewModel.onSearch(
-                                                query,
-                                                currentSelectedCategory
-                                            )
-                                        } else {
-                                            searchViewModel
-                                                .getNewsListByCategory(
-                                                    currentSelectedCategory!!
+                    AnimatedVisibility(visible = categoryList.loadState.refresh is LoadState.NotLoading) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 5.dp)
+                                .horizontalScroll(rememberScrollState())
+                        ) {
+                            // Category List
+                            categoryList
+                                .itemSnapshotList
+                                .items
+                                .forEachIndexed { index, item ->
+                                    CategoryListItem(
+                                        categoryName = item.name ?: "",
+                                        modifier = Modifier.padding(all = 5.dp),
+                                        colors = SegmentedButtonDefaults.colors(
+                                            activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                            inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                            activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                            inactiveContentColor = LocalContentColor.current
+                                        ),
+                                        index = index,
+                                        selectedCategoryIndex = selectedCategoryIndex,
+                                        onClick = { thisIndex, categoryName ->
+                                            selectedCategoryIndex = thisIndex
+                                            currentSelectedCategory = categoryName
+                                            focusManager.clearFocus()
+                                            if (query.isNotEmpty()) {
+                                                searchViewModel.onSearch(
+                                                    query,
+                                                    currentSelectedCategory
                                                 )
+                                            } else {
+                                                searchViewModel
+                                                    .getNewsListByCategory(
+                                                        currentSelectedCategory!!
+                                                    )
+                                            }
+                                            searchCount++
                                         }
-                                        searchCount++
-                                    }
-                                )
-                            }
+                                    )
+                                }
+                        }
                     }
                 },
                 modifier = Modifier
@@ -273,10 +272,8 @@ fun SearchScreen(
                     ) {
 
                         items(
-                            count = searchNewsList.size,
-                            key = { index ->
-                                searchNewsList[index].newsId ?: ""
-                            }
+                            count = searchNewsList.itemCount,
+                            key = searchNewsList.itemKey { it.newsId ?: "" }
                         ) { index ->
                             val item = searchNewsList[index]
 
@@ -294,11 +291,25 @@ fun SearchScreen(
                                 sharedTransitionScope = sharedTransitionScope,
                             )
                         }
+
+                        if (searchNewsList.loadState.append is LoadState.Loading) {
+                            item {
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                ) {
+                                    CircularProgressIndicator()
+                                }
+                            }
+                        }
                     }
                 }
 
-                if (searchViewModel.searchingStatus == Status.FAILED
-                    || searchNewsList.isEmpty()
+                if (
+                    (searchCount == 0 || searchResultNotFound)
+                    && searchNewsList.loadState.refresh is LoadState.NotLoading
+                    && searchNewsList.loadState.append is LoadState.NotLoading
                 ) {
                     Box(
                         modifier = Modifier
@@ -311,28 +322,25 @@ fun SearchScreen(
                             modifier = Modifier
                                 .padding(all = 10.dp)
                         ) {
-                            if (
-                                isNotSearchedYet || isSearchResultNotFound
-                            ) {
-                                Icon(
-                                    imageVector = if (isSearchResultNotFound)
-                                        Icons.Outlined.SearchOff else Icons.Outlined.Search,
-                                    contentDescription = "icon for Showing to do Search",
-                                    modifier = Modifier
-                                        .width(100.dp)
-                                        .height(100.dp),
-                                    tint = Green
-                                )
-                            }
+                            Icon(
+                                imageVector = if (searchCount == 0)
+                                    Icons.Outlined.Search
+                                else if (searchResultNotFound) Icons.Outlined.SearchOff
+                                else Icons.Outlined.Search,
+                                contentDescription = "icon for Showing to do Search",
+                                modifier = Modifier
+                                    .width(100.dp)
+                                    .height(100.dp),
+                                tint = Green
+                            )
                             Text(
-                                text = if (isNotSearchedYet)
+                                text = if (searchCount == 0)
                                     "Search for news"
-                                else if (searchViewModel.searchingStatus == Status.FAILED)
-                                    searchViewModel.errorMsg
-                                else if (isSearchResultNotFound)
+                                else if (searchNewsList.loadState.refresh is LoadState.Error)
+                                    (searchNewsList.loadState.refresh as LoadState.Error).error.localizedMessage
+                                        ?: ""
+                                else if (searchResultNotFound)
                                     "No Search Result Found!"
-                                else if (searchViewModel.searchingStatus == Status.Loading)
-                                    "Searching....."
                                 else "",
                                 style = TextStyle(
                                     fontSize = if (searchCount == 0)

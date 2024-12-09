@@ -9,7 +9,6 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +29,7 @@ import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -44,7 +44,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -53,8 +52,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
@@ -62,7 +65,7 @@ import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.core.domain.common.formatDateToString
 import com.android.studentnews.core.domain.common.formatTimeToString
-import com.android.studentnews.news.ui.CategoryStatusText
+import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
@@ -91,31 +94,29 @@ fun EventsScreen(
 
     val context = LocalContext.current
 
-    val eventsList by eventsViewModel.eventsList.collectAsState()
+    val eventsList = eventsViewModel.eventsList.collectAsLazyPagingItems()
 
     var categoryList = listOf(
         EventsCategoryList.AVAILABLE,
         EventsCategoryList.NOT_AVAILABLE,
     )
 
-    if (eventsList.size != 0) {
+    Column {
 
-        Column {
-
-            AnimatedVisibility(eventsViewModel.lazyListState.firstVisibleItemIndex > 1) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(all = 5.dp),
-                ) {
-                    // Category
-                    categoryList
-                        .sortedByDescending {
-                            eventsViewModel.selectedCategoryIndex != null
-                                    && eventsViewModel.selectedCategoryIndex == it.index
-                        }
-                        .forEach { item ->
+        AnimatedVisibility(eventsViewModel.lazyListState.firstVisibleItemIndex > 1) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(all = 5.dp),
+            ) {
+                // Category
+                categoryList
+                    .sortedByDescending {
+                        eventsViewModel.selectedCategoryIndex != null
+                                && eventsViewModel.selectedCategoryIndex == it.index
+                    }
+                    .forEach { item ->
 
                             CategoryListItem(
                                 categoryName = item.category,
@@ -128,12 +129,12 @@ fun EventsScreen(
                                 ),
                                 index = item.index,
                                 selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                                onClick = { index, category ->
+                                onClick = { index, _ ->
                                     eventsViewModel.selectedCategoryIndex = index
                                     if (eventsViewModel.selectedCategoryIndex == 0) {
-                                        eventsViewModel.getEventsListByAvailableStatus(true)
+                                        eventsViewModel.getEventsList(true)
                                     } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                        eventsViewModel.getEventsListByAvailableStatus(false)
+                                        eventsViewModel.getEventsList(false)
                                     }
                                 }
                             )
@@ -172,12 +173,12 @@ fun EventsScreen(
                                     ),
                                     index = item.index,
                                     selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                                    onClick = { index, category ->
+                                    onClick = { index, _ ->
                                         eventsViewModel.selectedCategoryIndex = index
                                         if (eventsViewModel.selectedCategoryIndex == 0) {
-                                            eventsViewModel.getEventsListByAvailableStatus(true)
+                                            eventsViewModel.getEventsList(true)
                                         } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                            eventsViewModel.getEventsListByAvailableStatus(false)
+                                            eventsViewModel.getEventsList(false)
                                         }
                                     }
                                 )
@@ -185,7 +186,13 @@ fun EventsScreen(
                     }
                 }
 
-                items(eventsList.size) { index ->
+            if (eventsList.loadState.refresh is LoadState.NotLoading) {
+                items(
+                    count = eventsList.itemCount,
+                    key = eventsList.itemKey {
+                        it.eventId ?: ""
+                    }
+                ) { index ->
                     val item = eventsList[index]
 
                     EventsItem(
@@ -201,16 +208,50 @@ fun EventsScreen(
                     )
                 }
             }
-        }
 
-    } else {
+            if (
+                eventsList.loadState.append is LoadState.Loading
+                || eventsList.loadState.refresh is LoadState.Loading
+            ) {
+                item {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+
+            if (eventsList.loadState.refresh is LoadState.Error) {
+                item {
+                    ErrorMessageContainer(
+                        errorMessage = (eventsList.loadState.refresh as LoadState.Error).error.localizedMessage
+                            ?: "",
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    )
+                }
+            }
+        }
+    }
+
+    if (
+        eventsList.loadState.refresh is LoadState.Error
+        || eventsList.loadState.refresh is LoadState.NotLoading
+    ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            if (eventsViewModel.eventsListErrorMsg.isNotEmpty()) {
-                Text(text = eventsViewModel.eventsListErrorMsg)
+            if (eventsList.loadState.refresh is LoadState.Error) {
+                Text(
+                    text = (eventsList.loadState.refresh as LoadState.Error).error.localizedMessage
+                        ?: ""
+                )
             } else {
                 Text(text = "No Events Available")
             }
@@ -264,7 +305,11 @@ fun EventsItem(
                         .sharedElement(
                             state = rememberSharedContentState(key = "image/${item?.eventId ?: ""}"),
                             animatedVisibilityScope = animatedVisibilityScope,
-                            clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
+                            clipInOverlayDuringTransition = OverlayClip(
+                                RoundedCornerShape(
+                                    10.dp
+                                )
+                            )
                         )
                 )
             }
@@ -332,7 +377,8 @@ fun EventsItem(
                     Text(
                         text = "${
                             formatTimeToString(
-                                (item?.startingTimeHour ?: 10), (item?.startingTimeMinutes ?: 0)
+                                (item?.startingTimeHour ?: 10),
+                                (item?.startingTimeMinutes ?: 0)
                             ).dropLast(2)
                         } ${item?.startingTimeStatus} - ${
                             formatTimeToString(

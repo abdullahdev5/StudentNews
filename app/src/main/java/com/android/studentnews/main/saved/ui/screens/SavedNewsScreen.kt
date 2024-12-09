@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -56,6 +58,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import androidx.paging.LoadState
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.studentnews.core.domain.common.isInternetAvailable
@@ -91,22 +96,22 @@ fun SavedNewsScreen(
     val density = LocalDensity.current
 
 
-    val savedNewsList by savedNewsViewModel.savedNewsList.collectAsStateWithLifecycle()
+    val savedNewsList = savedNewsViewModel.savedNewsList.collectAsLazyPagingItems()
 
 
     Surface(
         modifier = Modifier
             .fillMaxSize(),
     ) {
-        if (savedNewsList.size != 0) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize(),
-            ) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize(),
+        ) {
+            if (savedNewsList.loadState.refresh is LoadState.NotLoading) {
                 items(
-                    count = savedNewsList.size,
-                    key = { index ->
-                        savedNewsList[index].newsId ?: ""
+                    count = savedNewsList.itemCount,
+                    key = savedNewsList.itemKey {
+                        it.newsId ?: ""
                     }
                 ) { index ->
                     val item = savedNewsList[index]
@@ -125,19 +130,34 @@ fun SavedNewsScreen(
                     )
                 }
             }
-        } else {
+
+            if (
+                savedNewsList.loadState.append is LoadState.Loading
+                || savedNewsList.loadState.refresh is LoadState.Loading
+            ) {
+                item {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+            }
+        }
+
+        if (savedNewsList.itemCount == 0
+            && savedNewsList.loadState.refresh is LoadState.NotLoading
+            && savedNewsList.loadState.append is LoadState.NotLoading
+        ) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Text(text = "No Saved News")
+                Text(text = "No Saved News!")
             }
-        }
-
-
-        if (savedNewsViewModel.savedNewsStatus == Status.Loading) {
-            LoadingDialog()
         }
 
     }
