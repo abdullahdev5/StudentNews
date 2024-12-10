@@ -108,8 +108,9 @@ fun SearchScreen(
 
     var searchResultNotFound = remember {
         derivedStateOf {
-            searchNewsList.loadState.refresh is LoadState.NotLoading
-                    && searchNewsList.itemSnapshotList.items.isEmpty()
+            searchNewsList.itemCount == 0
+                    && searchNewsList.loadState.refresh is LoadState.NotLoading
+                    && searchNewsList.loadState.hasError
         }
     }.value
 
@@ -271,28 +272,32 @@ fun SearchScreen(
                             .fillMaxSize()
                     ) {
 
-                        items(
-                            count = searchNewsList.itemCount,
-                            key = searchNewsList.itemKey { it.newsId ?: "" }
-                        ) { index ->
-                            val item = searchNewsList[index]
+                        if (searchNewsList.loadState.refresh is LoadState.NotLoading) {
+                            items(
+                                count = searchNewsList.itemCount,
+                                key = searchNewsList.itemKey { it.newsId ?: "" }
+                            ) { index ->
+                                val item = searchNewsList[index]
 
-                            NewsItem(
-                                item = item,
-                                context = context,
-                                onItemClick = { newsId ->
-                                    navHostController.navigate(
-                                        NewsDestination.NEWS_DETAIL_SCREEN(
-                                            newsId = newsId
+                                NewsItem(
+                                    item = item,
+                                    context = context,
+                                    onItemClick = { newsId ->
+                                        navHostController.navigate(
+                                            NewsDestination.NEWS_DETAIL_SCREEN(
+                                                newsId = newsId
+                                            )
                                         )
-                                    )
-                                },
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                sharedTransitionScope = sharedTransitionScope,
-                            )
+                                    },
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    sharedTransitionScope = sharedTransitionScope,
+                                )
+                            }
                         }
 
-                        if (searchNewsList.loadState.append is LoadState.Loading) {
+                        if (
+                            searchNewsList.loadState.append is LoadState.Loading
+                        ) {
                             item {
                                 Row(
                                     horizontalArrangement = Arrangement.Center,
@@ -306,11 +311,7 @@ fun SearchScreen(
                     }
                 }
 
-                if (
-                    (searchCount == 0 || searchResultNotFound)
-                    && searchNewsList.loadState.refresh is LoadState.NotLoading
-                    && searchNewsList.loadState.append is LoadState.NotLoading
-                ) {
+                if (searchCount == 0 || searchResultNotFound) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize(),
@@ -336,9 +337,6 @@ fun SearchScreen(
                             Text(
                                 text = if (searchCount == 0)
                                     "Search for news"
-                                else if (searchNewsList.loadState.refresh is LoadState.Error)
-                                    (searchNewsList.loadState.refresh as LoadState.Error).error.localizedMessage
-                                        ?: ""
                                 else if (searchResultNotFound)
                                     "No Search Result Found!"
                                 else "",

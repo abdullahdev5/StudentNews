@@ -26,7 +26,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -56,6 +58,14 @@ fun RegisteredEventsScreen(
 
     val registeredEventsList =
         registeredEventsViewModel.registeredEventsList.collectAsLazyPagingItems()
+
+    val registeredEventsListNotFound = remember {
+        derivedStateOf {
+            registeredEventsList.itemCount == 0
+                    && registeredEventsList.loadState.refresh is LoadState.NotLoading
+                    && registeredEventsList.loadState.hasError
+        }
+    }.value
 
 
     Scaffold(
@@ -132,16 +142,13 @@ fun RegisteredEventsScreen(
 
         }
 
-        if (registeredEventsList.itemCount == 0
-            && registeredEventsList.loadState.refresh is LoadState.NotLoading
-            && registeredEventsList.loadState.append is LoadState.NotLoading
-        ) {
+        if (registeredEventsListNotFound) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Text(text = "No Saved News!")
+                Text(text = "No Registered Events Found!")
             }
         }
 

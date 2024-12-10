@@ -36,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -97,8 +98,15 @@ fun SavedNewsScreen(
     val configuration = LocalConfiguration.current
     val maxWidth by remember { mutableStateOf(250.dp) }
 
-
     val savedNewsList = savedNewsViewModel.savedNewsList.collectAsLazyPagingItems()
+
+    val savedNewsListNotFound = remember {
+        derivedStateOf {
+            savedNewsList.itemCount == 0
+                    && savedNewsList.loadState.refresh is LoadState.NotLoading
+                    && savedNewsList.loadState.hasError
+        }
+    }.value
 
 
     Surface(
@@ -206,16 +214,13 @@ fun SavedNewsScreen(
             }
         }
 
-        if (savedNewsList.itemCount == 0
-            && savedNewsList.loadState.refresh is LoadState.NotLoading
-            && savedNewsList.loadState.append is LoadState.NotLoading
-        ) {
+        if (savedNewsListNotFound) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                Text(text = "No Saved News!")
+                Text(text = "No Saved News Found!")
             }
         }
 

@@ -9,6 +9,7 @@ import androidx.core.content.FileProvider
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.android.studentnews.core.domain.constants.FirestoreNodes
+import com.android.studentnews.main.news.LIKES
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.resource.NewsState
@@ -67,7 +68,7 @@ class NewsDetailRepositoryImpl(
     override fun getSavedNewsById(newsId: String): Flow<NewsState<NewsModel?>> {
         return callbackFlow {
 
-            val savedNews = savedNewsColRef
+            savedNewsColRef
                 ?.document(newsId)
                 ?.addSnapshotListener { value, error ->
                     if (error != null) {
@@ -151,7 +152,7 @@ class NewsDetailRepositoryImpl(
 
             newsColRef
                 ?.document(newsId)
-                ?.update("likes", FieldValue.arrayRemove(auth.currentUser?.uid.toString()))
+                ?.update(LIKES, FieldValue.arrayRemove(auth.currentUser?.uid.toString()))
                 ?.addOnSuccessListener {
                     Log.d("TAG", "onNewsRemoveFromLike: News UnLike Successfully")
                 }
