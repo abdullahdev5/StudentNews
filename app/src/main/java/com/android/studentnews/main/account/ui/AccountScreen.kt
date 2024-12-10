@@ -11,14 +11,8 @@ import androidx.activity.result.launch
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,20 +29,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.CastForEducation
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.outlined.Call
 import androidx.compose.material.icons.outlined.CastForEducation
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material.icons.outlined.Email
-import androidx.compose.material.icons.outlined.HistoryEdu
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -57,24 +45,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SmallFloatingActionButton
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -85,42 +69,32 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.android.studentnews.core.data.snackbar_controller.SnackBarController
-import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.common.ConvertUriToBitmap
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.core.ui.common.CircularIndicatorWithProgress
 import com.android.studentnews.core.ui.common.ImagePickerDialog
 import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
 import com.android.studentnews.main.account.domain.AccountDataLabel
 import com.android.studentnews.main.account.domain.AccountList
-import com.android.studentnews.main.account.domain.resource.AccountState
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.ui.theme.Black
+import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
-import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.combineLatest
-import kotlinx.coroutines.flow.observeOn
 import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -138,8 +112,13 @@ fun AccountScreen(
 
     val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
 
+    var username by rememberSaveable(currentUser) {
+        mutableStateOf(currentUser?.registrationData?.name ?: "")
+    }
+
     var isImagePickerDialogOpen by rememberSaveable { mutableStateOf(false) }
     var isEditNameSheetVisible by rememberSaveable { mutableStateOf(false) }
+    var isSaveChangesAlertDialogOpen by rememberSaveable { mutableStateOf(false) }
 
     // Gallery
     var galleryImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
@@ -171,25 +150,28 @@ fun AccountScreen(
         }
     )
 
-
     LaunchedEffect(galleryImageUri) {
         galleryImageUri?.let { uri ->
             galleryImageBitmap = ConvertUriToBitmap(uri, context)
         }
     }
 
-    LaunchedEffect(accountViewModel.userImageSavedStatus.value) {
-        if (accountViewModel.userImageSavedStatus.value == Status.SUCCESS) {
-            cameraImageBitmap = null
-            galleryImageBitmap = null
+    LaunchedEffect(accountViewModel.saveStatus) {
+        if (accountViewModel.saveStatus == Status.SUCCESS) {
+            username = currentUser?.registrationData?.name ?: ""
             galleryImageUri = null
+            galleryImageBitmap = null
+            cameraImageBitmap = null
+            isSaveChangesAlertDialogOpen = false
+            accountViewModel.saveStatus = ""
         }
     }
 
-    BackHandler(galleryImageBitmap != null || cameraImageBitmap != null) {
-        galleryImageUri = null
-        galleryImageBitmap = null
-        cameraImageBitmap = null
+    BackHandler(
+        (galleryImageBitmap != null || cameraImageBitmap != null)
+                || username != (currentUser?.registrationData?.name)
+    ) {
+        isSaveChangesAlertDialogOpen = true
     }
 
 
@@ -201,10 +183,10 @@ fun AccountScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (galleryImageBitmap != null || cameraImageBitmap != null) {
-                            galleryImageUri = null
-                            galleryImageBitmap = null
-                            cameraImageBitmap = null
+                        if ((galleryImageBitmap != null || cameraImageBitmap != null)
+                            || username != (currentUser?.registrationData?.name)
+                        ) {
+                            isSaveChangesAlertDialogOpen = true
                         } else {
                             navHostController.navigateUp()
                         }
@@ -216,30 +198,33 @@ fun AccountScreen(
                     }
                 },
                 actions = {
-                    if (galleryImageBitmap != null || cameraImageBitmap != null) {
-
-                        TextButton(
-                            onClick = {
-                                galleryImageUri = null
-                                galleryImageBitmap = null
-                                cameraImageBitmap = null
-                            },
-                            enabled = accountViewModel.userImageSavedStatus.value != Status.Loading
+                    currentUser?.let {
+                        if ((galleryImageBitmap != null || cameraImageBitmap != null)
+                            || username != (currentUser?.registrationData?.name)
                         ) {
-                            Text(text = "Discard")
-                        }
 
-                        TextButton(
-                            onClick = {
-                                accountViewModel.onUserImageSave(
-                                    galleryImageBitmap?.let {
-                                        it
-                                    } ?: cameraImageBitmap!!
-                                )
-                            },
-                            enabled = accountViewModel.userImageSavedStatus.value != Status.Loading
-                        ) {
-                            Text(text = "Save")
+                            TextButton(
+                                onClick = {
+                                    isSaveChangesAlertDialogOpen = true
+                                },
+                                enabled = accountViewModel.saveStatus != Status.Loading
+                            ) {
+                                Text(text = "Discard")
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    accountViewModel.onSave(
+                                        username = if (username == (currentUser?.registrationData?.name
+                                                ?: "")
+                                        ) "" else username,
+                                        imageBitmap = galleryImageBitmap ?: cameraImageBitmap
+                                    )
+                                },
+                                enabled = accountViewModel.saveStatus != Status.Loading
+                            ) {
+                                Text(text = "Save")
+                            }
                         }
                     }
                 }
@@ -253,7 +238,7 @@ fun AccountScreen(
                 .verticalScroll(scrollState)
         ) {
 
-            if (accountViewModel.userImageSavedStatus.value == Status.Loading) {
+            if (accountViewModel.saveStatus == Status.Loading) {
                 LinearProgressIndicator(
                     color = Green,
                     modifier = Modifier
@@ -348,7 +333,7 @@ fun AccountScreen(
                     // Image Picker Card
                     SmallFloatingActionButton(
                         onClick = {
-                            if (accountViewModel.userImageSavedStatus.value != Status.Loading) {
+                            if (accountViewModel.saveStatus != Status.Loading) {
                                 isImagePickerDialogOpen = true
                             }
                         },
@@ -373,7 +358,7 @@ fun AccountScreen(
                 ) {
                     with(sharedTransitionScope) {
                         Text(
-                            text = currentUser?.registrationData?.name ?: "",
+                            text = username,
                             style = TextStyle(
                                 fontSize = FontSize.LARGE.sp,
                                 fontWeight = FontWeight.Bold
@@ -388,10 +373,12 @@ fun AccountScreen(
                     }
 
                     IconButton(onClick = {
-                        scope.launch {
-                            sheetState.show()
-                        }.invokeOnCompletion {
-                            isEditNameSheetVisible = true
+                        if (accountViewModel.saveStatus != Status.Loading) {
+                            scope.launch {
+                                sheetState.show()
+                            }.invokeOnCompletion {
+                                isEditNameSheetVisible = true
+                            }
                         }
                     }) {
                         Icon(
@@ -521,10 +508,8 @@ fun AccountScreen(
             EditNameBottomSheet(
                 sheetState = sheetState,
                 name = currentUser?.registrationData?.name ?: "",
-                onSave = { username ->
-                    scope.launch {
-                        accountViewModel.onUsernameSave(username)
-                    }
+                onOK = { thisUsername ->
+                    username = thisUsername
                 },
                 onDismiss = {
                     scope.launch {
@@ -538,6 +523,66 @@ fun AccountScreen(
             )
         }
 
+        if (isSaveChangesAlertDialogOpen) {
+            Dialog(
+                onDismissRequest = {
+                    isSaveChangesAlertDialogOpen = false
+                }
+            ) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSystemInDarkTheme()) DarkGray else White
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 10.dp)
+                    ) {
+                        Text(
+                            text = "Changes are Not Saved. Are you sure you want to discard the changes?",
+                        )
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(20.dp),
+                            modifier = Modifier
+                                .padding(top = 20.dp)
+                                .align(Alignment.End)
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    username = currentUser?.registrationData?.name ?: ""
+                                    galleryImageUri = null
+                                    galleryImageBitmap = null
+                                    cameraImageBitmap = null
+                                    isSaveChangesAlertDialogOpen = false
+                                }
+                            ) {
+                                Text(text = "Discard")
+                            }
+
+                            TextButton(
+                                onClick = {
+                                    accountViewModel.onSave(
+                                        username = if (username == (currentUser?.registrationData?.name
+                                                ?: "")
+                                        ) "" else username,
+                                        imageBitmap = galleryImageBitmap ?: cameraImageBitmap
+                                    )
+                                    isSaveChangesAlertDialogOpen = false
+                                }
+                            ) {
+                                Text(text = "Save")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
     }
 
 
@@ -547,7 +592,7 @@ fun AccountScreen(
 fun EditNameBottomSheet(
     sheetState: SheetState,
     name: String,
-    onSave: (String) -> Unit,
+    onOK: (String) -> Unit,
     onDismiss: () -> Unit,
 ) {
 
@@ -614,12 +659,12 @@ fun EditNameBottomSheet(
 
                 TextButton(
                     onClick = {
-                        onSave.invoke(name)
+                        onOK.invoke(name)
                         onDismiss.invoke()
                     },
                     enabled = name.isNotEmpty()
                 ) {
-                    Text(text = "Save")
+                    Text(text = "OK")
                 }
 
             }

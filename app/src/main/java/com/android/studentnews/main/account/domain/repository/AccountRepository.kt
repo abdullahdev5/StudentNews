@@ -15,8 +15,11 @@ interface AccountRepository {
 
     val userDocRef: DocumentReference?
 
-    fun onUserImageSave(imageBitmap: Bitmap): Flow<AccountState<String>>
-
     fun onUsernameSave(username: String)
+
+    fun onSave(
+        username: String,
+        imageBitmap: Bitmap?
+    ): Flow<AccountState<String>>
 
 }

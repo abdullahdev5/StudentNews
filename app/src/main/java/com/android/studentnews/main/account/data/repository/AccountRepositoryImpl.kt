@@ -34,63 +34,71 @@ class AccountRepositoryImpl(
         get() = firestore.collection(FirestoreNodes.USERS_COL).document(auth.currentUser?.uid.toString())
 
 
-    override fun onUserImageSave(imageBitmap: Bitmap): Flow<AccountState<String>> =
-        callbackFlow {
-
-            trySend(AccountState.Loading)
-
-            val baos = ByteArrayOutputStream()
-            imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-            val imageInByteArray = baos.toByteArray()
-
-            val imageRef = storageRef
-                ?.child(StorageNodes.USER_IMAGES)
-                ?.child(auth.currentUser?.uid.toString())
-
-            val uploadImage = imageRef?.putBytes(imageInByteArray)
-
-
-            uploadImage
-                ?.addOnCompleteListener() { task ->
-                    if (task.isSuccessful) {
-                        val uri = task.result.storage.downloadUrl
-
-                        uri
-                            .addOnSuccessListener { imageUri ->
-
-                                userDocRef
-                                    ?.update("profilePic", imageUri.toString())
-                                    ?.addOnSuccessListener {
-                                        trySend(AccountState.Success("Profile Pic Saved"))
-                                    }
-
-                            }
-                            .addOnFailureListener {
-                                trySend(AccountState.Failure(it))
-                            }
-
-                    } else {
-                        trySend(AccountState.Failure(task.exception!!))
-                    }
-                }
-                ?.addOnCanceledListener {
-                    uploadImage.cancel()
-                }
-                ?.addOnPausedListener {
-                    uploadImage.pause()
-                }
-
-
-            awaitClose {
-                close()
-            }
-    }
-
-
     override fun onUsernameSave(username: String) {
         userDocRef
             ?.update("registrationData.name", username)
     }
 
+
+    override fun onSave(username: String, imageBitmap: Bitmap?): Flow<AccountState<String>> {
+        return callbackFlow {
+
+            trySend(AccountState.Loading)
+
+            if (username.isNotEmpty()) {
+                onUsernameSave(username)
+            }
+
+            if (imageBitmap != null) {
+                val baos = ByteArrayOutputStream()
+                imageBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos)
+                val imageInByteArray = baos.toByteArray()
+
+                val imageRef = storageRef
+                    ?.child(StorageNodes.USER_IMAGES)
+                    ?.child(auth.currentUser?.uid.toString())
+
+                val uploadImage = imageRef?.putBytes(imageInByteArray)
+
+
+                uploadImage
+                    ?.addOnCompleteListener() { task ->
+                        if (task.isSuccessful) {
+                            val uri = task.result.storage.downloadUrl
+
+                            uri
+                                .addOnSuccessListener { imageUri ->
+
+                                    userDocRef
+                                        ?.update("profilePic", imageUri.toString())
+                                        ?.addOnSuccessListener {
+                                            trySend(AccountState.Success("Changes Saved Successfully"))
+                                        }
+
+                                }
+                                .addOnFailureListener {
+                                    trySend(AccountState.Failure(it))
+                                }
+
+                        } else {
+                            trySend(AccountState.Failure(task.exception!!))
+                        }
+                    }
+                    ?.addOnCanceledListener {
+                        uploadImage.cancel()
+                    }
+                    ?.addOnPausedListener {
+                        uploadImage.pause()
+                    }
+            } else {
+                trySend(AccountState.Success("Changes Saved Successfully"))
+            }
+
+
+            awaitClose {
+                close()
+            }
+        }
+    }
 
 }

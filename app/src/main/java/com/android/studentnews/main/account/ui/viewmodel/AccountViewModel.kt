@@ -2,8 +2,9 @@ package com.android.studentnews.main.account.ui.viewmodel
 
 import android.graphics.Bitmap
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.auth.domain.models.UserModel
@@ -13,13 +14,9 @@ import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.account.domain.repository.AccountRepository
 import com.android.studentnews.main.account.domain.resource.AccountState
-import com.android.studentnews.news.domain.resource.NewsState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.combineLatest
-import kotlinx.coroutines.flow.flatMapConcat
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
 
 
@@ -32,8 +29,7 @@ class AccountViewModel(
     private val _currentUser = MutableStateFlow<UserModel?>(null)
     val currentUser = _currentUser.asStateFlow()
 
-    var userImageSavedStatus = mutableStateOf("")
-
+    var saveStatus by mutableStateOf("")
 
     init {
         getCurrentUser()
@@ -56,14 +52,17 @@ class AccountViewModel(
         }
     }
 
-    fun onUserImageSave(imageBitmap: Bitmap) {
+    fun onSave(
+        username: String,
+        imageBitmap: Bitmap?
+    ) {
         viewModelScope.launch {
             accountRepository
-                .onUserImageSave(imageBitmap)
+                .onSave(username, imageBitmap)
                 .collect { result ->
                     when (result) {
                         is AccountState.Failure -> {
-                            userImageSavedStatus.value = Status.FAILED
+                            saveStatus = Status.FAILED
                             SnackBarController.sendEvent(
                                 SnackBarEvents(
                                     message = result.error.localizedMessage
@@ -73,11 +72,10 @@ class AccountViewModel(
                             )
                         }
                         AccountState.Loading -> {
-                            userImageSavedStatus.value = Status.Loading
+                            saveStatus = Status.Loading
                         }
-                        is AccountState.Progress -> {}
                         is AccountState.Success -> {
-                            userImageSavedStatus.value = Status.SUCCESS
+                            saveStatus = Status.SUCCESS
                             SnackBarController.sendEvent(
                                 SnackBarEvents(
                                     message = result.data,
@@ -85,13 +83,10 @@ class AccountViewModel(
                                 )
                             )
                         }
+                        else -> {}
                     }
                 }
         }
     }
-
-
-    fun onUsernameSave(username: String) = accountRepository.onUsernameSave(username)
-
 
 }
