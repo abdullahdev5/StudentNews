@@ -48,9 +48,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.outlined.Book
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Logout
@@ -103,6 +105,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -151,6 +154,27 @@ import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+enum class MainTabRowList(
+    val text: String,
+    val index: Int,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector,
+) {
+    News(
+        text = "News",
+        index = 0,
+        selectedIcon = Icons.Filled.Newspaper,
+        unselectedIcon = Icons.Outlined.Newspaper,
+    ),
+
+    Events(
+        text = "Events",
+        index = 1,
+        selectedIcon = Icons.Filled.Event,
+        unselectedIcon = Icons.Outlined.Event,
+    ),
+
+}
 
 @SuppressLint(
     "RememberReturnType", "FrequentlyChangedStateReadInComposition"
@@ -181,6 +205,11 @@ fun NewsScreen(
     val tabPagerState = rememberPagerState(pageCount = { 2 })
     val topBarScrollBehavior =
         TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
+    val tabList = listOf(
+        MainTabRowList.News,
+        MainTabRowList.Events,
+    )
 
 
     var newsCategoryStatus by rememberSaveable { mutableStateOf("") }
@@ -439,74 +468,35 @@ fun NewsScreen(
 
                     // Pager
                     Column {
-                        TabRow(
-                            selectedTabIndex = tabPagerState.currentPage,
-                        ) {
-                            // News
-                            Tab(
-                                selected = tabPagerState.currentPage == 0,
-                                onClick = {
-                                    if (tabPagerState.currentPage == 0) {
-                                        if (lazyListState.firstVisibleItemIndex != 0) {
-                                            scope.launch {
-                                                lazyListState.scrollToItem(0)
-                                            }
-                                        }
-                                    } else {
-                                        scope.launch {
-                                            tabPagerState.animateScrollToPage(0)
-                                        }
-                                    }
-                                },
-                                icon = {
-                                    if (!isLandScape) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Newspaper,
-                                            contentDescription = "Icon For News"
-                                        )
-                                    }
-                                },
-                                text = {
-                                    Text(text = "News")
-                                },
-                                selectedContentColor = Green,
-                                unselectedContentColor = if (isSystemInDarkTheme()) White else Black
-                            )
-                            // Events
-                            Tab(
-                                selected = tabPagerState.currentPage == 1,
-                                onClick = {
-                                    if (tabPagerState.currentPage == 1) {
-                                        if (eventsViewModel.lazyListState.firstVisibleItemIndex != 0) {
-                                            scope.launch {
-                                                eventsViewModel
-                                                    .lazyListState
-                                                    .animateScrollToItem(0)
-                                            }
+                        MainTabRow(
+                            tabPagerState = tabPagerState,
+                            tabList = tabList,
+                            isLandScape = isLandScape,
+                            onClick = { index ->
+                                scope.launch {
+                                    tabPagerState.animateScrollToPage(index)
+                                }
 
-                                        }
-                                    } else {
+                                if (index == 0) {
+                                    if (lazyListState.firstVisibleItemIndex != 0) {
                                         scope.launch {
-                                            tabPagerState.animateScrollToPage(1)
+                                            lazyListState.scrollToItem(0)
                                         }
                                     }
-                                },
-                                icon = {
-                                    if (!isLandScape) {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Event,
-                                            contentDescription = "Icon For Events"
-                                        )
-                                    }
-                                },
-                                text = {
-                                    Text(text = "Events")
-                                },
-                                selectedContentColor = Green,
-                                unselectedContentColor = if (isSystemInDarkTheme()) White else Black
-                            )
-                        }
+                                }
 
+                                if (index == 1) {
+                                    if (eventsViewModel.lazyListState.firstVisibleItemIndex != 0) {
+                                        scope.launch {
+                                            eventsViewModel
+                                                .lazyListState
+                                                .scrollToItem(0)
+                                        }
+
+                                    }
+                                }
+                            }
+                        )
 
                     }
 
@@ -1324,6 +1314,41 @@ fun MoreDropDownMenuMain(
                     )
                 },
                 contentPadding = PaddingValues(10.dp)
+            )
+        }
+    }
+}
+
+@Composable
+inline fun MainTabRow(
+    tabPagerState: PagerState,
+    tabList: List<MainTabRowList>,
+    isLandScape: Boolean,
+    crossinline onClick: (index: Int) -> Unit,
+) {
+    TabRow(
+        selectedTabIndex = tabPagerState.currentPage,
+    ) {
+        tabList.forEach { item ->
+            Tab(
+                selected = item.index == tabPagerState.currentPage,
+                onClick = {
+                    onClick(item.index)
+                },
+                icon = {
+                    if (!isLandScape) {
+                        Icon(
+                            imageVector = if (item.index == tabPagerState.currentPage)
+                                item.selectedIcon else item.unselectedIcon,
+                            contentDescription = "Icon For News"
+                        )
+                    }
+                },
+                text = {
+                    Text(text = item.text)
+                },
+                selectedContentColor = Green,
+                unselectedContentColor = if (isSystemInDarkTheme()) White else Black
             )
         }
     }

@@ -4,7 +4,6 @@ package com.android.studentnews.main.settings.saved.ui.screens
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -14,8 +13,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.BookmarkBorder
@@ -32,19 +29,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalScrollCaptureInProgress
-import androidx.core.os.ConfigurationCompat
 import androidx.navigation.NavHostController
-import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
+import com.android.studentnews.news.ui.MainTabRow
+import com.android.studentnews.news.ui.MainTabRowList
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
@@ -67,12 +62,17 @@ fun SavedScreen(
         configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
 
-    val pagerState = rememberPagerState(pageCount = { 2 })
+    val tabList = listOf(
+        MainTabRowList.News,
+        MainTabRowList.Events,
+    )
+
+    val tabPagerState = rememberPagerState(pageCount = { 2 })
 
 
-    BackHandler(pagerState.currentPage != 0) {
+    BackHandler(tabPagerState.currentPage != 0) {
         scope.launch {
-            pagerState.animateScrollToPage(0)
+            tabPagerState.animateScrollToPage(0)
         }
     }
 
@@ -118,56 +118,19 @@ fun SavedScreen(
                 .padding(innerPadding),
         ) {
 
-            TabRow(
-                selectedTabIndex = pagerState.currentPage
-            ) {
-                Tab(
-                    selected = pagerState.currentPage == 0,
-                    text = {
-                        Text(text = "News")
-                    },
-                    icon = {
-                        if (!isLandscape) {
-                            Icon(
-                                imageVector = Icons.Outlined.Newspaper,
-                                contentDescription = "Icon for News"
-                            )
-                        }
-                    },
-                    onClick = {
-                        scope.launch {
-                            pagerState.animateScrollToPage(0)
-                        }
-                    },
-                    selectedContentColor = Green,
-                    unselectedContentColor = if (isSystemInDarkTheme()) White else Black
-                )
-
-                Tab(
-                    selected = pagerState.currentPage == 1,
-                    text = {
-                        Text(text = "Events")
-                    },
-                    icon = {
-                        if (!isLandscape) {
-                            Icon(
-                                imageVector = Icons.Outlined.Event,
-                                contentDescription = "Icon for Events"
-                            )
-                        }
-                    },
-                    onClick = {
-                        scope.launch {
-                            pagerState.animateScrollToPage(1)
-                        }
-                    },
-                    selectedContentColor = Green,
-                    unselectedContentColor = if (isSystemInDarkTheme()) White else Black
-                )
-            }
+            MainTabRow(
+                tabPagerState = tabPagerState,
+                tabList = tabList,
+                isLandScape = isLandscape,
+                onClick = { index ->
+                    scope.launch {
+                        tabPagerState.animateScrollToPage(index)
+                    }
+                }
+            )
 
             HorizontalPager(
-                state = pagerState,
+                state = tabPagerState,
                 modifier = Modifier
                     .fillMaxSize()
             ) { page ->
