@@ -90,6 +90,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -110,6 +111,7 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
@@ -1073,28 +1075,28 @@ fun MainDrawerItems(
     drawerList: List<MainNavigationDrawerList>,
     onClick: (name: String) -> Unit,
 ) {
-    drawerList.forEach { item ->
-        NavigationDrawerItem(
-            label = {
-                Text(text = item.text)
-            },
-            icon = {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = "Icon"
-                )
-            },
-            selected = false,
-            onClick = {
-                onClick(item.name)
-            },
-            colors = NavigationDrawerItemDefaults.colors(
-                unselectedContainerColor = Color.Transparent,
-            ),
-            shape = RectangleShape,
-        )
-    }
-
+    drawerList
+        .forEachIndexed { index, item ->
+            NavigationDrawerItem(
+                label = {
+                    Text(text = item.text)
+                },
+                icon = {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = "Icon"
+                    )
+                },
+                selected = false,
+                onClick = {
+                    onClick(item.name)
+                },
+                colors = NavigationDrawerItemDefaults.colors(
+                    unselectedContainerColor = Color.Transparent,
+                ),
+                shape = RectangleShape,
+            )
+        }
 }
 
 @Composable
