@@ -73,6 +73,7 @@ import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
@@ -122,7 +123,7 @@ fun SavedEventsScreen(
                     ) { index ->
                         val item = savedEventsList[index]
 
-                        var offsetX = remember { Animatable(0f) }
+                        var offsetX = remember { Animatable(-0f) }
                         var isDragging by remember { mutableStateOf(false) }
                         var itemHeight by remember { mutableStateOf(0.dp) }
 
@@ -157,15 +158,24 @@ fun SavedEventsScreen(
                             onHorizontalDrag = { change, dragAmount ->
                                 change.consume()
                                 val newOffsetX = dragAmount
-                                val incrementedOffsetX = (offsetX.value) + newOffsetX
+                                val incrementedOffsetX = (offsetX.value) - newOffsetX
                                 scope.launch {
                                     with(density) {
-                                        offsetX.snapTo(
-                                            incrementedOffsetX.coerceIn(
-                                                minimumValue = 0f,
-                                                maximumValue = maxWidth.toPx()
+                                        if (offsetX.value < maxWidth.toPx() - 100.dp.toPx()) {
+                                            offsetX.snapTo(
+                                                incrementedOffsetX.coerceIn(
+                                                    minimumValue = 0f,
+                                                    maximumValue = maxWidth.toPx()
+                                                )
                                             )
-                                        )
+                                        } else {
+                                            offsetX.animateTo(
+                                                incrementedOffsetX.coerceIn(
+                                                    minimumValue = 0f,
+                                                    maximumValue = maxWidth.toPx()
+                                                )
+                                            )
+                                        }
                                     }
                                 }
                             },
@@ -245,7 +255,10 @@ fun SavedEventsItem(
 ) {
 
 
-    Column {
+    Column(
+        modifier = Modifier
+            .background(color = if (isSystemInDarkTheme()) DarkGray else LightGray)
+    ) {
 
         Box(
             modifier = Modifier
@@ -263,6 +276,7 @@ fun SavedEventsItem(
                         )
                         .height(itemHeight)
                         .background(color = Black)
+                        .align(Alignment.CenterEnd)
                         .clickable {
                             item?.let {
                                 onEventRemoveFromSaveListClick(it)
@@ -274,7 +288,7 @@ fun SavedEventsItem(
                                 || (offsetX).dp == maxWidth(),
                         label = "delete_from_save",
                         modifier = Modifier
-                            .align(Alignment.CenterStart),
+                            .align(Alignment.CenterEnd),
                     ) { targetState ->
                         Icon(
                             imageVector = if (targetState)
@@ -290,7 +304,7 @@ fun SavedEventsItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(0.dp))
-                    .offset { IntOffset(offsetX.roundToInt(), 0) }
+                    .offset { IntOffset(-offsetX.roundToInt(), 0) }
                     .pointerInput(true) {
                         detectHorizontalDragGestures(
                             onDragStart = {
@@ -303,11 +317,7 @@ fun SavedEventsItem(
                         )
                     }
                     .background(
-                        color = if ((offsetX).dp > maxWidth()) {
-                            if (isSystemInDarkTheme()) DarkGray else LightGray
-                        } else {
-                            if (isSystemInDarkTheme()) DarkColor else White
-                        }
+                        color = if (isSystemInDarkTheme()) DarkColor else White
                     )
                     .onGloballyPositioned { coordinates ->
                         onGloballyPositioned(coordinates)

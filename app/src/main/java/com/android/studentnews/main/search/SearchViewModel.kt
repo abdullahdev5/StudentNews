@@ -28,7 +28,9 @@ class SearchViewModel(
     private val _searchNewsList = MutableStateFlow<PagingData<NewsModel>>(PagingData.empty())
     val searchNewsList: StateFlow<PagingData<NewsModel>> = _searchNewsList
 
-    val categoriesList = newsRepository.getCategoriesList(NEWS_LIST_PAGE_SIZE)
+    val categoriesList = newsRepository
+        .getCategoriesList(NEWS_LIST_PAGE_SIZE)
+        .cachedIn(viewModelScope)
 
 
 

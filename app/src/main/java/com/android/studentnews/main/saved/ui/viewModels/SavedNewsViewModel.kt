@@ -20,6 +20,7 @@ import com.android.studentnews.news.data.repository.SAVED_NEWS_LIST_PAGE_SIZE
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.domain.resource.NewsState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -60,17 +61,18 @@ class SavedNewsViewModel(
 
     fun onNewsRemoveFromSave(news: NewsModel) {
         viewModelScope.launch {
+            delay(1000)
+            _savedNewsList.update {
+                it.filter { data ->
+                    news != data
+                }
+            }
             newsRemoveFromSaveStatus = Status.Loading
             newsRepository
                 .onNewsRemoveFromSave(news)
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Success -> {
-                            _savedNewsList.update {
-                                it.filter { data ->
-                                    news != data
-                                }
-                            }
                             newsRemoveFromSaveStatus = Status.SUCCESS
                             SnackBarController
                                 .sendEvent(

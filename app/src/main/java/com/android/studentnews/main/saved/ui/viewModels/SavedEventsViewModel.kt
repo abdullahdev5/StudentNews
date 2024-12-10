@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
+import androidx.paging.filter
 import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
@@ -16,10 +17,12 @@ import com.android.studentnews.main.events.data.repository.SAVED_EVENTS_LIST_PAG
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class SavedEventsViewModel(
@@ -49,6 +52,12 @@ class SavedEventsViewModel(
 
     fun onEventRemoveFromSaveList(event: EventsModel) {
         viewModelScope.launch {
+            delay(1000)
+            _savedEventsList.update {
+                it.filter { data ->
+                    event != data
+                }
+            }
             eventsRepository
                 .onEventRemoveFromSave(event)
                 .collectLatest { result ->

@@ -154,12 +154,21 @@ fun SavedNewsScreen(
                             val incrementedOffsetX = (offsetX.value) + newOffsetX
                             scope.launch {
                                 with(density) {
-                                    offsetX.snapTo(
-                                        incrementedOffsetX.coerceIn(
-                                            minimumValue = 0f,
-                                            maximumValue = maxWidth.toPx()
+                                    if (offsetX.value < maxWidth.toPx() - 100.dp.toPx()) {
+                                        offsetX.snapTo(
+                                            incrementedOffsetX.coerceIn(
+                                                minimumValue = 0f,
+                                                maximumValue = maxWidth.toPx()
+                                            )
                                         )
-                                    )
+                                    } else {
+                                        offsetX.animateTo(
+                                            incrementedOffsetX.coerceIn(
+                                                minimumValue = 0f,
+                                                maximumValue = maxWidth.toPx()
+                                            )
+                                        )
+                                    }
                                 }
                             }
                         },
@@ -233,7 +242,10 @@ fun SavedNewsItem(
     onRemoveFromSavedListClick: (NewsModel) -> Unit,
 ) {
 
-    Column {
+    Column(
+        modifier = Modifier
+            .background(color = if (isSystemInDarkTheme()) DarkGray else LightGray)
+    ) {
 
         Box(
             modifier = Modifier
@@ -251,6 +263,7 @@ fun SavedNewsItem(
                         )
                         .height(itemHeight)
                         .background(color = Black)
+                        .align(Alignment.CenterStart)
                         .clickable {
                             item?.let {
                                 onRemoveFromSavedListClick(it)
@@ -300,11 +313,7 @@ fun SavedNewsItem(
                             )
                         }
                         .background(
-                            color = if (offsetX.dp > maxWidth()) {
-                                if (isSystemInDarkTheme()) DarkGray else LightGray
-                            } else {
-                                if (isSystemInDarkTheme()) DarkColor else White
-                            }
+                            color = if (isSystemInDarkTheme()) DarkColor else White
                         )
                         .onGloballyPositioned { coordinates ->
                             onGloballyPositioned(coordinates)

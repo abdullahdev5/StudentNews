@@ -14,7 +14,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -106,10 +105,8 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -119,9 +116,6 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
-import androidx.paging.LoadStates
-import androidx.paging.PagingData
-import androidx.paging.PagingSource
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
@@ -131,8 +125,6 @@ import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.constants.FontSize
-import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.NavigationBarItems
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.domain.destination.EventsDestination
@@ -347,8 +339,9 @@ fun NewsScreen(
                                 )
                             }
                             if (isMoreDropDownMenuItemOpen) {
-                                MoreDropDownMenu(
+                                MoreDropDownMenuMain(
                                     expanded = isMoreDropDownMenuItemOpen,
+                                    currentPage = tabPagerState.currentPage,
                                     onSavedClick = {
                                         navHostController.navigate(SubGraph.SAVED)
                                     },
@@ -1251,8 +1244,9 @@ fun MainDrawerItems(
 }
 
 @Composable
-fun MoreDropDownMenu(
+fun MoreDropDownMenuMain(
     expanded: Boolean,
+    currentPage: Int,
     onSavedClick: () -> Unit,
     onLikedClick: () -> Unit,
     onRegisteredEventsClick: () -> Unit,
@@ -1285,40 +1279,44 @@ fun MoreDropDownMenu(
                 )
             },
         )
-        // Liked Item
-        DropdownMenuItem(
-            text = {
-                Text(text = "Liked")
-            },
-            onClick = {
-                onLikedClick.invoke()
-                onDismiss.invoke()
-            },
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.FavoriteBorder,
-                    contentDescription = "Icon fro Liked"
-                )
-            },
-        )
+        if (currentPage == 0) {
+            // Liked Item
+            DropdownMenuItem(
+                text = {
+                    Text(text = "Liked")
+                },
+                onClick = {
+                    onLikedClick.invoke()
+                    onDismiss.invoke()
+                },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.FavoriteBorder,
+                        contentDescription = "Icon fro Liked"
+                    )
+                },
+            )
+        }
 
-        // Registered Events Item
-        DropdownMenuItem(
-            text = {
-                Text(text = "Registered Events")
-            },
-            onClick = {
-                onRegisteredEventsClick.invoke()
-                onDismiss.invoke()
-            },
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Outlined.Book,
-                    contentDescription = "Icon fro Registered Events"
-                )
-            },
-            contentPadding = PaddingValues(10.dp)
-        )
+        if (currentPage == 1) {
+            // Registered Events Item
+            DropdownMenuItem(
+                text = {
+                    Text(text = "Registered Events")
+                },
+                onClick = {
+                    onRegisteredEventsClick.invoke()
+                    onDismiss.invoke()
+                },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Outlined.Book,
+                        contentDescription = "Icon fro Registered Events"
+                    )
+                },
+                contentPadding = PaddingValues(10.dp)
+            )
+        }
     }
 }
 
