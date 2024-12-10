@@ -258,7 +258,6 @@ fun NewsScreen(
         }
     }
 
-
     Surface(
         modifier = Modifier
             .fillMaxSize()
