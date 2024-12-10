@@ -4,10 +4,11 @@ package com.android.studentnews.main.events.ui.screens
 
 import android.annotation.SuppressLint
 import android.content.Context
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -20,8 +21,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -39,8 +38,6 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,19 +59,17 @@ import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
-import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.core.domain.common.formatDateToString
 import com.android.studentnews.core.domain.common.formatTimeToString
-import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.ui.theme.Black
+import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
-import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.ItemBackgroundColor
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 
-enum class EventsCategoryList(
+enum class EventsFiltersList(
     val category: String,
     val index: Int,
 ) {
@@ -82,7 +77,7 @@ enum class EventsCategoryList(
     NOT_AVAILABLE("Not Available", 1)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
 fun EventsScreen(
@@ -97,26 +92,33 @@ fun EventsScreen(
     val eventsList = eventsViewModel.eventsList.collectAsLazyPagingItems()
 
     var categoryList = listOf(
-        EventsCategoryList.AVAILABLE,
-        EventsCategoryList.NOT_AVAILABLE,
+        EventsFiltersList.AVAILABLE,
+        EventsFiltersList.NOT_AVAILABLE,
     )
 
     Column {
 
-        AnimatedVisibility(eventsViewModel.lazyListState.firstVisibleItemIndex > 1) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(all = 5.dp),
+        LazyColumn(
+            state = eventsViewModel.lazyListState,
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+
+            stickyHeader(
+                key = "events_filters"
             ) {
-                // Category
-                categoryList
-                    .sortedByDescending {
-                        eventsViewModel.selectedCategoryIndex != null
-                                && eventsViewModel.selectedCategoryIndex == it.index
-                    }
-                    .forEach { item ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(color = if (isSystemInDarkTheme()) DarkColor else White),
+                ) {
+                    // Category
+                    categoryList
+                        .sortedByDescending {
+                            eventsViewModel.selectedCategoryIndex != null
+                                    && eventsViewModel.selectedCategoryIndex == it.index
+                        }
+                        .forEach { item ->
 
                             CategoryListItem(
                                 categoryName = item.category,
@@ -141,50 +143,6 @@ fun EventsScreen(
                         }
                 }
             }
-
-            LazyColumn(
-                state = eventsViewModel.lazyListState,
-                modifier = Modifier
-                    .fillMaxSize()
-            ) {
-
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 5.dp, top = 5.dp),
-                    ) {
-                        // Category
-                        categoryList
-                            .sortedByDescending {
-                                eventsViewModel.selectedCategoryIndex != null
-                                        && eventsViewModel.selectedCategoryIndex == it.index
-                            }
-                            .forEach { item ->
-
-                                CategoryListItem(
-                                    categoryName = item.category,
-                                    modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                                    colors = SegmentedButtonDefaults.colors(
-                                        activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                        inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                        activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                        inactiveContentColor = LocalContentColor.current
-                                    ),
-                                    index = item.index,
-                                    selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                                    onClick = { index, _ ->
-                                        eventsViewModel.selectedCategoryIndex = index
-                                        if (eventsViewModel.selectedCategoryIndex == 0) {
-                                            eventsViewModel.getEventsList(true)
-                                        } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                            eventsViewModel.getEventsList(false)
-                                        }
-                                    }
-                                )
-                            }
-                    }
-                }
 
             if (eventsList.loadState.refresh is LoadState.NotLoading) {
                 items(

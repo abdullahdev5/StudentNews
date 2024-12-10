@@ -12,6 +12,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -154,7 +155,7 @@ import kotlinx.coroutines.launch
 @SuppressLint(
     "RememberReturnType", "FrequentlyChangedStateReadInComposition"
 )
-@OptIn(ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun NewsScreen(
     navHostController: NavHostController,
@@ -521,167 +522,175 @@ fun NewsScreen(
                             when (page) {
 
                                 0 -> {
-                                    Column {
-
-                                        AnimatedVisibility(lazyListState.firstVisibleItemIndex > 1) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .horizontalScroll(rememberScrollState())
+                                    LazyColumn(
+                                        state = lazyListState,
+                                        flingBehavior = ScrollableDefaults.flingBehavior(),
+                                        userScrollEnabled = true,
+                                        modifier = Modifier
+                                            .fillMaxSize(),
+                                    ) {
+                                        if (lazyListState.firstVisibleItemIndex > 1) {
+                                            stickyHeader(
+                                                key = "news_category_after_scroll"
                                             ) {
-                                                categoriesList
-                                                    .itemSnapshotList
-                                                    .items
-                                                    .forEachIndexed { index, item ->
-                                                        CategoryListItem(
-                                                            categoryName = item.name ?: "",
-                                                            modifier = Modifier.padding(
-                                                                start = 5.dp,
-                                                                end = 5.dp
-                                                            ),
-                                                            colors = SegmentedButtonDefaults.colors(
-                                                                activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                                                inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                                                activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                                                inactiveContentColor = LocalContentColor.current
-                                                            ),
-                                                            index = index,
-                                                            selectedCategoryIndex = selectedNewsCategoryIndex,
-                                                            onClick = { index, category ->
-                                                                selectedNewsCategoryIndex =
-                                                                    index
-                                                                newsViewModel
-                                                                    .getNewsList(category)
-                                                                newsCategoryStatus =
-                                                                    "$category News"
-                                                            }
+                                                Row(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .horizontalScroll(
+                                                            rememberScrollState()
                                                         )
-                                                    }
+                                                ) {
+                                                    categoriesList
+                                                        .itemSnapshotList
+                                                        .items
+                                                        .forEachIndexed { index, item ->
+                                                            CategoryListItem(
+                                                                categoryName = item.name
+                                                                    ?: "",
+                                                                modifier = Modifier.padding(
+                                                                    start = 5.dp,
+                                                                    end = 5.dp
+                                                                ),
+                                                                colors = SegmentedButtonDefaults.colors(
+                                                                    activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                                                    inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                                                    activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                                                    inactiveContentColor = LocalContentColor.current
+                                                                ),
+                                                                index = index,
+                                                                selectedCategoryIndex = selectedNewsCategoryIndex,
+                                                                onClick = { index, category ->
+                                                                    selectedNewsCategoryIndex =
+                                                                        index
+                                                                    newsViewModel
+                                                                        .getNewsList(
+                                                                            category
+                                                                        )
+                                                                    newsCategoryStatus =
+                                                                        "$category News"
+                                                                }
+                                                            )
+                                                        }
+                                                }
                                             }
                                         }
 
-                                        LazyColumn(
-                                            state = lazyListState,
-                                            flingBehavior = ScrollableDefaults.flingBehavior(),
-                                            userScrollEnabled = true,
-                                            modifier = Modifier
-                                                .fillMaxSize(),
+
+                                        item(
+                                            key = "news_category"
                                         ) {
-                                            item(
-                                                key = "news_category"
-                                            ) {
-                                                HorizontalPager(
+                                            HorizontalPager(
+                                                state = categoryPagerState,
+                                                pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
+                                                    (-30).dp else (-15).dp,
+                                                flingBehavior = PagerDefaults.flingBehavior(
                                                     state = categoryPagerState,
-                                                    pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
-                                                        (-30).dp else (-15).dp,
-                                                    flingBehavior = PagerDefaults.flingBehavior(
-                                                        state = categoryPagerState,
-                                                        pagerSnapDistance = PagerSnapDistance.atMost(
-                                                            1
-                                                        ),
-                                                        snapAnimationSpec = spring(
-                                                            stiffness = Spring.StiffnessVeryLow,
-                                                            dampingRatio = Spring.DampingRatioLowBouncy
-                                                        )
+                                                    pagerSnapDistance = PagerSnapDistance.atMost(
+                                                        1
                                                     ),
-                                                    key = categoriesList.itemKey {
-                                                        it.categoryId ?: ""
-                                                    },
-                                                    modifier = Modifier
-                                                        .height(250.dp),
-                                                ) { pagerIndex ->
-                                                    val item =
-                                                        categoriesList[pagerIndex]!!
-                                                    CategoriesListPagerItem(
-                                                        item = item,
-                                                        categoriesList = categoriesList.itemSnapshotList.items,
-                                                        categoryPagerState = categoryPagerState,
-                                                        context = context,
-                                                        onItemCLick = { category ->
-
-                                                            selectedNewsCategoryIndex = pagerIndex
-                                                            newsViewModel.getNewsList(category)
-                                                            newsCategoryStatus =
-                                                                "${category} News"
-                                                        }
+                                                    snapAnimationSpec = spring(
+                                                        stiffness = Spring.StiffnessVeryLow,
+                                                        dampingRatio = Spring.DampingRatioLowBouncy
                                                     )
-                                                }
-                                            }
+                                                ),
+                                                key = categoriesList.itemKey {
+                                                    it.categoryId ?: ""
+                                                },
+                                                modifier = Modifier
+                                                    .height(250.dp),
+                                            ) { pagerIndex ->
+                                                val item =
+                                                    categoriesList[pagerIndex]!!
+                                                CategoriesListPagerItem(
+                                                    item = item,
+                                                    categoriesList = categoriesList.itemSnapshotList.items,
+                                                    categoryPagerState = categoryPagerState,
+                                                    context = context,
+                                                    onItemCLick = { category ->
 
-                                            item(
-                                                key = "news_category_status"
-                                            ) {
-                                                CategoryStatusText(
-                                                    category = if (newsCategoryStatus.isNotEmpty())
-                                                        newsCategoryStatus else "For You",
-                                                    style = TextStyle(
-                                                        fontSize = FontSize.LARGE.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = Gray
-                                                    ),
-                                                    modifier = Modifier
-                                                        .padding(
-                                                            top = 10.dp,
-                                                            start = 10.dp,
-                                                            bottom = 5.dp
-                                                        ),
+                                                        selectedNewsCategoryIndex = pagerIndex
+                                                        newsViewModel.getNewsList(category)
+                                                        newsCategoryStatus =
+                                                            "${category} News"
+                                                    }
                                                 )
                                             }
+                                        }
 
-                                            if (newsList.loadState.refresh is LoadState.NotLoading) {
-                                                items(
-                                                    count = newsList.itemCount,
-                                                    key = newsList.itemKey {
-                                                        it.newsId ?: ""
-                                                    }
-                                                ) { index ->
-                                                    val item = newsList[index]
+                                        item(
+                                            key = "news_category_status"
+                                        ) {
+                                            CategoryStatusText(
+                                                category = if (newsCategoryStatus.isNotEmpty())
+                                                    newsCategoryStatus else "For You",
+                                                style = TextStyle(
+                                                    fontSize = FontSize.LARGE.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Gray
+                                                ),
+                                                modifier = Modifier
+                                                    .padding(
+                                                        top = 10.dp,
+                                                        start = 10.dp,
+                                                        bottom = 5.dp
+                                                    ),
+                                            )
+                                        }
 
-                                                    NewsItem(
-                                                        item = item,
-                                                        onItemClick = { newsId ->
-                                                            navHostController.navigate(
-                                                                NewsDestination.NEWS_DETAIL_SCREEN(
-                                                                    newsId
-                                                                )
+                                        if (newsList.loadState.refresh is LoadState.NotLoading) {
+                                            items(
+                                                count = newsList.itemCount,
+                                                key = newsList.itemKey {
+                                                    it.newsId ?: ""
+                                                }
+                                            ) { index ->
+                                                val item = newsList[index]
+
+                                                NewsItem(
+                                                    item = item,
+                                                    onItemClick = { newsId ->
+                                                        navHostController.navigate(
+                                                            NewsDestination.NEWS_DETAIL_SCREEN(
+                                                                newsId
                                                             )
-                                                        },
-                                                        context = context,
-                                                        animatedVisibilityScope = animatedVisibilityScope,
-                                                        sharedTransitionScope = sharedTransitionScope,
-                                                    )
+                                                        )
+                                                    },
+                                                    context = context,
+                                                    animatedVisibilityScope = animatedVisibilityScope,
+                                                    sharedTransitionScope = sharedTransitionScope,
+                                                )
+                                            }
+                                        }
+
+                                        if (
+                                            newsList.loadState.append is LoadState.Loading
+                                            || newsList.loadState.refresh is LoadState.Loading
+                                        ) {
+                                            item {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.Center,
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                ) {
+                                                    CircularProgressIndicator()
                                                 }
                                             }
+                                        }
 
-                                            if (
-                                                newsList.loadState.append is LoadState.Loading
-                                                || newsList.loadState.refresh is LoadState.Loading
-                                            ) {
-                                                item {
-                                                    Row(
-                                                        horizontalArrangement = Arrangement.Center,
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                    ) {
-                                                        CircularProgressIndicator()
-                                                    }
-                                                }
+                                        if (newsList.loadState.refresh is LoadState.Error) {
+                                            item {
+                                                ErrorMessageContainer(
+                                                    errorMessage =
+                                                    (newsList.loadState.refresh as LoadState.Error
+                                                            ).error.localizedMessage ?: "",
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(all = 20.dp),
+                                                    horizontalArrangement = Arrangement.spacedBy(
+                                                        20.dp
+                                                    ),
+                                                )
                                             }
-
-                                            if (newsList.loadState.refresh is LoadState.Error) {
-                                                item {
-                                                    ErrorMessageContainer(
-                                                        errorMessage =
-                                                        (newsList.loadState.refresh as LoadState.Error
-                                                                ).error.localizedMessage ?: "",
-                                                        modifier = Modifier
-                                                            .fillMaxWidth()
-                                                            .padding(all = 20.dp),
-                                                        horizontalArrangement = Arrangement.spacedBy(20.dp),
-                                                    )
-                                                }
-                                            }
-
                                         }
 
                                     }
