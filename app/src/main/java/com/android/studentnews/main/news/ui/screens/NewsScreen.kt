@@ -740,7 +740,6 @@ fun NewsItem(
                 containerColor = ItemBackgroundColor
             )
         ) {
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
