@@ -6,7 +6,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -48,18 +47,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.Event
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.outlined.Book
-import androidx.compose.material.icons.outlined.Event
-import androidx.compose.material.icons.outlined.Logout
-import androidx.compose.material.icons.outlined.Newspaper
-import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material.icons.outlined.Search
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -105,7 +96,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -129,7 +119,7 @@ import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.constants.FontSize
-import com.android.studentnews.main.NavigationBarItems
+import com.android.studentnews.main.MainBottomNavigationBarList
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
@@ -141,6 +131,7 @@ import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
 import com.android.studentnews.navigation.SubGraph
 import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
+import com.android.studentnews.main.MainNavigationDrawerList
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
@@ -153,28 +144,6 @@ import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-
-enum class MainTabRowList(
-    val text: String,
-    val index: Int,
-    val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector,
-) {
-    News(
-        text = "News",
-        index = 0,
-        selectedIcon = Icons.Filled.Newspaper,
-        unselectedIcon = Icons.Outlined.Newspaper,
-    ),
-
-    Events(
-        text = "Events",
-        index = 1,
-        selectedIcon = Icons.Filled.Event,
-        unselectedIcon = Icons.Outlined.Event,
-    ),
-
-}
 
 @SuppressLint(
     "RememberReturnType", "FrequentlyChangedStateReadInComposition"
@@ -232,9 +201,9 @@ fun NewsScreen(
     var selectedNavBarIndex by remember { mutableIntStateOf(0) }
 
     val navBarList = listOf(
-        NavigationBarItems.Home,
-        NavigationBarItems.Search,
-        NavigationBarItems.Account,
+        MainBottomNavigationBarList.Home,
+        MainBottomNavigationBarList.Search,
+        MainBottomNavigationBarList.Account,
     )
 
     LaunchedEffect(tabPagerState.currentPage) {
@@ -308,37 +277,53 @@ fun NewsScreen(
                         context = context,
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope,
-                        onAccountClick = {
-                            currentUser?.let {
-                                navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
+                        onClick = { name ->
+                            when (name) {
+
+                                MainNavigationDrawerList.Account.name -> {
+                                    currentUser?.let {
+                                        navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
+                                    }
+                                }
+
+                                MainNavigationDrawerList.Search.name -> {
+                                    navHostController.navigate(MainDestination.SEARCH_SCREEN)
+                                }
+
+                                MainNavigationDrawerList.Saved.name -> {
+                                    navHostController.navigate(SubGraph.SAVED)
+                                }
+
+                                MainNavigationDrawerList.Liked.name -> {
+                                    navHostController.navigate(NewsDestination.LIKED_NEWS_SCREEN)
+                                }
+
+                                MainNavigationDrawerList.Registered_Events.name -> {
+                                    navHostController.navigate(EventsDestination.REGISTERED_EVENTS_SCREEN)
+                                }
+
+                                MainNavigationDrawerList.Settings.name -> {
+                                    navHostController.navigate(SubGraph.SETTINGS)
+                                }
+
+                                MainNavigationDrawerList.Log_out.name -> {
+                                    newsViewModel.cancelPeriodicNewsWorkRequest()
+                                    context.cacheDir.delete()
+                                    context.imageLoader.memoryCache?.clear()
+                                    context.imageLoader.diskCache?.clear()
+                                    newsViewModel.signOut()
+                                    navHostController.navigate(SubGraph.AUTH) {
+                                        popUpTo(SubGraph.Main) {
+                                            inclusive = true
+                                        }
+                                        launchSingleTop = true
+                                    }
+                                }
                             }
                         },
-                        onSearchClick = {
-                            navHostController.navigate(MainDestination.SEARCH_SCREEN)
-                        },
-                        onSavedClick = {
-                            navHostController.navigate(SubGraph.SAVED)
-                        },
-                        onLikedClick = {
-                            navHostController.navigate(NewsDestination.LIKED_NEWS_SCREEN)
-                        },
-                        onRegisteredEventsClick = {
-                            navHostController.navigate(EventsDestination.REGISTERED_EVENTS_SCREEN)
-                        },
-                        onSettingsClick = {
-                            navHostController.navigate(SubGraph.SETTINGS)
-                        },
-                        onSignOutClick = {
-                            newsViewModel.cancelPeriodicNewsWorkRequest()
-                            context.cacheDir.delete()
-                            context.imageLoader.memoryCache?.clear()
-                            context.imageLoader.diskCache?.clear()
-                            newsViewModel.signOut()
-                            navHostController.navigate(SubGraph.AUTH) {
-                                popUpTo(SubGraph.Main) {
-                                    inclusive = true
-                                }
-                                launchSingleTop = true
+                        onUserImageClick = {
+                            currentUser?.let {
+                                navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
                             }
                         },
                         onDismiss = {
@@ -949,15 +934,21 @@ fun MainDrawerContent(
     context: Context,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
-    onAccountClick: () -> Unit,
-    onSearchClick: () -> Unit,
-    onSavedClick: () -> Unit,
-    onLikedClick: () -> Unit,
-    onRegisteredEventsClick: () -> Unit,
-    onSettingsClick: () -> Unit,
-    onSignOutClick: () -> Unit,
+    onClick: (name: String) -> Unit,
+    onUserImageClick: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+
+    val drawerList = listOf(
+        MainNavigationDrawerList.Account,
+        MainNavigationDrawerList.Search,
+        MainNavigationDrawerList.Saved,
+        MainNavigationDrawerList.Liked,
+        MainNavigationDrawerList.Registered_Events,
+        MainNavigationDrawerList.Settings,
+        MainNavigationDrawerList.Log_out,
+    )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1000,7 +991,7 @@ fun MainDrawerContent(
                                 .pointerInput(true) {
                                     detectTapGestures(
                                         onTap = {
-                                            onAccountClick.invoke()
+                                            onUserImageClick.invoke()
                                         }
                                     )
                                 },
@@ -1069,30 +1060,9 @@ fun MainDrawerContent(
         HorizontalDivider(color = Gray)
         Spacer(modifier = Modifier.height(16.dp))
         MainDrawerItems(
-            onAccountClick = onAccountClick,
-            onSearchClick = {
-                onDismiss.invoke()
-                onSearchClick.invoke()
-            },
-            onSavedClick = {
-                onDismiss.invoke()
-                onSavedClick.invoke()
-            },
-            onLikedClick = {
-                onDismiss.invoke()
-                onLikedClick.invoke()
-            },
-            onRegisteredEventsClick = {
-                onDismiss.invoke()
-                onRegisteredEventsClick.invoke()
-            },
-            onSettingsClick = {
-                onSettingsClick.invoke()
-                onDismiss.invoke()
-            },
-            onSignOutClick = {
-                onSignOutClick.invoke()
-                onDismiss.invoke()
+            drawerList = drawerList,
+            onClick = { name ->
+                onClick(name)
             }
         )
     }
@@ -1100,145 +1070,30 @@ fun MainDrawerContent(
 
 @Composable
 fun MainDrawerItems(
-    onAccountClick: () -> Unit,
-    onSearchClick: () -> Unit,
-    onSavedClick: () -> Unit,
-    onLikedClick: () -> Unit,
-    onRegisteredEventsClick: () -> Unit,
-    onSettingsClick: () -> Unit,
-    onSignOutClick: () -> Unit,
+    drawerList: List<MainNavigationDrawerList>,
+    onClick: (name: String) -> Unit,
 ) {
-    // Account
-    NavigationDrawerItem(
-        label = {
-            Text(text = "Account")
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Outlined.Person,
-                contentDescription = "icon of Account"
-            )
-        },
-        selected = false,
-        onClick = onAccountClick,
-        colors = NavigationDrawerItemDefaults.colors(
-            unselectedContainerColor = Color.Transparent,
-        ),
-        shape = RectangleShape,
-    )
-
-    // Search
-    NavigationDrawerItem(
-        label = {
-            Text(text = "Search")
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Outlined.Search,
-                contentDescription = "icon of Search"
-            )
-        },
-        selected = false,
-        onClick = onSearchClick,
-        colors = NavigationDrawerItemDefaults.colors(
-            unselectedContainerColor = Color.Transparent,
-        ),
-        shape = RectangleShape,
-    )
-
-    // Saved Item
-    NavigationDrawerItem(
-        label = {
-            Text(text = "Saved")
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Default.BookmarkBorder,
-                contentDescription = "icon of Saved"
-            )
-        },
-        selected = false,
-        onClick = onSavedClick,
-        colors = NavigationDrawerItemDefaults.colors(
-            unselectedContainerColor = Color.Transparent,
-        ),
-        shape = RectangleShape,
-    )
-
-    // Liked Item
-    NavigationDrawerItem(
-        label = {
-            Text(text = "Liked")
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Default.FavoriteBorder,
-                contentDescription = "icon of Liked"
-            )
-        },
-        selected = false,
-        onClick = onLikedClick,
-        colors = NavigationDrawerItemDefaults.colors(
-            unselectedContainerColor = Color.Transparent,
-        ),
-        shape = RectangleShape,
-    )
-
-    // Registered Events Item
-    NavigationDrawerItem(
-        label = {
-            Text(text = "Registered Events")
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Outlined.Book,
-                contentDescription = "icon of Registered Events"
-            )
-        },
-        selected = false,
-        onClick = onRegisteredEventsClick,
-        colors = NavigationDrawerItemDefaults.colors(
-            unselectedContainerColor = Color.Transparent,
-        ),
-        shape = RectangleShape,
-    )
-
-    // Settings Item
-    NavigationDrawerItem(
-        label = {
-            Text(text = "Settings")
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Outlined.Settings,
-                contentDescription = "icon of Settings"
-            )
-        },
-        selected = false,
-        onClick = onSettingsClick,
-        colors = NavigationDrawerItemDefaults.colors(
-            unselectedContainerColor = Color.Transparent,
-        ),
-        shape = RectangleShape,
-    )
-
-    NavigationDrawerItem(
-        label = {
-            Text(text = "Log out")
-        },
-        icon = {
-            Icon(
-                imageVector = Icons.Outlined.Logout,
-                contentDescription = "icon of Sign out"
-            )
-        },
-        selected = false,
-        onClick = onSignOutClick,
-        colors = NavigationDrawerItemDefaults.colors(
-            unselectedContainerColor = Color.Transparent,
-        ),
-        shape = RectangleShape,
-    )
+    drawerList.forEach { item ->
+        NavigationDrawerItem(
+            label = {
+                Text(text = item.text)
+            },
+            icon = {
+                Icon(
+                    imageVector = item.icon,
+                    contentDescription = "Icon"
+                )
+            },
+            selected = false,
+            onClick = {
+                onClick(item.name)
+            },
+            colors = NavigationDrawerItemDefaults.colors(
+                unselectedContainerColor = Color.Transparent,
+            ),
+            shape = RectangleShape,
+        )
+    }
 
 }
 
