@@ -68,7 +68,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.news.domain.destination.NewsDestination
-import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
+import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.ui.theme.Black

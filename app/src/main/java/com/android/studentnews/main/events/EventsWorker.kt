@@ -27,7 +27,7 @@ import com.android.studentnews.core.domain.common.formatTimeToString
 import com.android.studentnews.main.MyBroadcastReceiver
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnews.main.news.NOTIFICATION_ID
-import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
+import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import kotlin.random.Random
 

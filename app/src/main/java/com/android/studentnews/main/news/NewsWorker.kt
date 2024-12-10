@@ -25,7 +25,7 @@ import com.android.studentnews.main.MyBroadcastReceiver
 import com.android.studentnews.main.events.DESCRIPTION
 import com.android.studentnews.main.events.TITLE
 import com.android.studentnews.main.events.URL_LIST
-import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
+import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import kotlin.apply

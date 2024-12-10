@@ -69,7 +69,7 @@ import com.android.studentnews.core.domain.common.formatTimeToString
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
-import com.android.studentnews.main.news.ui.screens.getUrlOfImageNotVideo
+import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
