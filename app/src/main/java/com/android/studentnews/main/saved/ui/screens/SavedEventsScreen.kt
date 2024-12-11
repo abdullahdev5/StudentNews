@@ -7,6 +7,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -62,9 +63,12 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.android.studentnews.core.data.paginator.LENGTH_ERROR
+import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.common.formatDateToString
 import com.android.studentnews.core.domain.common.formatTimeToString
 import com.android.studentnews.core.domain.constants.FontSize
@@ -128,6 +132,9 @@ fun SavedEventsScreen(
                         count = savedEventsList.itemCount,
                         key = savedEventsList.itemKey {
                             it.eventId ?: ""
+                        },
+                        contentType = savedEventsList.itemContentType {
+                            "saved_events_list"
                         }
                     ) { index ->
                         val item = savedEventsList[index]
@@ -221,6 +228,44 @@ fun SavedEventsScreen(
                     }
                 }
 
+                if (
+                    savedEventsList.loadState.refresh is LoadState.Error
+                ) {
+                    item {
+                        ErrorMessageContainer(
+                            errorMessage =
+                            (savedEventsList.loadState.refresh as LoadState.Error
+                                    ).error.localizedMessage ?: "",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                20.dp
+                            ),
+                        )
+                    }
+                }
+
+                if (
+                    savedEventsList.loadState.append is LoadState.Error
+                    && (savedEventsList.loadState.append as LoadState.Error)
+                        .error.localizedMessage != LENGTH_ERROR
+                ) {
+                    item {
+                        ErrorMessageContainer(
+                            errorMessage =
+                            (savedEventsList.loadState.append as LoadState.Error
+                                    ).error.localizedMessage ?: "",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 20.dp),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                20.dp
+                            ),
+                        )
+                    }
+                }
+
             }
         }
 
@@ -276,7 +321,7 @@ fun SavedEventsItem(
                         .then(
                             with(density) {
                                 Modifier
-                                    .width(((maxWidth().toPx()) - 100.dp.toPx()).toDp())
+                                    .width((maxWidth().value).toDp())
                             }
                         )
                         .height(itemHeight)
@@ -324,6 +369,22 @@ fun SavedEventsItem(
                     .background(
                         color = if (isSystemInDarkTheme()) DarkColor else White
                     )
+                    .then(
+                        if (isSystemInDarkTheme()
+                            && offsetX != 0f
+                            && offsetX.dp <= maxWidth()
+                            && isDragging
+                        ) {
+                            Modifier
+                                .border(
+                                    width = 1.dp,
+                                    color = White
+                                )
+                        } else Modifier
+                    )
+                    .clickable {
+                        onItemClick(item?.eventId ?: "")
+                    }
                     .onGloballyPositioned { coordinates ->
                         onGloballyPositioned(coordinates)
                     },
@@ -333,9 +394,6 @@ fun SavedEventsItem(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(all = 20.dp)
-                        .clickable {
-                            onItemClick(item?.eventId ?: "")
-                        }
                 ) {
                     val imageRequest = ImageRequest.Builder(context)
                         .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))

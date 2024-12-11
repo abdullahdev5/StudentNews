@@ -29,10 +29,14 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
+import com.android.studentnews.core.data.paginator.LENGTH_ERROR
+import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.news.ui.NewsItem
 
@@ -97,6 +101,9 @@ fun LikedNewsScreen(
                     count = likedNewsList.itemCount,
                     key = likedNewsList.itemKey {
                         it.newsId ?: ""
+                    },
+                    contentType = likedNewsList.itemContentType {
+                        "liked_news_list"
                     }
                 ) { index ->
                     val item = likedNewsList[index]
@@ -130,6 +137,46 @@ fun LikedNewsScreen(
                     }
                 }
             }
+
+            if (
+                likedNewsList.loadState.refresh is LoadState.Error
+            ) {
+                item {
+                    ErrorMessageContainer(
+                        errorMessage =
+                        (likedNewsList.loadState.refresh as LoadState.Error
+                                ).error.localizedMessage ?: "",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            20.dp
+                        ),
+                    )
+                }
+            }
+
+            // Append Failed Error
+            if (
+                likedNewsList.loadState.prepend is LoadState.Error
+                && (likedNewsList.loadState.append as LoadState.Error)
+                    .error.localizedMessage != LENGTH_ERROR
+            ) {
+                item {
+                    ErrorMessageContainer(
+                        errorMessage =
+                        (likedNewsList.loadState.append as LoadState.Error
+                                ).error.localizedMessage ?: "",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            20.dp
+                        ),
+                    )
+                }
+            }
+
         }
 
         if (likedNewsListNotFound) {

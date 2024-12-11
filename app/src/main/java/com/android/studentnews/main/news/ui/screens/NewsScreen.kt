@@ -5,7 +5,9 @@ package com.android.studentnews.news.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
+import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -64,6 +66,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBarItem
@@ -90,7 +93,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -111,15 +113,17 @@ import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
-import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.imageLoader
 import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
+import com.android.studentnews.core.data.paginator.LENGTH_ERROR
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
+import com.android.studentnews.core.domain.common.formatDateOrTimeToAgo
 import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.MainBottomNavigationBarList
@@ -147,6 +151,7 @@ import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Calendar
 
 @SuppressLint(
     "RememberReturnType", "FrequentlyChangedStateReadInComposition"
@@ -222,9 +227,8 @@ fun NewsScreen(
         if (newsViewModel.isRefreshing) {
             scope.launch {
                 pullToRefreshState.startRefresh()
-                delay(1000L)
+                delay(2000L)
                 if (tabPagerState.currentPage == 0) {
-                    delay(1000)
                     newsViewModel.getNewsList(null)
                     newsCategoryStatus = ""
                     selectedNewsCategoryIndex?.let {
@@ -452,13 +456,11 @@ fun NewsScreen(
                     modifier = Modifier
                         .padding(paddingValues = innerPadding)
                 ) {
-
                     // Pager
                     Column {
                         MainTabRow(
                             tabPagerState = tabPagerState,
                             tabList = tabList,
-                            isLandScape = isLandScape,
                             onClick = { index ->
                                 scope.launch {
                                     tabPagerState.animateScrollToPage(index)
@@ -499,177 +501,220 @@ fun NewsScreen(
                             when (page) {
 
                                 0 -> {
-                                    LazyColumn(
-                                        state = lazyListState,
-                                        flingBehavior = ScrollableDefaults.flingBehavior(),
-                                        userScrollEnabled = true,
-                                        modifier = Modifier
-                                            .fillMaxSize(),
-                                    ) {
-                                        if (lazyListState.firstVisibleItemIndex > 1) {
-                                            stickyHeader(
-                                                key = "news_category_after_scroll"
+                                    Column {
+
+                                        AnimatedVisibility(
+                                            lazyListState.firstVisibleItemIndex > 1
+                                        ) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .horizontalScroll(
+                                                        rememberScrollState()
+                                                    )
+                                                    .background(
+                                                        color = MaterialTheme
+                                                            .colorScheme
+                                                            .surface
+                                                    )
                                             ) {
-                                                Row(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .horizontalScroll(
-                                                            rememberScrollState()
+                                                categoriesList
+                                                    .itemSnapshotList
+                                                    .items
+                                                    .forEachIndexed { index, item ->
+                                                        CategoryListItem(
+                                                            categoryName = item.name
+                                                                ?: "",
+                                                            modifier = Modifier.padding(
+                                                                start = 5.dp,
+                                                                end = 5.dp
+                                                            ),
+                                                            colors = SegmentedButtonDefaults.colors(
+                                                                activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                                                inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                                                activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                                                inactiveContentColor = LocalContentColor.current
+                                                            ),
+                                                            index = index,
+                                                            selectedCategoryIndex = selectedNewsCategoryIndex,
+                                                            onClick = { index, category ->
+                                                                selectedNewsCategoryIndex =
+                                                                    index
+                                                                newsViewModel
+                                                                    .getNewsList(
+                                                                        category
+                                                                    )
+                                                                newsCategoryStatus =
+                                                                    "$category News"
+                                                            }
                                                         )
-                                                ) {
-                                                    categoriesList
-                                                        .itemSnapshotList
-                                                        .items
-                                                        .forEachIndexed { index, item ->
-                                                            CategoryListItem(
-                                                                categoryName = item.name
-                                                                    ?: "",
-                                                                modifier = Modifier.padding(
-                                                                    start = 5.dp,
-                                                                    end = 5.dp
-                                                                ),
-                                                                colors = SegmentedButtonDefaults.colors(
-                                                                    activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                                                    inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                                                    activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                                                    inactiveContentColor = LocalContentColor.current
-                                                                ),
+                                                    }
+                                            }
+                                        }
+
+                                        LazyColumn(
+                                            state = lazyListState,
+                                            flingBehavior = ScrollableDefaults.flingBehavior(),
+                                            userScrollEnabled = true,
+                                            modifier = Modifier
+                                                .fillMaxSize(),
+                                        ) {
+                                            item(
+                                                key = "news_category"
+                                            ) {
+                                                Column {
+                                                    HorizontalPager(
+                                                        state = categoryPagerState,
+                                                        pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
+                                                            (-30).dp else (-15).dp,
+                                                        flingBehavior = PagerDefaults.flingBehavior(
+                                                            state = categoryPagerState,
+                                                            pagerSnapDistance = PagerSnapDistance.atMost(
+                                                                1
+                                                            ),
+                                                            snapAnimationSpec = spring(
+                                                                stiffness = Spring.StiffnessVeryLow,
+                                                                dampingRatio = Spring.DampingRatioLowBouncy
+                                                            )
+                                                        ),
+                                                        key = categoriesList.itemKey {
+                                                            it.categoryId ?: ""
+                                                        },
+                                                        modifier = Modifier
+                                                            .height(250.dp),
+                                                    ) { pagerIndex ->
+                                                        val item =
+                                                            categoriesList[pagerIndex]!!
+                                                        CategoriesListPagerItem(
+                                                            item = item,
+                                                            context = context,
+                                                            onItemCLick = { category ->
+
+                                                                selectedNewsCategoryIndex =
+                                                                    pagerIndex
+                                                                newsViewModel.getNewsList(category)
+                                                                newsCategoryStatus =
+                                                                    "${category} News"
+                                                            }
+                                                        )
+                                                    }
+
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .align(alignment = Alignment.CenterHorizontally),
+                                                    ) {
+                                                        repeat(categoriesList.itemCount) { index ->
+                                                            PagerIndicator(
                                                                 index = index,
-                                                                selectedCategoryIndex = selectedNewsCategoryIndex,
-                                                                onClick = { index, category ->
-                                                                    selectedNewsCategoryIndex =
-                                                                        index
-                                                                    newsViewModel
-                                                                        .getNewsList(
-                                                                            category
-                                                                        )
-                                                                    newsCategoryStatus =
-                                                                        "$category News"
-                                                                }
+                                                                pagerState = categoryPagerState
                                                             )
                                                         }
-                                                }
-                                            }
-                                        }
-
-
-                                        item(
-                                            key = "news_category"
-                                        ) {
-                                            HorizontalPager(
-                                                state = categoryPagerState,
-                                                pageSpacing = if (categoryPagerState.currentPage != categoryPagerState.pageCount - 1)
-                                                    (-30).dp else (-15).dp,
-                                                flingBehavior = PagerDefaults.flingBehavior(
-                                                    state = categoryPagerState,
-                                                    pagerSnapDistance = PagerSnapDistance.atMost(
-                                                        1
-                                                    ),
-                                                    snapAnimationSpec = spring(
-                                                        stiffness = Spring.StiffnessVeryLow,
-                                                        dampingRatio = Spring.DampingRatioLowBouncy
-                                                    )
-                                                ),
-                                                key = categoriesList.itemKey {
-                                                    it.categoryId ?: ""
-                                                },
-                                                modifier = Modifier
-                                                    .height(250.dp),
-                                            ) { pagerIndex ->
-                                                val item =
-                                                    categoriesList[pagerIndex]!!
-                                                CategoriesListPagerItem(
-                                                    item = item,
-                                                    categoriesList = categoriesList.itemSnapshotList.items,
-                                                    categoryPagerState = categoryPagerState,
-                                                    context = context,
-                                                    onItemCLick = { category ->
-
-                                                        selectedNewsCategoryIndex = pagerIndex
-                                                        newsViewModel.getNewsList(category)
-                                                        newsCategoryStatus =
-                                                            "${category} News"
                                                     }
+
+                                                }
+                                            }
+
+                                            item(
+                                                key = "news_category_status"
+                                            ) {
+                                                CategoryStatusText(
+                                                    category = if (newsCategoryStatus.isNotEmpty())
+                                                        newsCategoryStatus else "For You",
+                                                    style = TextStyle(
+                                                        fontSize = FontSize.LARGE.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Gray
+                                                    ),
+                                                    modifier = Modifier
+                                                        .padding(
+                                                            top = 10.dp,
+                                                            start = 10.dp,
+                                                            bottom = 5.dp
+                                                        ),
                                                 )
                                             }
-                                        }
 
-                                        item(
-                                            key = "news_category_status"
-                                        ) {
-                                            CategoryStatusText(
-                                                category = if (newsCategoryStatus.isNotEmpty())
-                                                    newsCategoryStatus else "For You",
-                                                style = TextStyle(
-                                                    fontSize = FontSize.LARGE.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Gray
-                                                ),
-                                                modifier = Modifier
-                                                    .padding(
-                                                        top = 10.dp,
-                                                        start = 10.dp,
-                                                        bottom = 5.dp
-                                                    ),
-                                            )
-                                        }
-
-                                        if (newsList.loadState.refresh is LoadState.NotLoading) {
-                                            items(
-                                                count = newsList.itemCount,
-                                                key = newsList.itemKey {
-                                                    it.newsId ?: ""
-                                                }
-                                            ) { index ->
-                                                val item = newsList[index]
-
-                                                NewsItem(
-                                                    item = item,
-                                                    onItemClick = { newsId ->
-                                                        navHostController.navigate(
-                                                            NewsDestination.NEWS_DETAIL_SCREEN(
-                                                                newsId
-                                                            )
-                                                        )
+                                            if (newsList.loadState.refresh is LoadState.NotLoading) {
+                                                items(
+                                                    count = newsList.itemCount,
+                                                    key = newsList.itemKey {
+                                                        it.newsId ?: ""
                                                     },
-                                                    context = context,
-                                                    animatedVisibilityScope = animatedVisibilityScope,
-                                                    sharedTransitionScope = sharedTransitionScope,
-                                                )
-                                            }
-                                        }
+                                                    contentType = newsList.itemContentType {
+                                                        "news_list"
+                                                    }
+                                                ) { index ->
+                                                    val item = newsList[index]
 
-                                        if (
-                                            newsList.loadState.append is LoadState.Loading
-                                            || newsList.loadState.refresh is LoadState.Loading
-                                        ) {
-                                            item {
-                                                Row(
-                                                    horizontalArrangement = Arrangement.Center,
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                ) {
-                                                    CircularProgressIndicator()
+
+                                                    NewsItem(
+                                                        item = item,
+                                                        onItemClick = { newsId ->
+                                                            navHostController.navigate(
+                                                                NewsDestination.NEWS_DETAIL_SCREEN(
+                                                                    newsId
+                                                                )
+                                                            )
+                                                        },
+                                                        context = context,
+                                                        animatedVisibilityScope = animatedVisibilityScope,
+                                                        sharedTransitionScope = sharedTransitionScope,
+                                                    )
                                                 }
                                             }
-                                        }
 
-                                        if (newsList.loadState.refresh is LoadState.Error) {
-                                            item {
-                                                ErrorMessageContainer(
-                                                    errorMessage =
-                                                    (newsList.loadState.refresh as LoadState.Error
-                                                            ).error.localizedMessage ?: "",
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .padding(all = 20.dp),
-                                                    horizontalArrangement = Arrangement.spacedBy(
-                                                        20.dp
-                                                    ),
-                                                )
+                                            if (
+                                                newsList.loadState.append is LoadState.Loading
+                                                || newsList.loadState.refresh is LoadState.Loading
+                                            ) {
+                                                item {
+                                                    Row(
+                                                        horizontalArrangement = Arrangement.Center,
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                    ) {
+                                                        CircularProgressIndicator()
+                                                    }
+                                                }
                                             }
-                                        }
 
+                                            if (newsList.loadState.refresh is LoadState.Error) {
+                                                item {
+                                                    ErrorMessageContainer(
+                                                        errorMessage =
+                                                        (newsList.loadState.refresh as LoadState.Error
+                                                                ).error.localizedMessage ?: "",
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(all = 20.dp),
+                                                        horizontalArrangement = Arrangement.spacedBy(
+                                                            20.dp
+                                                        ),
+                                                    )
+                                                }
+                                            }
+
+                                            if (
+                                                newsList.loadState.append is LoadState.Error
+                                                && (newsList.loadState.append as LoadState.Error
+                                                        ).error.localizedMessage != LENGTH_ERROR
+                                            ) {
+                                                item {
+                                                    ErrorMessageContainer(
+                                                        errorMessage =
+                                                        (newsList.loadState.append as LoadState.Error
+                                                                ).error.localizedMessage ?: "",
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .padding(all = 20.dp),
+                                                        horizontalArrangement = Arrangement.spacedBy(
+                                                            20.dp
+                                                        ),
+                                                    )
+                                                }
+                                            }
+
+                                        }
                                     }
                                 }
 
@@ -688,7 +733,7 @@ fun NewsScreen(
                             LaunchedEffect(true) {
                                 scope.launch {
                                     newsViewModel.isRefreshing = true
-                                    delay(1000L)
+                                    delay(2000L)
                                     newsViewModel.isRefreshing = false
                                 }
                             }
@@ -696,7 +741,18 @@ fun NewsScreen(
 
                         PullToRefreshContainer(
                             state = pullToRefreshState,
-                            containerColor = Color.Transparent,
+                            containerColor = if (
+                                pullToRefreshState.progress == 0f
+                                && !pullToRefreshState.isRefreshing
+                            )
+                                Color.Transparent else {
+                                if (isSystemInDarkTheme()) DarkColor else White
+                            },
+                            contentColor = if (
+                                pullToRefreshState.progress == 0f
+                                && !pullToRefreshState.isRefreshing
+                            )
+                                Color.Transparent else Green,
                             modifier = Modifier
                                 .align(Alignment.TopCenter)
                         )
@@ -740,80 +796,98 @@ fun NewsItem(
                 containerColor = ItemBackgroundColor
             )
         ) {
-            Row(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(all = 10.dp)
                     .clickable {
                         onItemClick.invoke(item?.newsId ?: "")
                     },
             ) {
-                Column(
+                Row(
                     modifier = Modifier
-                        .padding(end = 5.dp)
-                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(all = 10.dp)
                 ) {
                     Column(
                         modifier = Modifier
-                            .background(
-                                color = Black.copy(0.1f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
+                            .padding(end = 5.dp)
+                            .weight(1f)
                     ) {
-                        Text(
-                            text = item?.category ?: "",
+                        Column(
                             modifier = Modifier
-                                .padding(all = 2.dp)
+                                .background(
+                                    color = Black.copy(0.1f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                        ) {
+                            Text(
+                                text = item?.category ?: "",
+                                modifier = Modifier
+                                    .padding(all = 2.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(3.dp))
+                        Text(
+                            text = item?.title ?: "",
+                            style = TextStyle(
+                                fontSize = (FontSize.MEDIUM - 1).sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .sharedElement(
+                                    state = rememberSharedContentState(key = "title/${item?.newsId}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    renderInOverlayDuringTransition = true,
+                                )
+                        )
+                        Text(
+                            text = item?.description ?: "",
+                            style = TextStyle(
+                                fontSize = FontSize.SMALL.sp,
+                                color = Gray,
+                            ),
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .padding(top = 10.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.height(3.dp))
-                    Text(
-                        text = item?.title ?: "",
-                        style = TextStyle(
-                            fontSize = (FontSize.MEDIUM - 1).sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+
+                    val imageRequest = ImageRequest.Builder(context)
+                        .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))
+                        .crossfade(true)
+                        .build()
+
+                    AsyncImage(
+                        model = imageRequest,
+                        contentDescription = "News Image",
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
+                            .width(80.dp)
+                            .heightIn(max = 80.dp)
+                            .clip(shape = RoundedCornerShape(10.dp))
                             .sharedElement(
-                                state = rememberSharedContentState(key = "title/${item?.newsId}"),
+                                state = rememberSharedContentState(key = "image/${item?.newsId ?: ""}"),
                                 animatedVisibilityScope = animatedVisibilityScope,
-                                renderInOverlayDuringTransition = true,
+                                clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
                             )
                     )
+                }
+
+                item?.timestamp?.let { timestamp ->
+                    val dateChar = formatDateOrTimeToAgo(timestamp.toDate())
+
                     Text(
-                        text = item?.description ?: "",
+                        text = dateChar.toString(),
                         style = TextStyle(
                             fontSize = FontSize.SMALL.sp,
                             color = Gray,
                         ),
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
-                            .padding(top = 10.dp)
+                            .padding(all = 10.dp)
                     )
                 }
-
-                val imageRequest = ImageRequest.Builder(context)
-                    .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))
-                    .crossfade(true)
-                    .build()
-
-                AsyncImage(
-                    model = imageRequest,
-                    contentDescription = "News Image",
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .width(90.dp)
-                        .heightIn(max = 100.dp)
-                        .clip(shape = RoundedCornerShape(10.dp))
-                        .sharedElement(
-                            state = rememberSharedContentState(key = "image/${item?.newsId ?: ""}"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                            clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
-                        )
-                )
             }
         }
     }
@@ -822,85 +896,66 @@ fun NewsItem(
 @Composable
 fun CategoriesListPagerItem(
     item: CategoryModel,
-    categoriesList: List<CategoryModel>,
-    categoryPagerState: PagerState,
     context: Context,
     onItemCLick: (String) -> Unit,
 ) {
-    Column {
-
-        Card(
-            modifier = Modifier
-                .padding(
-                    start = 20.dp,
-                    end = 20.dp,
-                    top = 20.dp,
-                    bottom = 5.dp
-                )
-                .clickable {
-                    onItemCLick.invoke(item.name ?: "")
-                }
-                .weight(1f),
-            colors = CardDefaults.cardColors(
-                containerColor = Color.Transparent
+    Card(
+        modifier = Modifier
+            .padding(
+                start = 20.dp,
+                end = 20.dp,
+                top = 20.dp,
+                bottom = 5.dp
             )
+            .clickable {
+                onItemCLick.invoke(item.name ?: "")
+            },
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
         ) {
-            Box(
+
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(item.imageUrl ?: "")
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Category Image",
+                contentScale = ContentScale.Crop,
+                loading = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxSize()
-            ) {
+            )
 
-                SubcomposeAsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(item.imageUrl ?: "")
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = "Category Image",
-                    contentScale = ContentScale.Crop,
-                    loading = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxSize()
-                )
-
-                Text(
-                    text = item.name ?: "",
-                    style = TextStyle(
-                        fontSize = FontSize.LARGE.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = White
-                    ),
-                    modifier = Modifier
-                        .padding(all = 10.dp)
-                        .align(alignment = Alignment.BottomStart)
-                        .shadow(
-                            elevation = 10.dp,
-                        )
-                )
+            Text(
+                text = item.name ?: "",
+                style = TextStyle(
+                    fontSize = FontSize.LARGE.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = White
+                ),
+                modifier = Modifier
+                    .padding(all = 10.dp)
+                    .align(alignment = Alignment.BottomStart)
+                    .shadow(
+                        elevation = 10.dp,
+                    )
+            )
 
 
-            }
         }
-
-        Row(
-            modifier = Modifier
-                .align(alignment = Alignment.CenterHorizontally),
-        ) {
-            repeat(categoriesList.size) { index ->
-                PagerIndicator(
-                    index = index,
-                    pagerState = categoryPagerState
-                )
-            }
-        }
-
     }
 }
 
@@ -921,10 +976,9 @@ fun PagerIndicator(
             } else {
                 Gray
             }
-        )
-    ) {
-
-    }
+        ),
+        content = {}
+    )
 }
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -1063,6 +1117,9 @@ fun MainDrawerContent(
         MainDrawerItems(
             drawerList = drawerList,
             onClick = { name ->
+                if (name != MainNavigationDrawerList.Account.name) {
+                    onDismiss()
+                }
                 onClick(name)
             }
         )
@@ -1179,7 +1236,6 @@ fun MoreDropDownMenuMain(
 inline fun MainTabRow(
     tabPagerState: PagerState,
     tabList: List<MainTabRowList>,
-    isLandScape: Boolean,
     crossinline onClick: (index: Int) -> Unit,
 ) {
     TabRow(
@@ -1190,15 +1246,6 @@ inline fun MainTabRow(
                 selected = item.index == tabPagerState.currentPage,
                 onClick = {
                     onClick(item.index)
-                },
-                icon = {
-                    if (!isLandScape) {
-                        Icon(
-                            imageVector = if (item.index == tabPagerState.currentPage)
-                                item.selectedIcon else item.unselectedIcon,
-                            contentDescription = "Icon For News"
-                        )
-                    }
                 },
                 text = {
                     Text(text = item.text)
@@ -1213,8 +1260,8 @@ inline fun MainTabRow(
 @Composable
 inline fun CategoryStatusText(
     category: String,
-    style: TextStyle = TextStyle(),
     modifier: Modifier = Modifier,
+    style: TextStyle = TextStyle(),
 ) {
     Text(
         text = category,

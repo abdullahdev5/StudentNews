@@ -18,6 +18,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
 import okio.IOException
 
+const val LENGTH_ERROR = "length=0; index=-1"
+
+
 class NewsListPagingSource(
     private val query: Query,
     private val isForSearchNews: Boolean = false,
@@ -36,7 +39,7 @@ class NewsListPagingSource(
 
             delay(2000)
 
-            val currentPage = params.key ?: this@NewsListPagingSource.query.get().await()
+            val currentPage = params.key ?: this@NewsListPagingSource.query.get(Source.DEFAULT).await()
             val lastVisiblePage = currentPage.documents[currentPage.size() - 1]
             val nextPage =
                 this@NewsListPagingSource.query.startAfter(lastVisiblePage).get(Source.DEFAULT)
@@ -73,46 +76,14 @@ class NewsListPagingSource(
             )
 
         } catch (e: FirebaseFirestoreException) {
-            LoadResult.Error(Throwable("Failed To load more news. May be cause of Internet!"))
+            if (isForLikedNews) {
+                LoadResult.Error(Throwable("Failed To load liked news. May be cause of Internet!"))
+            } else {
+                LoadResult.Error(Throwable("Failed To load news. May be cause of Internet!"))
+            }
         } catch (e: Exception) {
             return LoadResult.Error(e)
         }
-    }
-
-}
-
-@OptIn(ExperimentalPagingApi::class)
-class NewsListRemoteMediator(
-    private val newsQuery: Query,
-) : RemoteMediator<QuerySnapshot, NewsModel>() {
-
-    override suspend fun load(
-        loadType: LoadType,
-        state: PagingState<QuerySnapshot, NewsModel>,
-    ): MediatorResult {
-        val currentPage = newsQuery.get().await()
-
-        when (loadType) {
-            LoadType.REFRESH -> currentPage
-            LoadType.PREPEND -> {
-                MediatorResult.Success(
-                    endOfPaginationReached = true
-                )
-            }
-
-            LoadType.APPEND -> {
-                val lastItem = currentPage.documents[currentPage.size() - 1]
-                if (lastItem == null) {
-                    currentPage
-                } else {
-                    newsQuery.startAfter(lastItem).get().await()
-                }
-            }
-        }
-
-        return MediatorResult.Success(
-            endOfPaginationReached = true
-        )
     }
 
 }

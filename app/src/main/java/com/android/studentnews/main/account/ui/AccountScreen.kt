@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -84,6 +85,7 @@ import com.android.studentnews.core.domain.common.ConvertUriToBitmap
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.ImagePickerDialog
+import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
 import com.android.studentnews.main.account.domain.AccountDataLabel
@@ -425,66 +427,68 @@ fun AccountScreen(
                 )
             )
 
-            Column(
-                modifier = Modifier
-                    .padding(bottom = 20.dp)
-            ) {
-                accountList.forEachIndexed { index, item ->
-                    TextFieldComponent(
-                        value = item.value,
-                        onValueChange = {},
-                        label = {
-                            Text(text = item.label)
-                        },
-                        colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            focusedIndicatorColor = Green,
-                            unfocusedIndicatorColor = Gray,
-                            focusedLabelColor = Green,
-                            unfocusedLabelColor = Gray,
-                            focusedTrailingIconColor = Green,
-                        ),
-                        trailingIcon = {
-                            if (item.label == AccountDataLabel.EMAIL) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Lock,
-                                    contentDescription = "Icon for Email"
+            currentUser?.let {
+                Column(
+                    modifier = Modifier
+                        .padding(bottom = 20.dp)
+                ) {
+                    accountList.forEachIndexed { index, item ->
+                        TextFieldComponent(
+                            value = item.value,
+                            onValueChange = {},
+                            label = {
+                                Text(text = item.label)
+                            },
+                            colors = TextFieldDefaults.colors(
+                                unfocusedContainerColor = Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Green,
+                                unfocusedIndicatorColor = Gray,
+                                focusedLabelColor = Green,
+                                unfocusedLabelColor = Gray,
+                                focusedTrailingIconColor = Green,
+                            ),
+                            trailingIcon = {
+                                if (item.label == AccountDataLabel.EMAIL) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Lock,
+                                        contentDescription = "Icon for Email"
+                                    )
+                                }
+                                if (item.label == AccountDataLabel.PHONE_NUMBER) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Call,
+                                        contentDescription = "Icon for Phone Number"
+                                    )
+                                }
+                                if (item.label == AccountDataLabel.SEMESTER) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.CastForEducation,
+                                        contentDescription = "Icon for Semester"
+                                    )
+                                }
+                                if (item.label == AccountDataLabel.ADDRESS) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.MyLocation,
+                                        contentDescription = "Icon for Address"
+                                    )
+                                }
+                            },
+                            readOnly = true,
+                            singleLine = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    start = 20.dp,
+                                    end = 20.dp,
+                                    top = 10.dp,
+                                    bottom = 10.dp,
                                 )
-                            }
-                            if (item.label == AccountDataLabel.PHONE_NUMBER) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Call,
-                                    contentDescription = "Icon for Phone Number"
-                                )
-                            }
-                            if (item.label == AccountDataLabel.SEMESTER) {
-                                Icon(
-                                    imageVector = Icons.Outlined.CastForEducation,
-                                    contentDescription = "Icon for Semester"
-                                )
-                            }
-                            if (item.label == AccountDataLabel.ADDRESS) {
-                                Icon(
-                                    imageVector = Icons.Outlined.MyLocation,
-                                    contentDescription = "Icon for Address"
-                                )
-                            }
-                        },
-                        readOnly = true,
-                        singleLine = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                start = 20.dp,
-                                end = 20.dp,
-                                top = 10.dp,
-                                bottom = 10.dp,
-                            )
-                            .focusable(enabled = false)
-                    )
+                                .focusable(enabled = false)
+                        )
+                    }
                 }
-            }
+            } ?: CircularProgressIndicator()
 
         }
 

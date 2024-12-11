@@ -4,6 +4,7 @@ package com.android.studentnews.main.events.ui.screens
 
 import android.annotation.SuppressLint
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
@@ -51,9 +52,11 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.android.studentnews.core.data.paginator.LENGTH_ERROR
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.events.domain.destination.EventsDestination
@@ -97,6 +100,45 @@ fun EventsScreen(
     )
 
     Column {
+        AnimatedVisibility(
+            eventsViewModel.lazyListState.firstVisibleItemIndex > 1
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(color = if (isSystemInDarkTheme()) DarkColor else White),
+            ) {
+                // Category
+                categoryList
+                    .sortedByDescending {
+                        eventsViewModel.selectedCategoryIndex != null
+                                && eventsViewModel.selectedCategoryIndex == it.index
+                    }
+                    .forEach { item ->
+
+                        CategoryListItem(
+                            categoryName = item.category,
+                            modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                            colors = SegmentedButtonDefaults.colors(
+                                activeContainerColor = if (isSystemInDarkTheme()) White else Black,
+                                inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                inactiveContentColor = LocalContentColor.current
+                            ),
+                            index = item.index,
+                            selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
+                            onClick = { index, _ ->
+                                eventsViewModel.selectedCategoryIndex = index
+                                if (eventsViewModel.selectedCategoryIndex == 0) {
+                                    eventsViewModel.getEventsList(true)
+                                } else if (eventsViewModel.selectedCategoryIndex == 1) {
+                                    eventsViewModel.getEventsList(false)
+                                }
+                            }
+                        )
+                    }
+            }
+        }
 
         LazyColumn(
             state = eventsViewModel.lazyListState,
@@ -104,7 +146,7 @@ fun EventsScreen(
                 .fillMaxSize()
         ) {
 
-            stickyHeader(
+            item(
                 key = "events_filters"
             ) {
                 Row(
@@ -149,6 +191,9 @@ fun EventsScreen(
                     count = eventsList.itemCount,
                     key = eventsList.itemKey {
                         it.eventId ?: ""
+                    },
+                    contentType = eventsList.itemContentType {
+                        "events_list"
                     }
                 ) { index ->
                     val item = eventsList[index]
@@ -193,6 +238,27 @@ fun EventsScreen(
                     )
                 }
             }
+
+            if (
+                eventsList.loadState.append is LoadState.Error
+                && (eventsList.loadState.append as LoadState.Error
+                        ).error.localizedMessage != LENGTH_ERROR
+            ) {
+                item {
+                    ErrorMessageContainer(
+                        errorMessage =
+                        (eventsList.loadState.append as LoadState.Error
+                                ).error.localizedMessage ?: "",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            20.dp
+                        ),
+                    )
+                }
+            }
+
         }
     }
 

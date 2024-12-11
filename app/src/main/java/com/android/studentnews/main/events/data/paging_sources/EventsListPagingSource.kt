@@ -3,6 +3,7 @@ package com.android.studentnews.main.events.data.paging_sources
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.firestore.toObject
@@ -50,8 +51,8 @@ class EventsListPagingSource(
                 nextKey = nextPage
             )
 
-        } catch (e: Exception) {
-            LoadResult.Error(e)
+        } catch (e: FirebaseFirestoreException) {
+            LoadResult.Error(Throwable("Failed to load events, May be cause of Internet!"))
         } catch (e: Exception) {
             LoadResult.Error(e)
         }

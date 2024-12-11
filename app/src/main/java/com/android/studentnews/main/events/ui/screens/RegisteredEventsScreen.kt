@@ -35,11 +35,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFontLoader
 import androidx.compose.ui.platform.LocalScrollCaptureInProgress
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
+import com.android.studentnews.core.data.paginator.LENGTH_ERROR
+import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.LoadingDialog
 import com.android.studentnews.main.events.domain.destination.EventsDestination
@@ -106,6 +110,9 @@ fun RegisteredEventsScreen(
                     count = registeredEventsList.itemCount,
                     key = registeredEventsList.itemKey {
                         it.eventId ?: ""
+                    },
+                    contentType = registeredEventsList.itemContentType {
+                        "registered_events_list"
                     }
                 ) { index ->
                     val item = registeredEventsList[index]
@@ -137,6 +144,44 @@ fun RegisteredEventsScreen(
                     ) {
                         CircularProgressIndicator()
                     }
+                }
+            }
+
+            if (
+                registeredEventsList.loadState.refresh is LoadState.Error
+            ) {
+                item {
+                    ErrorMessageContainer(
+                        errorMessage =
+                        (registeredEventsList.loadState.refresh as LoadState.Error
+                                ).error.localizedMessage ?: "",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            20.dp
+                        ),
+                    )
+                }
+            }
+
+            if (
+                registeredEventsList.loadState.append is LoadState.Error
+                && (registeredEventsList.loadState.append as LoadState.Error
+                        ).error.localizedMessage != LENGTH_ERROR
+            ) {
+                item {
+                    ErrorMessageContainer(
+                        errorMessage =
+                        (registeredEventsList.loadState.append as LoadState.Error
+                                ).error.localizedMessage ?: "",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            20.dp
+                        ),
+                    )
                 }
             }
 

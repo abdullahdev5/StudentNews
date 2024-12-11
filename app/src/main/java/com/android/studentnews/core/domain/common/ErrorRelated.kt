@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.android.studentnews.ui.theme.Red
 
 @Composable
 inline fun ErrorMessageContainer(
@@ -25,7 +26,8 @@ inline fun ErrorMessageContainer(
     ) {
         Icon(
             imageVector = Icons.Default.Error,
-            contentDescription = "Icon for Error"
+            contentDescription = "Icon for Error",
+            tint = Red
         )
 
         Text(text = errorMessage)

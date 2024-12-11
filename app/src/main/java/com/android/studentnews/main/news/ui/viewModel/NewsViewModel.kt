@@ -39,7 +39,7 @@ class NewsViewModel(
     var isRefreshing by mutableStateOf(false)
 
     init {
-        getNewsList(null)
+        isRefreshing = true
         setupPeriodicNewsWorkRequest()
 //        cancelPeriodicNewsWorkRequest()
     }

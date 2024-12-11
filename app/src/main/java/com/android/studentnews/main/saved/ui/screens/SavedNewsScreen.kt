@@ -9,6 +9,7 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -64,9 +65,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.android.studentnews.core.data.paginator.LENGTH_ERROR
+import com.android.studentnews.core.domain.common.ErrorMessageContainer
+import com.android.studentnews.core.domain.common.formatDateOrTimeToAgo
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
@@ -122,6 +127,9 @@ fun SavedNewsScreen(
                     count = savedNewsList.itemCount,
                     key = savedNewsList.itemKey {
                         it.newsId ?: ""
+                    },
+                    contentType = savedNewsList.itemContentType {
+                        "saved_news_list"
                     }
                 ) { index ->
                     val item = savedNewsList[index]
@@ -212,6 +220,45 @@ fun SavedNewsScreen(
                     }
                 }
             }
+
+            if (
+                savedNewsList.loadState.refresh is LoadState.Error
+            ) {
+                item {
+                    ErrorMessageContainer(
+                        errorMessage =
+                        (savedNewsList.loadState.refresh as LoadState.Error
+                                ).error.localizedMessage ?: "",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            20.dp
+                        ),
+                    )
+                }
+            }
+
+            if (
+                savedNewsList.loadState.append is LoadState.Error
+                && (savedNewsList.loadState.append as LoadState.Error)
+                    .error.localizedMessage != LENGTH_ERROR
+            ) {
+                item {
+                    ErrorMessageContainer(
+                        errorMessage =
+                        (savedNewsList.loadState.append as LoadState.Error
+                                ).error.localizedMessage ?: "",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            20.dp
+                        ),
+                    )
+                }
+            }
+
         }
 
         if (savedNewsListNotFound) {
@@ -263,7 +310,7 @@ fun SavedNewsItem(
                         .then(
                             with(density) {
                                 Modifier
-                                    .width((maxWidth().toPx() - 100.dp.toPx()).toDp())
+                                    .width((maxWidth().value).toDp())
                             }
                         )
                         .height(itemHeight)
@@ -293,7 +340,8 @@ fun SavedNewsItem(
             }
 
             with(sharedTransitionScope) {
-                Row(
+
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .sharedElement(
@@ -320,91 +368,123 @@ fun SavedNewsItem(
                         .background(
                             color = if (isSystemInDarkTheme()) DarkColor else White
                         )
+                        .then(
+                            if (isSystemInDarkTheme()
+                                && offsetX != 0f
+                                && offsetX.dp <= maxWidth()
+                                && isDragging
+                            ) {
+                                Modifier
+                                    .border(
+                                        width = 1.dp,
+                                        color = White
+                                    )
+                            } else Modifier
+                        )
+                        .clickable {
+                            onItemClick.invoke(item?.newsId ?: "")
+                        }
                         .onGloballyPositioned { coordinates ->
                             onGloballyPositioned(coordinates)
                         },
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 20.dp)
-                            .clickable {
-                                onItemClick.invoke(item?.newsId ?: "")
-                            }
-                    ) {
-                        Column(
+                    Row {
+                        Row(
                             modifier = Modifier
-                                .padding(end = 5.dp)
-                                .weight(1f)
+                                .fillMaxWidth()
+                                .padding(all = 20.dp)
                         ) {
                             Column(
                                 modifier = Modifier
-                                    .background(
-                                        color = Black.copy(0.1f),
-                                        shape = RoundedCornerShape(8.dp)
-                                    )
+                                    .padding(end = 5.dp)
+                                    .weight(1f)
                             ) {
-                                Text(
-                                    text = item?.category ?: "",
+                                Column(
                                     modifier = Modifier
-                                        .padding(all = 2.dp)
+                                        .background(
+                                            color = Black.copy(0.1f),
+                                            shape = RoundedCornerShape(8.dp)
+                                        )
+                                ) {
+                                    Text(
+                                        text = item?.category ?: "",
+                                        modifier = Modifier
+                                            .padding(all = 2.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(3.dp))
+                                Text(
+                                    text = item?.title ?: "",
+                                    style = TextStyle(
+                                        fontSize = (FontSize.MEDIUM - 1).sp,
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .sharedElement(
+                                            state = rememberSharedContentState(key = "title/${item?.newsId}"),
+                                            animatedVisibilityScope = animatedVisibilityScope,
+                                        )
+                                )
+
+                                Text(
+                                    text = item?.description ?: "",
+                                    style = TextStyle(
+                                        fontSize = FontSize.SMALL.sp,
+                                        color = Gray,
+                                    ),
+                                    maxLines = 3,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .padding(top = 10.dp)
                                 )
                             }
-                            Spacer(modifier = Modifier.height(3.dp))
-                            Text(
-                                text = item?.title ?: "",
-                                style = TextStyle(
-                                    fontSize = (FontSize.MEDIUM - 1).sp,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
+
+                            val imageRequest = ImageRequest.Builder(context)
+                                .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))
+                                .crossfade(true)
+                                .build()
+
+                            AsyncImage(
+                                model = imageRequest,
+                                contentDescription = "News Image",
+                                contentScale = ContentScale.Crop,
                                 modifier = Modifier
+                                    .width(80.dp)
+                                    .heightIn(max = 80.dp)
+                                    .clip(shape = RoundedCornerShape(10.dp))
                                     .sharedElement(
-                                        state = rememberSharedContentState(key = "title/${item?.newsId}"),
+                                        state = rememberSharedContentState(key = "image/${item?.newsId}"),
                                         animatedVisibilityScope = animatedVisibilityScope,
-                                    )
-                            )
-
-                            Text(
-                                text = item?.description ?: "",
-                                style = TextStyle(
-                                    fontSize = FontSize.SMALL.sp,
-                                    color = Gray,
-                                ),
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier
-                                    .padding(top = 10.dp)
-                            )
-                        }
-
-                        val imageRequest = ImageRequest.Builder(context)
-                            .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))
-                            .crossfade(true)
-                            .build()
-
-                        AsyncImage(
-                            model = imageRequest,
-                            contentDescription = "News Image",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .width(90.dp)
-                                .heightIn(max = 100.dp)
-                                .clip(shape = RoundedCornerShape(10.dp))
-                                .sharedElement(
-                                    state = rememberSharedContentState(key = "image/${item?.newsId}"),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                    renderInOverlayDuringTransition = true,
-                                    clipInOverlayDuringTransition = OverlayClip(
-                                        RoundedCornerShape(
-                                            10.dp
+                                        renderInOverlayDuringTransition = true,
+                                        clipInOverlayDuringTransition = OverlayClip(
+                                            RoundedCornerShape(
+                                                10.dp
+                                            )
                                         )
                                     )
-                                )
+                            )
+                        }
+                    }
+
+                    item?.timestamp?.let { timestamp ->
+
+                        val dateChar = formatDateOrTimeToAgo(timestamp.toDate())
+
+                        Text(
+                            text = "$dateChar when save",
+                            style = TextStyle(
+                                fontSize = FontSize.SMALL.sp,
+                                color = Gray
+                            ),
+                            modifier = Modifier
+                                .padding(all = 10.dp)
                         )
                     }
+
                 }
+
             }
         }
         HorizontalDivider(
