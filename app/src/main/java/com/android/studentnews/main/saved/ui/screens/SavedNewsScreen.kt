@@ -101,7 +101,7 @@ fun SavedNewsScreen(
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
-    val maxWidth by remember { mutableStateOf(250.dp) }
+    val maxWidth by remember { mutableStateOf(200.dp) }
 
     val savedNewsList = savedNewsViewModel.savedNewsList.collectAsLazyPagingItems()
 
@@ -306,6 +306,7 @@ fun SavedNewsItem(
 
             if (isDragging) {
                 Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .then(
                             with(density) {
@@ -326,8 +327,6 @@ fun SavedNewsItem(
                         targetState = (offsetX).dp > maxWidth()
                                 || (offsetX).dp == maxWidth(),
                         label = "delete_from_save",
-                        modifier = Modifier
-                            .align(Alignment.CenterStart),
                     ) { targetState ->
                         Icon(
                             imageVector = if (targetState)

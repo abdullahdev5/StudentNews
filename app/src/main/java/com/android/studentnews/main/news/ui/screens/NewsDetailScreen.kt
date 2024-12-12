@@ -562,44 +562,6 @@ fun NewsDetailScreen(
                             ),
                     ) {
 
-                        newsById?.timestamp?.let { timestamp ->
-                            Column(
-                                modifier = Modifier
-                                    .padding(
-                                        top = 10.dp,
-                                        start = 20.dp,
-                                        end = 20.dp,
-                                        bottom = 5.dp
-                                    )
-                            ) {
-                                val dateChar = formatDateOrTimeToAgo(timestamp.toDate())
-
-                                Text(
-                                    text = dateChar.toString(),
-                                    style = TextStyle(
-                                        fontSize = FontSize.SMALL.sp,
-                                        color = Gray
-                                    )
-                                )
-
-                                if (dateChar.endsWith("ago")) {
-                                    val day = formatDateToDay(timestamp.toDate().time)
-                                    val monthName = formatDateToMonthName(timestamp.toDate().time)
-                                    val year = formatDateToYear(timestamp.toDate().time)
-
-                                    Text(
-                                        text = "$day $monthName $year",
-                                        style = TextStyle(
-                                            fontSize = FontSize.SMALL.sp,
-                                            color = Gray
-                                        )
-                                    )
-                                }
-
-                            }
-                        }
-
-
                         // Category Container
                         Box(
                             modifier = Modifier
@@ -620,7 +582,6 @@ fun NewsDetailScreen(
                                 style = TextStyle(
                                     fontSize = FontSize.MEDIUM.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = White
                                 ),
                                 modifier = Modifier
                                     .padding(all = 5.dp)
@@ -695,6 +656,32 @@ fun NewsDetailScreen(
                                 }
                             }
                         }
+
+                        newsById?.timestamp?.let { timestamp ->
+                            Column(
+                                modifier = Modifier
+                                    .padding(
+                                        top = 10.dp,
+                                        start = 20.dp,
+                                        end = 20.dp,
+                                        bottom = 5.dp
+                                    )
+                            ) {
+                                val day = formatDateToDay(timestamp.toDate().time)
+                                val monthName = formatDateToMonthName(timestamp.toDate().time)
+                                val year = formatDateToYear(timestamp.toDate().time)
+
+                                Text(
+                                    text = "News added on $day $monthName $year",
+                                    style = TextStyle(
+                                        fontSize = FontSize.SMALL.sp,
+                                        color = Gray
+                                    )
+                                )
+
+                            }
+                        }
+
                     }
 
                 }

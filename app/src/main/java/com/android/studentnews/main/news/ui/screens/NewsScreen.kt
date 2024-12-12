@@ -818,11 +818,15 @@ fun NewsItem(
                                     color = Black.copy(0.1f),
                                     shape = RoundedCornerShape(8.dp)
                                 )
+                                .padding(all = 2.dp)
                         ) {
                             Text(
                                 text = item?.category ?: "",
+                                style = TextStyle(
+                                    fontSize = FontSize.SMALL.sp
+                                ),
                                 modifier = Modifier
-                                    .padding(all = 2.dp)
+//                                    .padding(all = 2.dp)
                             )
                         }
                         Spacer(modifier = Modifier.height(3.dp))
@@ -850,7 +854,7 @@ fun NewsItem(
                             maxLines = 3,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
-                                .padding(top = 10.dp)
+                                .padding(top = 5.dp)
                         )
                     }
 
@@ -875,18 +879,39 @@ fun NewsItem(
                     )
                 }
 
-                item?.timestamp?.let { timestamp ->
-                    val dateChar = formatDateOrTimeToAgo(timestamp.toDate())
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    modifier = Modifier
+                        .padding(all = 10.dp)
+                ) {
+                    item?.timestamp?.let { timestamp ->
+                        val dateChar = formatDateOrTimeToAgo(timestamp.toDate())
 
-                    Text(
-                        text = dateChar.toString(),
-                        style = TextStyle(
-                            fontSize = FontSize.SMALL.sp,
-                            color = Gray,
-                        ),
+                        Text(
+                            text = dateChar.toString(),
+                            style = TextStyle(
+                                fontSize = FontSize.SMALL.sp,
+                                color = Gray,
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    IconButton(
+                        onClick = {
+
+                        },
                         modifier = Modifier
-                            .padding(all = 10.dp)
-                    )
+                            .width(20.dp)
+                            .height(20.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Icon for More Options",
+                        )
+                    }
+
                 }
             }
         }
@@ -1168,7 +1193,7 @@ fun MoreDropDownMenuMain(
         expanded = expanded,
         onDismissRequest = onDismiss,
         properties = PopupProperties(
-            focusable = false,
+            focusable = true,
             dismissOnClickOutside = true,
             dismissOnBackPress = true
         ),
@@ -1184,12 +1209,6 @@ fun MoreDropDownMenuMain(
                 onSavedClick.invoke()
                 onDismiss.invoke()
             },
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Default.BookmarkBorder,
-                    contentDescription = "Icon for Saved"
-                )
-            },
         )
         if (currentPage == 0) {
             // Liked Item
@@ -1200,12 +1219,6 @@ fun MoreDropDownMenuMain(
                 onClick = {
                     onLikedClick.invoke()
                     onDismiss.invoke()
-                },
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.FavoriteBorder,
-                        contentDescription = "Icon fro Liked"
-                    )
                 },
             )
         }
@@ -1219,12 +1232,6 @@ fun MoreDropDownMenuMain(
                 onClick = {
                     onRegisteredEventsClick.invoke()
                     onDismiss.invoke()
-                },
-                trailingIcon = {
-                    Icon(
-                        imageVector = Icons.Outlined.Book,
-                        contentDescription = "Icon fro Registered Events"
-                    )
                 },
                 contentPadding = PaddingValues(10.dp)
             )

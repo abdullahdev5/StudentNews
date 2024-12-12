@@ -103,7 +103,7 @@ fun SavedEventsScreen(
 
     val savedEventsList = savedEventsViewModel.savedEventsList.collectAsLazyPagingItems()
 
-    var maxWidth by remember { mutableStateOf(250.dp) }
+    var maxWidth by remember { mutableStateOf(200.dp) }
 
     val savedEventsListNotFound = remember {
         derivedStateOf {
@@ -317,6 +317,7 @@ fun SavedEventsItem(
 
             if (isDragging) {
                 Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .then(
                             with(density) {
@@ -337,8 +338,6 @@ fun SavedEventsItem(
                         targetState = (offsetX).dp > maxWidth()
                                 || (offsetX).dp == maxWidth(),
                         label = "delete_from_save",
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd),
                     ) { targetState ->
                         Icon(
                             imageVector = if (targetState)
