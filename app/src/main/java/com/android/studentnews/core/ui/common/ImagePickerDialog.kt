@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhotoAlbum
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -22,12 +23,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.android.studentnews.ui.theme.DarkColor
-import com.android.studentnews.ui.theme.DialogBackgroundColorDark
+import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
+import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 
 @Composable
 fun ImagePickerDialog(
+    modifier: Modifier = Modifier,
     onCameraClick: () -> Unit,
     onGalleryClick: () -> Unit,
     onDismiss: () -> Unit,
@@ -36,12 +39,10 @@ fun ImagePickerDialog(
         onDismissRequest = onDismiss,
         content = {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(all = 20.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = if (isSystemInDarkTheme()) DialogBackgroundColorDark else White
-                )
+                    containerColor = if (isSystemInDarkTheme()) DarkColor else White,
+                ),
+                modifier = modifier
             ) {
                 Column(
                     modifier = Modifier

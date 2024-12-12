@@ -13,9 +13,12 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -187,6 +190,7 @@ fun NewsScreen(
         MainTabRowList.News,
         MainTabRowList.Events,
     )
+    var refreshCount by rememberSaveable { mutableIntStateOf(0) }
 
 
     var newsCategoryStatus by rememberSaveable { mutableStateOf("") }
@@ -225,22 +229,24 @@ fun NewsScreen(
 
     LaunchedEffect(newsViewModel.isRefreshing) {
         if (newsViewModel.isRefreshing) {
+            val currentPage = tabPagerState.currentPage
             scope.launch {
                 pullToRefreshState.startRefresh()
                 delay(2000L)
-                if (tabPagerState.currentPage == 0) {
+                if (currentPage == 0) {
                     newsViewModel.getNewsList(null)
                     newsCategoryStatus = ""
                     selectedNewsCategoryIndex?.let {
                         selectedNewsCategoryIndex = null
                     }
                 }
-                if (tabPagerState.currentPage == 1) {
+                if (currentPage == 1) {
                     eventsViewModel.getEventsList(null)
                     eventsViewModel.selectedCategoryIndex?.let {
                         eventsViewModel.selectedCategoryIndex = null
                     }
                 }
+                refreshCount++
             }
         } else {
             pullToRefreshState.endRefresh()
@@ -376,7 +382,14 @@ fun NewsScreen(
                                     },
                                     onDismiss = {
                                         isMoreDropDownMenuItemOpen = false
-                                    }
+                                    },
+                                    modifier = Modifier
+                                        .background(color = if (isSystemInDarkTheme()) DarkColor else White)
+                                        .border(
+                                            width = 1.dp,
+                                            color = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                            shape = RoundedCornerShape(5.dp)
+                                        )
                                 )
                             }
                         },
@@ -530,9 +543,11 @@ fun NewsScreen(
                                                                 end = 5.dp
                                                             ),
                                                             colors = SegmentedButtonDefaults.colors(
-                                                                activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                                                inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                                                activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                                                activeBorderColor = if (isSystemInDarkTheme()) White else Black,
+                                                                inactiveBorderColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                                                activeContainerColor = Color.Transparent,
+                                                                inactiveContainerColor = Color.Transparent,
+                                                                activeContentColor = LocalContentColor.current,
                                                                 inactiveContentColor = LocalContentColor.current
                                                             ),
                                                             index = index,
@@ -1019,7 +1034,7 @@ fun MainDrawerContent(
     onDismiss: () -> Unit,
 ) {
 
-    val drawerList = listOf(
+    var drawerList = listOf(
         MainNavigationDrawerList.Account,
         MainNavigationDrawerList.Search,
         MainNavigationDrawerList.Saved,
@@ -1056,7 +1071,6 @@ fun MainDrawerContent(
                                 state = rememberSharedContentState(key = "user_image/${currentUser?.uid}"),
                                 animatedVisibilityScope = animatedVisibilityScope,
                                 clipInOverlayDuringTransition = OverlayClip(CircleShape),
-                                renderInOverlayDuringTransition = true
                             ),
                         colors = CardDefaults.cardColors(
                             containerColor = if (currentUser?.profilePic.isNullOrEmpty())
@@ -1121,7 +1135,6 @@ fun MainDrawerContent(
                             .sharedElement(
                                 state = rememberSharedContentState(key = "user_name/${currentUser?.uid}"),
                                 animatedVisibilityScope = animatedVisibilityScope,
-                                renderInOverlayDuringTransition = true,
                             )
                     )
                 }
@@ -1183,6 +1196,7 @@ fun MainDrawerItems(
 @Composable
 fun MoreDropDownMenuMain(
     expanded: Boolean,
+    modifier: Modifier = Modifier,
     currentPage: Int,
     onSavedClick: () -> Unit,
     onLikedClick: () -> Unit,
@@ -1197,8 +1211,7 @@ fun MoreDropDownMenuMain(
             dismissOnClickOutside = true,
             dismissOnBackPress = true
         ),
-        modifier = Modifier
-            .background(color = if (isSystemInDarkTheme()) DarkGray else DropDownMenuColorLight)
+        modifier = modifier
     ) {
         // Saved Item
         DropdownMenuItem(
@@ -1209,6 +1222,7 @@ fun MoreDropDownMenuMain(
                 onSavedClick.invoke()
                 onDismiss.invoke()
             },
+            contentPadding = PaddingValues(10.dp)
         )
         if (currentPage == 0) {
             // Liked Item
@@ -1220,6 +1234,7 @@ fun MoreDropDownMenuMain(
                     onLikedClick.invoke()
                     onDismiss.invoke()
                 },
+                contentPadding = PaddingValues(10.dp)
             )
         }
 

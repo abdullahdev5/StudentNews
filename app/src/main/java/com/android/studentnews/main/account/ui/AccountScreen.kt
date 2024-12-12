@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -95,6 +96,7 @@ import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
+import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.launch
 
@@ -109,7 +111,9 @@ fun AccountScreen(
 
     val scope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
     val context = LocalContext.current
 
     val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
@@ -121,6 +125,39 @@ fun AccountScreen(
     var isImagePickerDialogOpen by rememberSaveable { mutableStateOf(false) }
     var isEditNameSheetVisible by rememberSaveable { mutableStateOf(false) }
     var isSaveChangesAlertDialogOpen by rememberSaveable { mutableStateOf(false) }
+
+
+    val accountList = listOf(
+        AccountList(
+            label = "Email",
+            value = currentUser?.email ?: ""
+        ),
+        AccountList(
+            label = "Degree",
+            value = currentUser?.registrationData?.degree ?: ""
+        ),
+        AccountList(
+            label = "Degree Title",
+            value = currentUser?.registrationData?.degreeTitle ?: ""
+        ),
+        AccountList(
+            label = "Semester",
+            value = currentUser?.registrationData?.semester ?: ""
+        ),
+        AccountList(
+            label = "Phone Number",
+            value = currentUser?.registrationData?.phoneNumber ?: ""
+        ),
+        AccountList(
+            label = "City",
+            value = currentUser?.registrationData?.city ?: ""
+        ),
+        AccountList(
+            label = "Address",
+            value = currentUser?.registrationData?.address ?: ""
+        )
+    )
+
 
     // Gallery
     var galleryImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
@@ -369,7 +406,6 @@ fun AccountScreen(
                                 .sharedElement(
                                     state = rememberSharedContentState(key = "user_name/${currentUser?.uid}"),
                                     animatedVisibilityScope = animatedVisibilityScope,
-                                    renderInOverlayDuringTransition = true
                                 )
                         )
                     }
@@ -396,99 +432,66 @@ fun AccountScreen(
 
             // User Data List
 
-            val accountList = listOf(
-                AccountList(
-                    label = "Email",
-                    value = currentUser?.email ?: ""
-                ),
-                AccountList(
-                    label = "Degree",
-                    value = currentUser?.registrationData?.degree ?: ""
-                ),
-                AccountList(
-                    label = "Degree Title",
-                    value = currentUser?.registrationData?.degreeTitle ?: ""
-                ),
-                AccountList(
-                    label = "Semester",
-                    value = currentUser?.registrationData?.semester ?: ""
-                ),
-                AccountList(
-                    label = "Phone Number",
-                    value = currentUser?.registrationData?.phoneNumber ?: ""
-                ),
-                AccountList(
-                    label = "City",
-                    value = currentUser?.registrationData?.city ?: ""
-                ),
-                AccountList(
-                    label = "Address",
-                    value = currentUser?.registrationData?.address ?: ""
-                )
-            )
-
-            currentUser?.let {
-                Column(
-                    modifier = Modifier
-                        .padding(bottom = 20.dp)
-                ) {
-                    accountList.forEachIndexed { index, item ->
-                        TextFieldComponent(
-                            value = item.value,
-                            onValueChange = {},
-                            label = {
-                                Text(text = item.label)
-                            },
-                            colors = TextFieldDefaults.colors(
-                                unfocusedContainerColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Green,
-                                unfocusedIndicatorColor = Gray,
-                                focusedLabelColor = Green,
-                                unfocusedLabelColor = Gray,
-                                focusedTrailingIconColor = Green,
-                            ),
-                            trailingIcon = {
-                                if (item.label == AccountDataLabel.EMAIL) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Lock,
-                                        contentDescription = "Icon for Email"
-                                    )
-                                }
-                                if (item.label == AccountDataLabel.PHONE_NUMBER) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Call,
-                                        contentDescription = "Icon for Phone Number"
-                                    )
-                                }
-                                if (item.label == AccountDataLabel.SEMESTER) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.CastForEducation,
-                                        contentDescription = "Icon for Semester"
-                                    )
-                                }
-                                if (item.label == AccountDataLabel.ADDRESS) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.MyLocation,
-                                        contentDescription = "Icon for Address"
-                                    )
-                                }
-                            },
-                            readOnly = true,
-                            singleLine = true,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    start = 20.dp,
-                                    end = 20.dp,
-                                    top = 10.dp,
-                                    bottom = 10.dp,
+            Column(
+                modifier = Modifier
+                    .padding(bottom = 20.dp)
+            ) {
+                accountList.forEachIndexed { index, item ->
+                    TextFieldComponent(
+                        value = item.value,
+                        onValueChange = {},
+                        label = {
+                            Text(text = item.label)
+                        },
+                        colors = TextFieldDefaults.colors(
+                            unfocusedContainerColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            focusedIndicatorColor = Green,
+                            unfocusedIndicatorColor = Gray,
+                            focusedLabelColor = Green,
+                            unfocusedLabelColor = Gray,
+                            focusedTrailingIconColor = Green,
+                        ),
+                        trailingIcon = {
+                            if (item.label == AccountDataLabel.EMAIL) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Lock,
+                                    contentDescription = "Icon for Email"
                                 )
-                                .focusable(enabled = false)
-                        )
-                    }
+                            }
+                            if (item.label == AccountDataLabel.PHONE_NUMBER) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Call,
+                                    contentDescription = "Icon for Phone Number"
+                                )
+                            }
+                            if (item.label == AccountDataLabel.SEMESTER) {
+                                Icon(
+                                    imageVector = Icons.Outlined.CastForEducation,
+                                    contentDescription = "Icon for Semester"
+                                )
+                            }
+                            if (item.label == AccountDataLabel.ADDRESS) {
+                                Icon(
+                                    imageVector = Icons.Outlined.MyLocation,
+                                    contentDescription = "Icon for Address"
+                                )
+                            }
+                        },
+                        readOnly = true,
+                        singleLine = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                start = 20.dp,
+                                end = 20.dp,
+                                top = 10.dp,
+                                bottom = 10.dp,
+                            )
+                            .focusable(enabled = false)
+                    )
                 }
-            } ?: CircularProgressIndicator()
+            }
 
         }
 
@@ -504,7 +507,15 @@ fun AccountScreen(
                 },
                 onDismiss = {
                     isImagePickerDialogOpen = false
-                }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(all = 20.dp)
+                    .border(
+                        width = 1.dp,
+                        color = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                        shape = RoundedCornerShape(10.dp)
+                    ),
             )
         }
 

@@ -42,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -120,9 +121,11 @@ fun EventsScreen(
                             categoryName = item.category,
                             modifier = Modifier.padding(start = 5.dp, end = 5.dp),
                             colors = SegmentedButtonDefaults.colors(
-                                activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                activeContentColor = if (isSystemInDarkTheme()) Black else White,
+                                activeBorderColor = if (isSystemInDarkTheme()) White else Black,
+                                inactiveBorderColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                activeContainerColor = Color.Transparent,
+                                inactiveContainerColor = Color.Transparent,
+                                activeContentColor = LocalContentColor.current,
                                 inactiveContentColor = LocalContentColor.current
                             ),
                             index = item.index,
@@ -149,40 +152,46 @@ fun EventsScreen(
             item(
                 key = "events_filters"
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(color = if (isSystemInDarkTheme()) DarkColor else White),
+                AnimatedVisibility(
+                    eventsList.loadState.refresh is LoadState.NotLoading
                 ) {
-                    // Category
-                    categoryList
-                        .sortedByDescending {
-                            eventsViewModel.selectedCategoryIndex != null
-                                    && eventsViewModel.selectedCategoryIndex == it.index
-                        }
-                        .forEach { item ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(color = if (isSystemInDarkTheme()) DarkColor else White),
+                    ) {
+                        // Category
+                        categoryList
+                            .sortedByDescending {
+                                eventsViewModel.selectedCategoryIndex != null
+                                        && eventsViewModel.selectedCategoryIndex == it.index
+                            }
+                            .forEach { item ->
 
-                            CategoryListItem(
-                                categoryName = item.category,
-                                modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                                colors = SegmentedButtonDefaults.colors(
-                                    activeContainerColor = if (isSystemInDarkTheme()) White else Black,
-                                    inactiveContainerColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                    activeContentColor = if (isSystemInDarkTheme()) Black else White,
-                                    inactiveContentColor = LocalContentColor.current
-                                ),
-                                index = item.index,
-                                selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                                onClick = { index, _ ->
-                                    eventsViewModel.selectedCategoryIndex = index
-                                    if (eventsViewModel.selectedCategoryIndex == 0) {
-                                        eventsViewModel.getEventsList(true)
-                                    } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                        eventsViewModel.getEventsList(false)
+                                CategoryListItem(
+                                    categoryName = item.category,
+                                    modifier = Modifier.padding(start = 5.dp, end = 5.dp),
+                                    colors = SegmentedButtonDefaults.colors(
+                                        activeBorderColor = if (isSystemInDarkTheme()) White else Black,
+                                        inactiveBorderColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                        activeContainerColor = Color.Transparent,
+                                        inactiveContainerColor = Color.Transparent,
+                                        activeContentColor = LocalContentColor.current,
+                                        inactiveContentColor = LocalContentColor.current
+                                    ),
+                                    index = item.index,
+                                    selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
+                                    onClick = { index, _ ->
+                                        eventsViewModel.selectedCategoryIndex = index
+                                        if (eventsViewModel.selectedCategoryIndex == 0) {
+                                            eventsViewModel.getEventsList(true)
+                                        } else if (eventsViewModel.selectedCategoryIndex == 1) {
+                                            eventsViewModel.getEventsList(false)
+                                        }
                                     }
-                                }
-                            )
-                        }
+                                )
+                            }
+                    }
                 }
             }
 

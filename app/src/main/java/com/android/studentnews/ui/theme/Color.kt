@@ -24,4 +24,3 @@ val Red = Color.Red
 val DarkBackgroundColor = Color(0xff181717)
 val DropDownMenuColorLight = White
 val ItemBackgroundColor = Green.copy(0.1f)
-val DialogBackgroundColorDark = DarkGray
