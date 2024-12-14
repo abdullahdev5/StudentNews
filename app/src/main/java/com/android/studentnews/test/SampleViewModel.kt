@@ -1,5 +1,6 @@
 package com.android.studentnews.test
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,6 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.android.studentnews.news.domain.destination.MainDestination
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
@@ -50,7 +55,8 @@ class SampleViewModel : ViewModel() {
 
 @Composable
 fun Screen(
-    viewModel: SampleViewModel
+    viewModel: SampleViewModel,
+    navController: NavController,
 ) {
 
     Box(
