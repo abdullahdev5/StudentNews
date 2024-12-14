@@ -77,6 +77,7 @@ import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -1333,14 +1334,12 @@ fun MoreOptionSheetOfNewsItems(
 
     val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
 
-    val scope = rememberCoroutineScope()
-
     LaunchedEffect(Unit) {
         newsDetailViewModel.getNewsById(newsId)
         newsDetailViewModel.getIsNewsSaved(newsId)
     }
 
-    val newsById by newsDetailViewModel.newsById.collectAsState(scope.coroutineContext)
+    val newsById by newsDetailViewModel.newsById.collectAsState()
 
     val isNewsSaved = remember(newsDetailViewModel.isNewsSaved) {
         derivedStateOf {
