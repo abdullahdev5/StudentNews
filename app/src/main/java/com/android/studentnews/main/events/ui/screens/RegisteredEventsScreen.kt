@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -90,7 +91,7 @@ fun RegisteredEventsScreen(
                 },
                 actions = {
                     Icon(
-                        imageVector = Icons.Outlined.Book,
+                        imageVector = Icons.Outlined.CollectionsBookmark, // this icon looks like Registered Events collection
                         contentDescription = "Icon for Registered Events"
                     )
                 }

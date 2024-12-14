@@ -47,12 +47,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.BookmarkRemove
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -1399,7 +1402,7 @@ fun MoreOptionSheetOfNewsItems(
 
                         Icon(
                             imageVector = if (isNewsSaved)
-                                Icons.Default.BookmarkRemove
+                                Icons.Outlined.BookmarkRemove
                             else Icons.Default.BookmarkBorder,
                             contentDescription = "Icon for Save or UnSave the News"
                         )
