@@ -2,7 +2,6 @@
 
 package com.android.studentnews.main.news.ui.screens
 
-import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -52,6 +51,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,7 +79,6 @@ import androidx.media3.ui.PlayerView
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import com.android.studentnews.core.domain.common.formatDateOrTimeToAgo
 import com.android.studentnews.core.domain.common.formatDateToDay
 import com.android.studentnews.core.domain.common.formatDateToMonthName
 import com.android.studentnews.core.domain.common.formatDateToYear
@@ -111,24 +110,30 @@ fun NewsDetailScreen(
     sharedTransitionScope: SharedTransitionScope,
 ) {
 
+    LaunchedEffect(Unit) {
+        newsDetailViewModel.getNewsById(newsId)
+        newsDetailViewModel.getIsNewsSaved(newsId)
+    }
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val scrollState = rememberScrollState()
 
     val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
-    val savedNewsById by newsDetailViewModel.savedNewsById.collectAsStateWithLifecycle()
     val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
 
-    var isSaved by remember(savedNewsById) {
-        mutableStateOf(savedNewsById != null)
-    }
+    var isNewsSaved = remember(newsDetailViewModel.isNewsSaved) {
+        derivedStateOf {
+            newsDetailViewModel.isNewsSaved ?: false
+        }
+    }.value
+
     var isLiked by remember(newsById, currentUser) {
         mutableStateOf(
             newsById?.likes?.contains(currentUser?.uid ?: "") ?: false
         )
     }
-    var isShareBtnClicked by remember { mutableStateOf(false) }
     var scrollInDp by remember { mutableStateOf(0.dp) }
 
     val pagerState = rememberPagerState(
@@ -137,49 +142,8 @@ fun NewsDetailScreen(
         }
     )
 
-    LaunchedEffect(Unit) {
-        newsDetailViewModel.getNewsById(newsId)
-        newsDetailViewModel.getSavedNewsById(newsId)
-    }
-
     LaunchedEffect(scrollState.value) {
         scrollInDp = with(density) { scrollState.value.toDp() }
-    }
-
-    LaunchedEffect(isShareBtnClicked) {
-        if (isShareBtnClicked) {
-            val title = newsById?.title ?: ""
-            val imageUrl = getUrlOfImageNotVideo(
-                newsById?.urlList ?: emptyList()
-            )
-
-            newsDetailViewModel.onShareNews(
-                imageUrl,
-                context,
-                onShare = { fileUri ->
-                    Intent(
-                        Intent.ACTION_SEND,
-                    ).apply {
-                        if (fileUri != null) {
-                            putExtra(Intent.EXTRA_STREAM, fileUri)
-                            type = "image/*"
-                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                        }
-                        putExtra(Intent.EXTRA_TEXT, title)
-                        type = "text/plain"
-                    }.let { intent ->
-                        val sharedIntent = Intent.createChooser(
-                            intent,
-                            null,
-                        )
-
-                        context.startActivity(sharedIntent)
-                        newsDetailViewModel.storeShareCount(newsId)
-                        isShareBtnClicked = false
-                    }
-                }
-            )
-        }
     }
 
 
@@ -217,10 +181,20 @@ fun NewsDetailScreen(
                         Row {
                             IconsForLikeAndMore(
                                 onShare = {
-                                    isShareBtnClicked = true
+                                    val title = newsById?.title ?: ""
+                                    val imageUrl = getUrlOfImageNotVideo(
+                                        newsById?.urlList ?: emptyList()
+                                    )
+
+                                    newsDetailViewModel.onNewsShare(
+                                        imageUrl = imageUrl,
+                                        title = title,
+                                        context = context,
+                                        newsId = newsId
+                                    )
                                 },
                                 onSave = {
-                                    isSaved = !isSaved
+                                    isNewsSaved = !isNewsSaved
 
                                     newsById?.let {
 
@@ -237,7 +211,7 @@ fun NewsDetailScreen(
                                             likes = it.likes
                                         )
 
-                                        if (isSaved) {
+                                        if (isNewsSaved) {
                                             newsDetailViewModel.onNewsSave(news)
                                         } else {
                                             newsDetailViewModel.onNewsRemoveFromSave(news)
@@ -254,14 +228,14 @@ fun NewsDetailScreen(
                                     }
                                 },
                                 saveIconBtnContent = {
-                                    AnimatedVisibility(isSaved) {
+                                    AnimatedVisibility(isNewsSaved) {
                                         Icon(
                                             imageVector = Icons.Filled.Bookmark,
                                             contentDescription = "Icon for Saved News",
                                         )
                                     }
 
-                                    AnimatedVisibility(!isSaved) {
+                                    AnimatedVisibility(!isNewsSaved) {
                                         Icon(
                                             imageVector = Icons.Outlined.BookmarkBorder,
                                             contentDescription = "Icon for unSaved News",
@@ -454,11 +428,21 @@ fun NewsDetailScreen(
                         IconsForLikeAndMore(
                             // on Share
                             onShare = {
-                                isShareBtnClicked = true
+                                val title = newsById?.title ?: ""
+                                val imageUrl = getUrlOfImageNotVideo(
+                                    newsById?.urlList ?: emptyList()
+                                )
+
+                                newsDetailViewModel.onNewsShare(
+                                    imageUrl = imageUrl,
+                                    title = title,
+                                    context = context,
+                                    newsId = newsId
+                                )
                             },
                             // on Save
                             onSave = {
-                                isSaved = !isSaved
+                                isNewsSaved = !isNewsSaved
 
                                 newsById?.let {
                                     val news = NewsModel(
@@ -474,7 +458,7 @@ fun NewsDetailScreen(
                                         likes = it.likes
                                     )
 
-                                    if (isSaved) {
+                                    if (isNewsSaved) {
                                         newsDetailViewModel.onNewsSave(news)
                                     } else {
                                         newsDetailViewModel.onNewsRemoveFromSave(news)
@@ -493,14 +477,14 @@ fun NewsDetailScreen(
                             },
                             // Save Icon
                             saveIconBtnContent = {
-                                this@Column.AnimatedVisibility(isSaved) {
+                                this@Column.AnimatedVisibility(isNewsSaved) {
                                     Icon(
                                         imageVector = Icons.Default.Bookmark,
                                         contentDescription = "Icon of Liked News",
                                     )
                                 }
 
-                                this@Column.AnimatedVisibility(!isSaved) {
+                                this@Column.AnimatedVisibility(!isNewsSaved) {
                                     Icon(
                                         imageVector = Icons.Default.BookmarkBorder,
                                         contentDescription = "Icon of unliked News",

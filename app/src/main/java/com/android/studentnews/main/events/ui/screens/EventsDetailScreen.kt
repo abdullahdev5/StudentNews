@@ -326,7 +326,7 @@ fun EventsDetailScreen(
                     text = if (userIdsListFromBookings.contains(currentUser?.uid)) {
                         "Already Registered"
                     } else if (!(eventById?.isAvailable ?: true)) {
-                        "Not Available"
+                        "UnAvailable"
                     } else "Register"
                 )
             }
@@ -567,7 +567,7 @@ fun EventsDetailScreen(
                             )
                         )
                         Text(
-                            text = if (isAvailable) "Available" else "Not Available",
+                            text = if (isAvailable) "Available" else "UnAvailable",
                             fontSize = FontSize.SMALL.sp
                         )
                     }

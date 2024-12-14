@@ -29,6 +29,7 @@ import com.android.studentnews.main.news.LINK_TITLE
 import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.NOTIFICATION_ID
 import com.android.studentnews.main.news.SAVE_NEWS_ACTION
+import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.model.UrlList
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -54,7 +55,7 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
         if (intent?.action == SAVE_NEWS_ACTION) {
 
             val notificationManager: NotificationManagerCompat by inject()
-            val newsRepository: NewsRepository by inject()
+            val newsDetailRepository: NewsDetailRepository by inject()
             val scope = CoroutineScope(Dispatchers.Default)
 
 
@@ -96,7 +97,7 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
                 )
 
                 scope.launch {
-                    newsRepository
+                    newsDetailRepository
                         .onNewsSave(news)
                         .collect { result ->
                             when (result) {

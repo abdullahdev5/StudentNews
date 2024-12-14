@@ -102,50 +102,6 @@ class NewsRepositoryImpl(
         }
     }
 
-
-    override fun onNewsSave(news: NewsModel): Flow<NewsState<String>> {
-        return callbackFlow {
-
-            savedNewsColRef
-                ?.document(news.newsId ?: "")
-                ?.set(news)
-                ?.addOnSuccessListener { document ->
-                    trySend(NewsState.Success("News Saved"))
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(NewsState.Failed(error))
-                }
-
-            awaitClose {
-                close()
-            }
-        }
-    }
-
-    override fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>> {
-        return callbackFlow {
-
-            try {
-                savedNewsColRef
-                    ?.document(news.newsId.toString())
-                    ?.delete()
-                    ?.addOnSuccessListener {
-                        trySend(NewsState.Success("News Removed from Saved List"))
-                    }
-                    ?.addOnCanceledListener {
-                        trySend(NewsState.Failed(error("Canceled to Removing News from Saved List!")))
-                    }
-
-            } catch (e: Exception) {
-                trySend(NewsState.Failed(e))
-            }
-
-            awaitClose {
-                close()
-            }
-        }
-    }
-
     override fun getSavedNewsList(limit: Int): Flow<PagingData<NewsModel>> {
 
         val query = savedNewsColRef

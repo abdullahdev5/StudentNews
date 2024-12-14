@@ -5,7 +5,6 @@ package com.android.studentnews.news.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
-import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -13,8 +12,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -51,11 +48,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -70,6 +67,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBarItem
@@ -78,6 +76,7 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -86,9 +85,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -142,19 +145,20 @@ import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.main.MainNavigationDrawerList
 import com.android.studentnews.main.MainTabRowList
+import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
-import com.android.studentnews.ui.theme.DropDownMenuColorLight
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.ItemBackgroundColor
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Calendar
+import org.koin.androidx.compose.koinViewModel
 
 @SuppressLint(
     "RememberReturnType", "FrequentlyChangedStateReadInComposition"
@@ -173,6 +177,9 @@ fun NewsScreen(
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val drawerScrollState = rememberScrollState()
+    val moreOptionsInNewsItemsSheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true
+    )
     val lazyListState = rememberLazyListState()
     val pullToRefreshState = rememberPullToRefreshState()
     val configuration = LocalConfiguration.current
@@ -192,9 +199,9 @@ fun NewsScreen(
     )
     var refreshCount by rememberSaveable { mutableIntStateOf(0) }
 
-
     var newsCategoryStatus by rememberSaveable { mutableStateOf("") }
     var isMoreDropDownMenuItemOpen by rememberSaveable { mutableStateOf(false) }
+    var isMoreOptionsInNewsItemsSheetStateOpen by rememberSaveable { mutableStateOf(false) }
     var eventsListGettingCount by rememberSaveable { mutableIntStateOf(0) }
 
     val newsList = newsViewModel.newsList.collectAsLazyPagingItems()
@@ -661,7 +668,6 @@ fun NewsScreen(
                                                 ) { index ->
                                                     val item = newsList[index]
 
-
                                                     NewsItem(
                                                         item = item,
                                                         onItemClick = { newsId ->
@@ -671,10 +677,23 @@ fun NewsScreen(
                                                                 )
                                                             )
                                                         },
+                                                        onMoreOptionsClick = { thisNewsId ->
+                                                            newsViewModel.newsIdWhenMoreOptionClick =
+                                                                thisNewsId
+                                                            scope.launch {
+                                                                moreOptionsInNewsItemsSheetState.show()
+                                                            }.invokeOnCompletion {
+                                                                if (moreOptionsInNewsItemsSheetState.isVisible) {
+                                                                    isMoreOptionsInNewsItemsSheetStateOpen =
+                                                                        true
+                                                                }
+                                                            }
+                                                        },
                                                         context = context,
                                                         animatedVisibilityScope = animatedVisibilityScope,
                                                         sharedTransitionScope = sharedTransitionScope,
                                                     )
+
                                                 }
                                             }
 
@@ -776,6 +795,28 @@ fun NewsScreen(
 
                 }
 
+                if (isMoreOptionsInNewsItemsSheetStateOpen) {
+
+                    newsViewModel.newsIdWhenMoreOptionClick?.let { thisNewsId ->
+                        MoreOptionSheetOfNewsItems(
+                            newsId = thisNewsId,
+                            sheetState = moreOptionsInNewsItemsSheetState,
+                            context = context,
+                            onDismiss = {
+                                scope.launch {
+                                    moreOptionsInNewsItemsSheetState.hide()
+                                }.invokeOnCompletion {
+                                    if (!moreOptionsInNewsItemsSheetState.isVisible) {
+                                        newsViewModel.newsIdWhenMoreOptionClick = null
+                                        isMoreOptionsInNewsItemsSheetStateOpen =
+                                            false
+                                    }
+                                }
+                            }
+                        )
+                    }
+                }
+
             }
 
         }
@@ -789,6 +830,7 @@ fun NewsItem(
     item: NewsModel?,
     context: Context,
     onItemClick: (String) -> Unit,
+    onMoreOptionsClick: (String) -> Unit = {},
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
 ) {
@@ -915,7 +957,9 @@ fun NewsItem(
 
                     IconButton(
                         onClick = {
-
+                            item?.newsId?.let { thisNewsId ->
+                                onMoreOptionsClick(thisNewsId)
+                            }
                         },
                         modifier = Modifier
                             .width(20.dp)
@@ -1276,6 +1320,138 @@ inline fun MainTabRow(
                 unselectedContentColor = if (isSystemInDarkTheme()) White else Black
             )
         }
+    }
+}
+
+@Composable
+fun MoreOptionSheetOfNewsItems(
+    newsId: String,
+    sheetState: SheetState,
+    context: Context,
+    onDismiss: () -> Unit,
+) {
+
+    val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
+
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        newsDetailViewModel.getNewsById(newsId)
+        newsDetailViewModel.getIsNewsSaved(newsId)
+    }
+
+    val newsById by newsDetailViewModel.newsById.collectAsState(scope.coroutineContext)
+
+    val isNewsSaved = remember(newsDetailViewModel.isNewsSaved) {
+        derivedStateOf {
+            newsDetailViewModel.isNewsSaved ?: false
+        }
+    }.value
+
+
+    ModalBottomSheet(
+        sheetState = sheetState,
+        onDismissRequest = onDismiss
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(bottom = 100.dp)
+        ) {
+            newsById?.let { news ->
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val newsForSave = NewsModel(
+                                title = news.title ?: "",
+                                description = news.description ?: "",
+                                newsId = news.newsId ?: "",
+                                category = news.category ?: "",
+                                timestamp = Timestamp.now(),
+                                link = news.link ?: "",
+                                linkTitle = news.linkTitle ?: "",
+                                urlList = news.urlList,
+                                shareCount = news.shareCount ?: 0,
+                                likes = news.likes ?: emptyList(),
+                            )
+
+                            if (isNewsSaved) {
+                                newsDetailViewModel.onNewsRemoveFromSave(
+                                    news = newsForSave,
+                                    wantToShowSuccessMessage = true
+                                )
+                            } else {
+                                newsDetailViewModel.onNewsSave(
+                                    news = newsForSave,
+                                    wantToShowSuccessMessage = true
+                                )
+                            }
+                            onDismiss()
+                        }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp)
+                    ) {
+
+                        Icon(
+                            imageVector = if (isNewsSaved)
+                                Icons.Default.BookmarkRemove
+                            else Icons.Default.BookmarkBorder,
+                            contentDescription = "Icon for Save or UnSave the News"
+                        )
+
+                        Text(text = if (isNewsSaved) "UnSave" else "Save")
+
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+
+                            val title = newsById?.title ?: ""
+                            val imageUrl = getUrlOfImageNotVideo(
+                                urlList = newsById?.urlList ?: emptyList()
+                            )
+
+                            newsDetailViewModel
+                                .onNewsShare(
+                                    title = title,
+                                    imageUrl = imageUrl,
+                                    context = context,
+                                    newsId = newsId
+                                )
+
+                            onDismiss()
+                        }
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(20.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp)
+                    ) {
+
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Icon for Share the News"
+                        )
+
+                        Text(text = "Share")
+
+                    }
+                }
+
+            } ?: CircularProgressIndicator()
+        }
+
     }
 }
 

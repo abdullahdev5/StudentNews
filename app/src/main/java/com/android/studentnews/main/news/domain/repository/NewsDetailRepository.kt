@@ -15,12 +15,17 @@ interface NewsDetailRepository {
     val savedNewsColRef: CollectionReference?
 
     fun getNewsById(newsId: String): Flow<NewsState<NewsModel?>>
-    fun getSavedNewsById(newsId: String): Flow<NewsState<NewsModel?>>
     fun onNewsShare(
         imageUrl: String,
         context: Context,
         onShare: (Uri?) -> Unit
     )
+    // Save
+    fun getIsNewsSaved(newsId: String): Flow<NewsState<Boolean>>
+    fun onNewsSave(news: NewsModel): Flow<NewsState<String>>
+    fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>>
+
+    // Like
     fun onNewsLike(newsId: String): Flow<NewsState<String>>
     fun onNewsUnlike(newsId: String): Flow<NewsState<String>>
     fun storeShareCount(newsId: String)

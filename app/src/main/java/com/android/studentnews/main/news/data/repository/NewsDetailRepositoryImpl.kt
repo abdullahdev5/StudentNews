@@ -10,6 +10,7 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.news.LIKES
+import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.resource.NewsState
@@ -23,6 +24,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import java.io.File
 import java.io.FileOutputStream
+
+private val TAG = "NewsDetailRepositoryImpl"
 
 class NewsDetailRepositoryImpl(
     private val auth: FirebaseAuth,
@@ -64,29 +67,74 @@ class NewsDetailRepositoryImpl(
             }
         }
 
-
-    override fun getSavedNewsById(newsId: String): Flow<NewsState<NewsModel?>> {
+    override fun getIsNewsSaved(newsId: String): Flow<NewsState<Boolean>> {
         return callbackFlow {
 
             savedNewsColRef
                 ?.document(newsId)
                 ?.addSnapshotListener { value, error ->
+
                     if (error != null) {
                         trySend(NewsState.Failed(error))
+                        Log.e(TAG, "getIsNewsSaved: Failed to get News Saved Or Not: ", error)
                     }
 
-                    if (value != null) {
-                        val savedNews = value.toObject(NewsModel::class.java)
-                        trySend(NewsState.Success(savedNews))
-                    }
+                    val newsId = value?.get(NEWS_ID)
+                    val newsSaved = newsId != null == true
+
+                    trySend(NewsState.Success(newsSaved))
+                    Log.d(TAG, "getIsNewsSaved: IsNewsSaved: $newsSaved")
                 }
-
 
             awaitClose {
                 close()
             }
         }
     }
+
+    override fun onNewsSave(news: NewsModel): Flow<NewsState<String>> {
+        return callbackFlow {
+
+            savedNewsColRef
+                ?.document(news.newsId.toString())
+                ?.set(news)
+                ?.addOnSuccessListener { document ->
+                    trySend(NewsState.Success("News Saved"))
+                }
+                ?.addOnFailureListener { error ->
+                    trySend(NewsState.Failed(error))
+                }
+
+            awaitClose {
+                close()
+            }
+        }
+    }
+
+    override fun onNewsRemoveFromSave(news: NewsModel): Flow<NewsState<String>> {
+        return callbackFlow {
+
+            try {
+                savedNewsColRef
+                    ?.document(news.newsId.toString())
+                    ?.delete()
+                    ?.addOnSuccessListener {
+                        trySend(NewsState.Success("News Removed from Saved List"))
+                    }
+                    ?.addOnCanceledListener {
+                        trySend(NewsState.Failed(error("Canceled to Removing News from Saved List!")))
+                    }
+
+            } catch (e: Exception) {
+                trySend(NewsState.Failed(e))
+            }
+
+            awaitClose {
+                close()
+            }
+        }
+    }
+
 
     override fun onNewsShare(
         imageUrl: String,

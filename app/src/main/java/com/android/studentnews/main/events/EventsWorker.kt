@@ -189,7 +189,7 @@ class EventsWorker(
                     ).dropLast(2)
                 } ${event?.endingTimeStatus}"
                 val isAvailable =
-                    if ((event?.isAvailable ?: true)) "Available" else "Not Available"
+                    if ((event?.isAvailable ?: true)) "Available" else "UnAvailable"
 
 
                 val notification =

@@ -16,6 +16,7 @@ import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.data.repository.SAVED_NEWS_LIST_PAGE_SIZE
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -34,6 +35,7 @@ import kotlinx.coroutines.launch
 
 class SavedNewsViewModel(
     private val newsRepository: NewsRepository,
+    private val newsDetailRepository: NewsDetailRepository,
 ) : ViewModel() {
 
     private val _savedNewsList = MutableStateFlow<PagingData<NewsModel>>(PagingData.empty())
@@ -68,7 +70,7 @@ class SavedNewsViewModel(
                 }
             }
             newsRemoveFromSaveStatus = Status.Loading
-            newsRepository
+            newsDetailRepository
                 .onNewsRemoveFromSave(news)
                 .collectLatest { result ->
                     when (result) {

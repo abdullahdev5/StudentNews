@@ -1,6 +1,7 @@
 package com.android.studentnews.news.ui.viewModel
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.internal.isLiveLiteralsEnabled
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
@@ -12,15 +13,24 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import androidx.paging.cachedIn
 import com.android.studentnews.auth.domain.repository.AuthRepository
+import com.android.studentnews.core.data.snackbar_controller.SnackBarController
+import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
+import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.MainNavigationDrawerList
+import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.data.repository.NEWS_CATEGORY_LIST_PAGE_SIZE
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
+import com.android.studentnews.news.domain.resource.NewsState
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
 import org.koin.core.qualifier.qualifier
 
@@ -37,6 +47,9 @@ class NewsViewModel(
         .cachedIn(viewModelScope)
 
     var isRefreshing by mutableStateOf(false)
+
+    var newsIdWhenMoreOptionClick by mutableStateOf<String?>(null)
+
 
     init {
         isRefreshing = true
@@ -60,5 +73,9 @@ class NewsViewModel(
     fun setupPeriodicNewsWorkRequest() = newsRepository.setupPeriodicNewsWorkRequest()
 
     fun cancelPeriodicNewsWorkRequest() = newsRepository.cancelPeriodicNewsWorkRequest()
+
+    override fun onCleared() {
+        newsIdWhenMoreOptionClick = null
+    }
 
 }

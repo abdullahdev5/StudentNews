@@ -1,39 +1,32 @@
 package com.android.studentnews.main.news.ui.viewModel
 
 import android.content.Context
-import android.net.Uri
+import android.content.Intent
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.android.studentnews.auth.domain.models.UserModel
-import com.android.studentnews.auth.domain.repository.AuthRepository
-import com.android.studentnews.core.data.snackbar_controller.SnackBarActions
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.main.account.domain.repository.AccountRepository
-import com.android.studentnews.main.account.domain.resource.AccountState
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.domain.model.NewsModel
-import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.domain.resource.NewsState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.io.File
 
 class NewsDetailViewModel(
     private val newsDetailRepository: NewsDetailRepository,
-    private val newsRepository: NewsRepository,
 ) : ViewModel() {
 
     private val _newsById = MutableStateFlow<NewsModel?>(null)
     val newsById = _newsById.asStateFlow()
 
-    private val _savedNewsById = MutableStateFlow<NewsModel?>(null)
-    val savedNewsById = _savedNewsById.asStateFlow()
+    var isNewsSaved by mutableStateOf<Boolean?>(null)
 
     val newsByIdStatus = mutableStateOf("")
 
@@ -62,29 +55,30 @@ class NewsDetailViewModel(
                             _newsById.value = result.data
                             newsByIdStatus.value = Status.SUCCESS
                         }
+
                         else -> {}
                     }
                 }
         }
     }
 
-    fun getSavedNewsById(newsId: String) {
+    fun getIsNewsSaved(newsId: String) {
         viewModelScope.launch {
             newsDetailRepository
-                .getSavedNewsById(newsId)
+                .getIsNewsSaved(newsId)
                 .collectLatest { result ->
                     when (result) {
                         is NewsState.Success -> {
-                            _savedNewsById.value = result.data
+                            isNewsSaved = result.data
                         }
 
                         is NewsState.Failed -> {
-                            SnackBarController.sendEvent(
-                                SnackBarEvents(
-                                    message = result.error.localizedMessage ?: "",
-                                    duration = SnackbarDuration.Long
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = "Failed to get News Saved OR Not!"
+                                    )
                                 )
-                            )
                         }
 
                         else -> {}
@@ -93,12 +87,28 @@ class NewsDetailViewModel(
         }
     }
 
-    fun onNewsSave(news: NewsModel) {
+    fun onNewsSave(
+        news: NewsModel,
+        wantToShowSuccessMessage: Boolean = false,
+    ) {
         viewModelScope.launch {
-            newsRepository
+            newsDetailRepository
                 .onNewsSave(news)
                 .collectLatest { result ->
                     when (result) {
+
+                        is NewsState.Success -> {
+                            if (wantToShowSuccessMessage == true) {
+                                viewModelScope.launch {
+                                    SnackBarController
+                                        .sendEvent(
+                                            SnackBarEvents(
+                                                message = result.data
+                                            )
+                                        )
+                                }
+                            }
+                        }
 
                         is NewsState.Failed -> {
                             SnackBarController
@@ -117,12 +127,28 @@ class NewsDetailViewModel(
         }
     }
 
-    fun onNewsRemoveFromSave(news: NewsModel) {
+    fun onNewsRemoveFromSave(
+        news: NewsModel,
+        wantToShowSuccessMessage: Boolean = false,
+    ) {
         viewModelScope.launch {
-            newsRepository
+            newsDetailRepository
                 .onNewsRemoveFromSave(news)
                 .collectLatest { result ->
                     when (result) {
+
+                        is NewsState.Success -> {
+                            if (wantToShowSuccessMessage) {
+                                viewModelScope.launch {
+                                    SnackBarController
+                                        .sendEvent(
+                                            SnackBarEvents(
+                                                message = result.data
+                                            )
+                                        )
+                                }
+                            }
+                        }
 
                         is NewsState.Failed -> {
                             SnackBarController
@@ -140,11 +166,38 @@ class NewsDetailViewModel(
         }
     }
 
-    fun onShareNews(
+    fun onNewsShare(
+        title: String,
         imageUrl: String,
         context: Context,
-        onShare: (Uri?) -> Unit
-    ) = newsDetailRepository.onNewsShare(imageUrl, context, onShare)
+        newsId: String,
+    ) {
+        newsDetailRepository.onNewsShare(
+            imageUrl,
+            context,
+            onShare = { fileUri ->
+                Intent(
+                    Intent.ACTION_SEND,
+                ).apply {
+                    if (fileUri != null) {
+                        putExtra(Intent.EXTRA_STREAM, fileUri)
+                        type = "image/*"
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    putExtra(Intent.EXTRA_TEXT, title)
+                    type = "text/plain"
+                }.let { intent ->
+                    val sharedIntent = Intent.createChooser(
+                        intent,
+                        null,
+                    )
+
+                    context.startActivity(sharedIntent)
+                    storeShareCount(newsId)
+                }
+            }
+        )
+    }
 
     fun onNewsLike(newsId: String) {
         viewModelScope.launch {
@@ -161,6 +214,7 @@ class NewsDetailViewModel(
                                     )
                                 )
                         }
+
                         else -> {}
                     }
                 }
@@ -182,6 +236,7 @@ class NewsDetailViewModel(
                                     )
                                 )
                         }
+
                         else -> {}
                     }
                 }
@@ -190,6 +245,10 @@ class NewsDetailViewModel(
 
 
     fun storeShareCount(newsId: String) = newsDetailRepository.storeShareCount(newsId)
+
+    override fun onCleared() {
+        isNewsSaved = null
+    }
 
 
 }
