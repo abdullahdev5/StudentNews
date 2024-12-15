@@ -32,7 +32,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
@@ -47,11 +49,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
-import androidx.compose.material.icons.filled.BookmarkRemove
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.CollectionsBookmark
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
@@ -80,7 +79,6 @@ import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -90,9 +88,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -114,9 +110,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
@@ -132,6 +131,7 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.data.paginator.LENGTH_ERROR
+import com.android.studentnews.core.domain.common.CollapsingAppBarNestedScrollConnection
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.common.formatDateOrTimeToAgo
 import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
@@ -179,6 +179,7 @@ fun NewsScreen(
 ) {
 
     val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
     val context = LocalContext.current
     val drawerScrollState = rememberScrollState()
     val moreOptionsInNewsItemsSheetState = rememberModalBottomSheetState(
@@ -194,8 +195,20 @@ fun NewsScreen(
         initialValue = DrawerValue.Closed
     )
     val tabPagerState = rememberPagerState(pageCount = { 2 })
-    val topBarScrollBehavior =
-        TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
+    // Top Bar Scroll Connection
+    val topBarMaxHeight: Int = with(density) { (30).dp.roundToPx() }
+    val topBarScrollConnection: CollapsingAppBarNestedScrollConnection =
+        remember(topBarMaxHeight) {
+            CollapsingAppBarNestedScrollConnection(topBarMaxHeight)
+        }
+
+    // Bottom Bar Scroll Connection
+    val bottomBarMaxHeight: Int = with(density) { (50).dp.roundToPx() }
+    val bottomBarScrollConnection: CollapsingAppBarNestedScrollConnection =
+        remember(bottomBarMaxHeight) {
+            CollapsingAppBarNestedScrollConnection(bottomBarMaxHeight)
+        }
 
     val tabList = listOf(
         MainTabRowList.News,
@@ -281,6 +294,7 @@ fun NewsScreen(
         }
     }
 
+
     Surface(
         modifier = Modifier
             .fillMaxSize()
@@ -360,82 +374,132 @@ fun NewsScreen(
         ) {
             Scaffold(
                 topBar = {
-                    CenterAlignedTopAppBar(
-                        title = {
-                            Text(
-                                text = if (tabPagerState.currentPage == 0) "News"
-                                else "Events",
-                            )
-                        },
-                        actions = {
-                            IconButton(onClick = {
-                                isMoreDropDownMenuItemOpen = !isMoreDropDownMenuItemOpen
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "Icon for More"
+                    Column {
+                        CenterAlignedTopAppBar(
+                            title = {
+                                Text(
+                                    text = if (tabPagerState.currentPage == 0) "News"
+                                    else "Events",
                                 )
-                            }
-                            if (isMoreDropDownMenuItemOpen) {
-                                MoreDropDownMenuMain(
-                                    expanded = isMoreDropDownMenuItemOpen,
-                                    currentPage = tabPagerState.currentPage,
-                                    onSavedClick = {
-                                        navHostController.navigate(SubGraph.SAVED)
-                                    },
-                                    onLikedClick = {
-                                        navHostController
-                                            .navigate(NewsDestination.LIKED_NEWS_SCREEN)
-                                    },
-                                    onRegisteredEventsClick = {
-                                        navHostController
-                                            .navigate(EventsDestination.REGISTERED_EVENTS_SCREEN)
-                                    },
-                                    onDismiss = {
-                                        isMoreDropDownMenuItemOpen = false
-                                    },
-                                    modifier = Modifier
-                                        .background(color = if (isSystemInDarkTheme()) DarkColor else White)
-                                        .border(
-                                            width = 1.dp,
-                                            color = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                            shape = RoundedCornerShape(5.dp)
-                                        )
-                                )
-                            }
-                        },
-                        navigationIcon = {
-                            IconButton(onClick = {
-                                scope.launch {
-                                    drawerState.open()
+                            },
+                            actions = {
+                                IconButton(onClick = {
+                                    isMoreDropDownMenuItemOpen = !isMoreDropDownMenuItemOpen
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.MoreVert,
+                                        contentDescription = "Icon for More"
+                                    )
                                 }
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Menu,
-                                    contentDescription = "Icon for Navigation Drawer",
+                                if (isMoreDropDownMenuItemOpen) {
+                                    MoreDropDownMenuMain(
+                                        expanded = isMoreDropDownMenuItemOpen,
+                                        currentPage = tabPagerState.currentPage,
+                                        onSavedClick = {
+                                            navHostController.navigate(SubGraph.SAVED)
+                                        },
+                                        onLikedClick = {
+                                            navHostController
+                                                .navigate(NewsDestination.LIKED_NEWS_SCREEN)
+                                        },
+                                        onRegisteredEventsClick = {
+                                            navHostController
+                                                .navigate(EventsDestination.REGISTERED_EVENTS_SCREEN)
+                                        },
+                                        onDismiss = {
+                                            isMoreDropDownMenuItemOpen = false
+                                        },
+                                        modifier = Modifier
+                                            .background(color = if (isSystemInDarkTheme()) DarkColor else White)
+                                            .border(
+                                                width = 1.dp,
+                                                color = if (isSystemInDarkTheme()) DarkGray else LightGray,
+                                                shape = RoundedCornerShape(5.dp)
+                                            )
+                                    )
+                                }
+                            },
+                            navigationIcon = {
+                                IconButton(onClick = {
+                                    scope.launch {
+                                        drawerState.open()
+                                    }
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Menu,
+                                        contentDescription = "Icon for Navigation Drawer",
+                                    )
+                                }
+                            },
+                            colors = TopAppBarDefaults.topAppBarColors(
+                                containerColor = Color.Transparent,
+                                scrolledContainerColor = Color.Transparent
+                            ),
+                            modifier = Modifier
+                                .statusBarsPadding()
+                                .then(
+                                    with(density) {
+                                        Modifier
+                                            .height(
+                                                (topBarMaxHeight + topBarScrollConnection.appBarOffset).toDp()
+                                            )
+                                    }
                                 )
-                            }
-                        },
-                        scrollBehavior = topBarScrollBehavior,
-                        colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color.Transparent,
-                            scrolledContainerColor = Color.Transparent
-                        ),
-                    )
+                                .offset { IntOffset(0, topBarScrollConnection.appBarOffset) }
+                        )
+
+                        MainTabRow(
+                            tabPagerState = tabPagerState,
+                            tabList = tabList,
+                            onClick = { index ->
+                                scope.launch {
+                                    tabPagerState.animateScrollToPage(index)
+                                }
+
+                                if (index == 0) {
+                                    if (lazyListState.firstVisibleItemIndex != 0) {
+                                        scope.launch {
+                                            lazyListState.scrollToItem(0)
+                                        }
+                                    }
+                                }
+
+                                if (index == 1) {
+                                    if (eventsViewModel.lazyListState.firstVisibleItemIndex != 0) {
+                                        scope.launch {
+                                            eventsViewModel
+                                                .lazyListState
+                                                .scrollToItem(0)
+                                        }
+
+                                    }
+                                }
+                            },
+                        )
+
+                    }
                 },
                 bottomBar = {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .navigationBarsPadding()
-                            .height(50.dp),
+                            .then(
+                                with(density) {
+                                    Modifier
+                                        .height(
+                                            (bottomBarMaxHeight + bottomBarScrollConnection.appBarOffset).toDp()
+                                        )
+                                }
+                            ),
                     ) {
                         HorizontalDivider()
 
                         BottomAppBar(
                             containerColor = Color.Transparent,
                             modifier = Modifier
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .offset { IntOffset(0, -bottomBarScrollConnection.appBarOffset) },
                         ) {
                             navBarList.forEachIndexed { index, item ->
                                 NavigationBarItem(
@@ -466,67 +530,45 @@ fun NewsScreen(
                     }
                 },
                 modifier = Modifier
-                    .then(
-                        if (lazyListState.canScrollForward
-                            || eventsViewModel.lazyListState.canScrollForward
-                        )
-                            Modifier
-                                .nestedScroll(topBarScrollBehavior.nestedScrollConnection)
-                        else Modifier
-                    )
+                    .nestedScroll(topBarScrollConnection)
+                    .nestedScroll(bottomBarScrollConnection)
             ) { innerPadding ->
 
                 Column(
                     modifier = Modifier
                         .padding(paddingValues = innerPadding)
                 ) {
-                    // Pager
-                    Column {
-                        MainTabRow(
-                            tabPagerState = tabPagerState,
-                            tabList = tabList,
-                            onClick = { index ->
-                                scope.launch {
-                                    tabPagerState.animateScrollToPage(index)
-                                }
-
-                                if (index == 0) {
-                                    if (lazyListState.firstVisibleItemIndex != 0) {
-                                        scope.launch {
-                                            lazyListState.scrollToItem(0)
-                                        }
-                                    }
-                                }
-
-                                if (index == 1) {
-                                    if (eventsViewModel.lazyListState.firstVisibleItemIndex != 0) {
-                                        scope.launch {
-                                            eventsViewModel
-                                                .lazyListState
-                                                .scrollToItem(0)
-                                        }
-
-                                    }
-                                }
-                            }
-                        )
-
-                    }
-
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .nestedScroll(pullToRefreshState.nestedScrollConnection),
                     ) {
+
+                        val categoriesMaxHeight =
+                            with(density) { (50).dp.roundToPx() }
+
+                        val categoriesScrollConnection = remember(categoriesMaxHeight) {
+                            CollapsingAppBarNestedScrollConnection(
+                                categoriesMaxHeight
+                            )
+                        }
+
                         HorizontalPager(
-                            state = tabPagerState
+                            state = tabPagerState,
                         ) { page ->
 
                             when (page) {
 
                                 0 -> {
-                                    Column {
-
+                                    Column(
+                                        modifier = Modifier
+                                            .then(
+                                                if (lazyListState.firstVisibleItemIndex > 1)
+                                                    Modifier
+                                                        .nestedScroll(categoriesScrollConnection)
+                                                else Modifier
+                                            )
+                                    ) {
                                         AnimatedVisibility(
                                             lazyListState.firstVisibleItemIndex > 1
                                         ) {
@@ -541,6 +583,20 @@ fun NewsScreen(
                                                             .colorScheme
                                                             .surface
                                                     )
+                                                    .then(
+                                                        with(density) {
+                                                            Modifier
+                                                                .height(
+                                                                    (categoriesMaxHeight + categoriesScrollConnection.appBarOffset).toDp()
+                                                                )
+                                                        }
+                                                    )
+                                                    .offset {
+                                                        IntOffset(
+                                                            0,
+                                                            categoriesScrollConnection.appBarOffset
+                                                        )
+                                                    },
                                             ) {
                                                 categoriesList
                                                     .itemSnapshotList
@@ -549,17 +605,13 @@ fun NewsScreen(
                                                         CategoryListItem(
                                                             categoryName = item.name
                                                                 ?: "",
-                                                            modifier = Modifier.padding(
-                                                                start = 5.dp,
-                                                                end = 5.dp
-                                                            ),
                                                             colors = SegmentedButtonDefaults.colors(
                                                                 activeBorderColor = if (isSystemInDarkTheme()) White else Black,
                                                                 inactiveBorderColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
                                                                 activeContainerColor = Color.Transparent,
                                                                 inactiveContainerColor = Color.Transparent,
                                                                 activeContentColor = LocalContentColor.current,
-                                                                inactiveContentColor = LocalContentColor.current
+                                                                inactiveContentColor = Gray
                                                             ),
                                                             index = index,
                                                             selectedCategoryIndex = selectedNewsCategoryIndex,
@@ -572,7 +624,12 @@ fun NewsScreen(
                                                                     )
                                                                 newsCategoryStatus =
                                                                     "$category News"
-                                                            }
+                                                            },
+                                                            modifier = Modifier
+                                                                .padding(
+                                                                    start = 5.dp,
+                                                                    end = 5.dp
+                                                                ),
                                                         )
                                                     }
                                             }
@@ -995,7 +1052,9 @@ fun CategoriesListPagerItem(
                 top = 20.dp,
                 bottom = 5.dp
             )
-            .clickable {
+            .clickable(
+                role = Role.Image
+            ) {
                 onItemCLick.invoke(item.name ?: "")
             },
         colors = CardDefaults.cardColors(
@@ -1305,11 +1364,14 @@ fun MoreDropDownMenuMain(
 @Composable
 inline fun MainTabRow(
     tabPagerState: PagerState,
+    modifier: Modifier = Modifier,
     tabList: List<MainTabRowList>,
     crossinline onClick: (index: Int) -> Unit,
 ) {
     TabRow(
         selectedTabIndex = tabPagerState.currentPage,
+        containerColor = if (isSystemInDarkTheme()) DarkColor else White,
+        modifier = modifier
     ) {
         tabList.forEach { item ->
             Tab(

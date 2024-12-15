@@ -11,6 +11,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,9 +21,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.DateRange
@@ -39,15 +42,19 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -58,6 +65,7 @@ import androidx.paging.compose.itemKey
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.android.studentnews.core.data.paginator.LENGTH_ERROR
+import com.android.studentnews.core.domain.common.CollapsingAppBarNestedScrollConnection
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.events.domain.destination.EventsDestination
@@ -68,6 +76,7 @@ import com.android.studentnews.core.domain.common.formatTimeToString
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
+import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.ItemBackgroundColor
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
@@ -78,7 +87,7 @@ enum class EventsFiltersList(
     val index: Int,
 ) {
     AVAILABLE("Available", 0),
-    NOT_AVAILABLE("Not Available", 1)
+    UNAVAILABLE("UnAvailable", 1)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -92,22 +101,43 @@ fun EventsScreen(
 ) {
 
     val context = LocalContext.current
+    val density = LocalDensity.current
 
     val eventsList = eventsViewModel.eventsList.collectAsLazyPagingItems()
 
     var categoryList = listOf(
         EventsFiltersList.AVAILABLE,
-        EventsFiltersList.NOT_AVAILABLE,
+        EventsFiltersList.UNAVAILABLE,
     )
 
-    Column {
+    val eventsFiltersMaxHeight = with(density) { (50).dp.roundToPx() }
+
+    val eventsFiltersScrollConnection = remember(eventsFiltersMaxHeight) {
+        CollapsingAppBarNestedScrollConnection(eventsFiltersMaxHeight)
+    }
+
+
+
+    Column(
+        modifier = Modifier
+            .nestedScroll(eventsFiltersScrollConnection)
+    ) {
         AnimatedVisibility(
-            eventsViewModel.lazyListState.firstVisibleItemIndex > 1
+            visible = eventsList.loadState.refresh is LoadState.NotLoading
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(color = if (isSystemInDarkTheme()) DarkColor else White),
+//                    .horizontalScroll(rememberScrollState())
+                    .background(color = if (isSystemInDarkTheme()) DarkColor else White)
+                    .then(
+                        with(density) {
+                            Modifier.height(
+                                (eventsFiltersMaxHeight + eventsFiltersScrollConnection.appBarOffset).toDp()
+                            )
+                        }
+                    )
+                    .offset { IntOffset(0, eventsFiltersScrollConnection.appBarOffset) },
             ) {
                 // Category
                 categoryList
@@ -126,7 +156,7 @@ fun EventsScreen(
                                 activeContainerColor = Color.Transparent,
                                 inactiveContainerColor = Color.Transparent,
                                 activeContentColor = LocalContentColor.current,
-                                inactiveContentColor = LocalContentColor.current
+                                inactiveContentColor = Gray
                             ),
                             index = item.index,
                             selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
@@ -148,52 +178,6 @@ fun EventsScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-
-            item(
-                key = "events_filters"
-            ) {
-                AnimatedVisibility(
-                    eventsList.loadState.refresh is LoadState.NotLoading
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(color = if (isSystemInDarkTheme()) DarkColor else White),
-                    ) {
-                        // Category
-                        categoryList
-                            .sortedByDescending {
-                                eventsViewModel.selectedCategoryIndex != null
-                                        && eventsViewModel.selectedCategoryIndex == it.index
-                            }
-                            .forEach { item ->
-
-                                CategoryListItem(
-                                    categoryName = item.category,
-                                    modifier = Modifier.padding(start = 5.dp, end = 5.dp),
-                                    colors = SegmentedButtonDefaults.colors(
-                                        activeBorderColor = if (isSystemInDarkTheme()) White else Black,
-                                        inactiveBorderColor = if (isSystemInDarkTheme()) DarkGray else LightGray,
-                                        activeContainerColor = Color.Transparent,
-                                        inactiveContainerColor = Color.Transparent,
-                                        activeContentColor = LocalContentColor.current,
-                                        inactiveContentColor = LocalContentColor.current
-                                    ),
-                                    index = item.index,
-                                    selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,
-                                    onClick = { index, _ ->
-                                        eventsViewModel.selectedCategoryIndex = index
-                                        if (eventsViewModel.selectedCategoryIndex == 0) {
-                                            eventsViewModel.getEventsList(true)
-                                        } else if (eventsViewModel.selectedCategoryIndex == 1) {
-                                            eventsViewModel.getEventsList(false)
-                                        }
-                                    }
-                                )
-                            }
-                    }
-                }
-            }
 
             if (eventsList.loadState.refresh is LoadState.NotLoading) {
                 items(
