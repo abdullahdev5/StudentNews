@@ -156,7 +156,8 @@ fun EventsScreen(
                                 activeContainerColor = Color.Transparent,
                                 inactiveContainerColor = Color.Transparent,
                                 activeContentColor = LocalContentColor.current,
-                                inactiveContentColor = Gray
+                                inactiveContentColor = if (eventsViewModel.selectedCategoryIndex == null)
+                                    LocalContentColor.current else Gray
                             ),
                             index = item.index,
                             selectedCategoryIndex = eventsViewModel.selectedCategoryIndex,

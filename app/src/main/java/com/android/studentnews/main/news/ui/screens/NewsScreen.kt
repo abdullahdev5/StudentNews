@@ -611,7 +611,8 @@ fun NewsScreen(
                                                                 activeContainerColor = Color.Transparent,
                                                                 inactiveContainerColor = Color.Transparent,
                                                                 activeContentColor = LocalContentColor.current,
-                                                                inactiveContentColor = Gray
+                                                                inactiveContentColor = if (selectedNewsCategoryIndex == null)
+                                                                    LocalContentColor.current else Gray
                                                             ),
                                                             index = index,
                                                             selectedCategoryIndex = selectedNewsCategoryIndex,

@@ -6,6 +6,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -200,7 +202,11 @@ fun EventsDetailScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    AnimatedVisibility(scrollState.value > 550) {
+                    AnimatedVisibility(
+                        visible = scrollState.value > 550,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
