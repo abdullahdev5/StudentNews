@@ -1,16 +1,20 @@
 package com.android.studentnews.main.news.ui.viewModel
 
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.main.MyBroadcastReceiver
+import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.resource.NewsState
@@ -18,6 +22,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+
+const val SHARE_NEWS_ACTION = "com.android.studentnews.SHARE_NEWS_ACTION"
+const val SHARE_NEWS_REQUEST_CODE = 10
+
 
 class NewsDetailViewModel(
     private val newsDetailRepository: NewsDetailRepository,
@@ -176,24 +184,52 @@ class NewsDetailViewModel(
             imageUrl,
             context,
             onShare = { fileUri ->
-                Intent(
-                    Intent.ACTION_SEND,
-                ).apply {
-                    if (fileUri != null) {
+                try {
+                    Intent(
+                        Intent.ACTION_SEND,
+                    ).apply {
+                        putExtra(Intent.EXTRA_TEXT, title)
                         putExtra(Intent.EXTRA_STREAM, fileUri)
-                        type = "image/*"
+                        setDataAndType(fileUri, "image/*")
                         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }
-                    putExtra(Intent.EXTRA_TEXT, title)
-                    type = "text/plain"
-                }.let { intent ->
-                    val sharedIntent = Intent.createChooser(
-                        intent,
-                        null,
-                    )
+                    }.let { intent ->
 
-                    context.startActivity(sharedIntent)
-                    storeShareCount(newsId)
+                        val shareClickedIntent = Intent(
+                            context,
+                            MyBroadcastReceiver::class.java,
+                        ).apply {
+                            action = SHARE_NEWS_ACTION
+                            putExtra(NEWS_ID, newsId)
+                            type = "text/plain"
+                        }
+
+                        val sharedPendingIntent = PendingIntent
+                            .getBroadcast(
+                                context,
+                                SHARE_NEWS_REQUEST_CODE,
+                                shareClickedIntent,
+                                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                            )
+
+                        val sharedIntent = Intent.createChooser(
+                            intent,
+                            null,
+                            sharedPendingIntent.intentSender
+                        )
+
+                        context.startActivity(sharedIntent)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    viewModelScope.launch {
+                        SnackBarController
+                            .sendEvent(
+                                SnackBarEvents(
+                                    message = e.localizedMessage ?: "",
+                                    duration = SnackbarDuration.Long
+                                )
+                            )
+                    }
                 }
             }
         )
@@ -242,9 +278,6 @@ class NewsDetailViewModel(
                 }
         }
     }
-
-
-    fun storeShareCount(newsId: String) = newsDetailRepository.storeShareCount(newsId)
 
     override fun onCleared() {
         isNewsSaved = null

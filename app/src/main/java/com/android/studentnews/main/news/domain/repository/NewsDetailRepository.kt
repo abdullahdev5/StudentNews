@@ -28,6 +28,6 @@ interface NewsDetailRepository {
     // Like
     fun onNewsLike(newsId: String): Flow<NewsState<String>>
     fun onNewsUnlike(newsId: String): Flow<NewsState<String>>
-    fun storeShareCount(newsId: String)
+    fun onShare(newsId: String)
 
 }

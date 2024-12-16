@@ -29,10 +29,11 @@ import com.android.studentnews.main.news.LINK_TITLE
 import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.NOTIFICATION_ID
 import com.android.studentnews.main.news.SAVE_NEWS_ACTION
+import com.android.studentnews.main.news.SHARE_COUNT
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
+import com.android.studentnews.main.news.ui.viewModel.SHARE_NEWS_ACTION
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.model.UrlList
-import com.android.studentnews.news.domain.repository.NewsRepository
 import com.android.studentnews.news.domain.resource.NewsState
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
@@ -69,6 +70,7 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
             val link = intent.getStringExtra(LINK) ?: ""
             val linkTitle = intent.getStringExtra(LINK_TITLE) ?: ""
             val serializedUrlListInString = intent.getStringExtra(URL_LIST)
+            val shareCount = intent.getIntExtra(SHARE_COUNT, 0)
             val likesStringArray = intent.getStringArrayExtra(LIKES) ?: emptyArray()
 
 
@@ -93,6 +95,7 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
                     link = link,
                     linkTitle = linkTitle,
                     urlList = urlList,
+                    shareCount = shareCount,
                     likes = likes
                 )
 
@@ -210,6 +213,17 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
 
 
         }
+
+        if (intent?.action == SHARE_NEWS_ACTION) {
+
+            val newsDetailRepository: NewsDetailRepository by inject()
+
+            val newsId = intent.getStringExtra(NEWS_ID)
+
+            newsDetailRepository
+                .onShare(newsId!!)
+        }
+
 
     }
 

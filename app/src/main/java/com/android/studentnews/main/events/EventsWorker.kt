@@ -49,7 +49,7 @@ const val BOOKINGS = "bookings"
 const val IS_AVAILABLE = "isAvailable"
 
 
-const val SAVED_EVENT_ACTION = "SAVED_EVENT_ACTION"
+const val SAVED_EVENT_ACTION = "com.android.studentnews.SAVED_EVENT_ACTION"
 const val EVENTS_URI = "https://www.events.com/"
 const val EVENTS_REGISTRATION_URI = "https://www.events_registration.com/"
 

@@ -34,12 +34,13 @@ import kotlin.random.Random
 import kotlin.run
 
 const val NEWS_URI = "https://www.news.com"
-const val SAVE_NEWS_ACTION = "SAVE_NEWS_ACTION"
+const val SAVE_NEWS_ACTION = "com.android.studentnews.SAVE_NEWS_ACTION"
 const val NEWS_ID = "newsId"
 const val CATEGORY = "category"
 const val LINK = "link"
 const val LINK_TITLE = "linkTitle"
 const val LIKES = "likes"
+const val SHARE_COUNT = "shareCount"
 const val NOTIFICATION_ID = "notification_id"
 
 
@@ -108,6 +109,7 @@ class NewsWorker(
         val link = news?.link
         val linkTitle = news?.linkTitle
         val imageUrl = getUrlOfImageNotVideo(news?.urlList ?: emptyList())
+        val shareCount = news?.shareCount ?: 0
         val likes = news?.likes?.map { it }?.toTypedArray() ?: emptyArray()
 
 
@@ -129,6 +131,7 @@ class NewsWorker(
                     putExtra(LINK, link)
                     putExtra(LINK_TITLE, linkTitle)
                     putExtra(URL_LIST, serializedUrlList)
+                    putExtra(SHARE_COUNT, shareCount)
                     putExtra(LIKES, likes)
                     putExtra(NOTIFICATION_ID, notificationId)
                 }

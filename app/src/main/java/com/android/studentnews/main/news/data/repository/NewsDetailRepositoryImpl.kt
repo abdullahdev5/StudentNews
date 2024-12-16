@@ -144,33 +144,31 @@ class NewsDetailRepositoryImpl(
         val request = ImageRequest.Builder(context)
             .data(imageUrl)
             .allowHardware(false)
-            .target(
-                onSuccess = { drawable ->
-                    val bitmap = (drawable as BitmapDrawable).bitmap
-                    val tempFile = File.createTempFile("shared_IMG", ".jpg", context.cacheDir)
+            .target { drawable ->
+                val bitmap = (drawable as BitmapDrawable).bitmap
+                val tempFile = File.createTempFile("shared_IMG", ".jpg", context.cacheDir)
 
-                    FileOutputStream(tempFile)
-                        .use { outputStream ->
-                            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-                        }
-
-
-                    val fileUri = try {
-                        FileProvider.getUriForFile(
-                            context,
-                            "${context.packageName}.fileprovider",
-                            tempFile
-                        )
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                        println("Failed to Get File Uri: $e")
-                        null
+                FileOutputStream(tempFile)
+                    .use { outputStream ->
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
                     }
 
-                    onShare.invoke(fileUri)
 
+                val fileUri = try {
+                    FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.fileprovider",
+                        tempFile
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    println("Failed to Get File Uri: $e")
+                    null
                 }
-            )
+
+                onShare.invoke(fileUri)
+
+            }
             .build()
         context.imageLoader.enqueue(request)
     }
@@ -214,7 +212,7 @@ class NewsDetailRepositoryImpl(
         }
     }
 
-    override fun storeShareCount(newsId: String) {
+    override fun onShare(newsId: String) {
         newsColRef
             ?.document(newsId)
             ?.update("shareCount", FieldValue.increment(1))
