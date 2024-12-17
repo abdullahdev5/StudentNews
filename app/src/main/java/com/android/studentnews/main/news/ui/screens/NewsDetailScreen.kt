@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -53,19 +54,27 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -97,6 +106,7 @@ import com.android.studentnews.ui.theme.ItemBackgroundColor
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.google.firebase.Timestamp
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @UnstableApi
@@ -117,6 +127,7 @@ fun NewsDetailScreen(
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
     val density = LocalDensity.current
     val scrollState = rememberScrollState()
 
@@ -134,7 +145,6 @@ fun NewsDetailScreen(
             newsById?.likes?.contains(currentUser?.uid ?: "") ?: false
         )
     }
-    var scrollInDp by remember { mutableStateOf(0.dp) }
 
     val pagerState = rememberPagerState(
         pageCount = {
@@ -142,8 +152,25 @@ fun NewsDetailScreen(
         }
     )
 
-    LaunchedEffect(scrollState.value) {
-        scrollInDp = with(density) { scrollState.value.toDp() }
+    val horizontalPagerMaxHeight = with(density) { (300).dp.roundToPx() }
+
+    var horizontalPagerOffset by remember { mutableIntStateOf(0) }
+
+    val horizontalPagerScrollConnection = remember(horizontalPagerMaxHeight) {
+        object : NestedScrollConnection {
+            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+                val delta = available.y.roundToInt()
+                val newOffset = horizontalPagerOffset + delta
+                val previousOffset = horizontalPagerOffset
+
+                horizontalPagerOffset = newOffset.coerceIn(-horizontalPagerMaxHeight, 0)
+
+                val consumed = horizontalPagerOffset - previousOffset
+
+                return Offset(0f, consumed.toFloat())
+            }
+
+        }
     }
 
 
@@ -177,7 +204,7 @@ fun NewsDetailScreen(
 
                     Spacer(modifier = Modifier.weight(1f))
 
-                    AnimatedVisibility(scrollInDp > 300.dp) {
+                    AnimatedVisibility(scrollState.value > 300) {
                         Row {
                             IconsForLikeAndMore(
                                 onShare = {
@@ -267,27 +294,39 @@ fun NewsDetailScreen(
                     }
                 }
             }
-        }
+        },
     ) { innerPadding ->
         with(sharedTransitionScope) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
+                    .nestedScroll(horizontalPagerScrollConnection)
                     .verticalScroll(scrollState)
-                    .sharedElement(
-                        state = rememberSharedContentState(key = "container/$newsId"),
+                    .sharedBounds(
+                        sharedContentState = rememberSharedContentState(key = "container/$newsId"),
                         animatedVisibilityScope = animatedVisibilityScope,
                     )
+
             ) {
 
-                Box {
+                Box(
+                    modifier = Modifier
+                        .then(
+                            with(density) {
+                                Modifier
+                                    .height(
+                                        (horizontalPagerMaxHeight + horizontalPagerOffset).toDp()
+                                    )
+                            }
+                        )
+                        .offset { IntOffset(0, horizontalPagerOffset) }
+                ) {
 
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(300.dp)
                             .sharedElement(
                                 state = rememberSharedContentState(key = "image/$newsId"),
                                 animatedVisibilityScope = animatedVisibilityScope,
@@ -594,8 +633,8 @@ fun NewsDetailScreen(
                                     top = 20.dp,
                                     bottom = 10.dp
                                 )
-                                .sharedElement(
-                                    state = rememberSharedContentState(key = "title/$newsId"),
+                                .sharedBounds(
+                                    sharedContentState = rememberSharedContentState(key = "title/$newsId"),
                                     animatedVisibilityScope = animatedVisibilityScope,
                                 )
                         )
