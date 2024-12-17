@@ -11,7 +11,9 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -163,6 +165,7 @@ import com.google.firebase.Timestamp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import kotlin.math.roundToInt
 
 @SuppressLint(
     "RememberReturnType", "FrequentlyChangedStateReadInComposition"
@@ -197,11 +200,15 @@ fun NewsScreen(
     val tabPagerState = rememberPagerState(pageCount = { 2 })
 
     // Top Bar Scroll Connection
-    val topBarMaxHeight: Int = with(density) { (30).dp.roundToPx() }
+    val topBarMaxHeight: Int = with(density) { (50).dp.roundToPx() }
     val topBarScrollConnection: CollapsingAppBarNestedScrollConnection =
         remember(topBarMaxHeight) {
             CollapsingAppBarNestedScrollConnection(topBarMaxHeight)
         }
+    val animatedTopBarOffset by animateFloatAsState(
+        targetValue = topBarScrollConnection.appBarOffset.toFloat(),
+        label = ""
+    )
 
     // Bottom Bar Scroll Connection
     val bottomBarMaxHeight: Int = with(density) { (50).dp.roundToPx() }
@@ -209,6 +216,11 @@ fun NewsScreen(
         remember(bottomBarMaxHeight) {
             CollapsingAppBarNestedScrollConnection(bottomBarMaxHeight)
         }
+    val animatedBottomBarOffset by animateFloatAsState(
+        targetValue = bottomBarScrollConnection.appBarOffset.toFloat(),
+        label = ""
+    )
+
 
     val tabList = listOf(
         MainTabRowList.News,
@@ -445,11 +457,11 @@ fun NewsScreen(
                                     with(density) {
                                         Modifier
                                             .height(
-                                                (topBarMaxHeight + topBarScrollConnection.appBarOffset).toDp()
+                                                (topBarMaxHeight + animatedTopBarOffset.roundToInt()).toDp()
                                             )
                                     }
                                 )
-                                .offset { IntOffset(0, topBarScrollConnection.appBarOffset) }
+                                .offset { IntOffset(0, animatedTopBarOffset.roundToInt()) }
                         )
 
                         MainTabRow(
@@ -492,7 +504,7 @@ fun NewsScreen(
                                 with(density) {
                                     Modifier
                                         .height(
-                                            (bottomBarMaxHeight + bottomBarScrollConnection.appBarOffset).toDp()
+                                            (bottomBarMaxHeight + animatedTopBarOffset.roundToInt()).toDp()
                                         )
                                 }
                             ),
@@ -503,7 +515,7 @@ fun NewsScreen(
                             containerColor = Color.Transparent,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .offset { IntOffset(0, -bottomBarScrollConnection.appBarOffset) },
+                                .offset { IntOffset(0, -animatedTopBarOffset.roundToInt()) },
                         ) {
                             navBarList.forEachIndexed { index, item ->
                                 NavigationBarItem(
@@ -910,8 +922,8 @@ fun NewsItem(
                     top = 10.dp,
                     bottom = 10.dp,
                 )
-                .sharedElement(
-                    state = rememberSharedContentState(key = "container/${item?.newsId}"),
+                .sharedBounds(
+                    sharedContentState = rememberSharedContentState(key = "container/${item?.newsId}"),
                     animatedVisibilityScope = animatedVisibilityScope,
                     renderInOverlayDuringTransition = true
                 ),
@@ -962,8 +974,8 @@ fun NewsItem(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
-                                .sharedElement(
-                                    state = rememberSharedContentState(key = "title/${item?.newsId}"),
+                                .sharedBounds(
+                                    sharedContentState = rememberSharedContentState(key = "title/${item?.newsId}"),
                                     animatedVisibilityScope = animatedVisibilityScope,
                                     renderInOverlayDuringTransition = true,
                                 )
