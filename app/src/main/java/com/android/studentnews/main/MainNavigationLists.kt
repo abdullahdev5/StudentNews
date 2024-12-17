@@ -9,6 +9,7 @@ import androidx.compose.material.icons.filled.Newspaper
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.CollectionsBookmark
 import androidx.compose.material.icons.outlined.Event
 import androidx.compose.material.icons.outlined.Home
@@ -72,6 +73,11 @@ enum class MainNavigationDrawerList(
     Registered_Events(
         text = "Registered Events",
         icon  = Icons.Outlined.CollectionsBookmark, // this icon looks like Registered Events collection
+    ),
+
+    REFERRAL_BONUS(
+        text = "Referral Bonus",
+        icon = Icons.Outlined.CardGiftcard
     ),
 
     Settings(

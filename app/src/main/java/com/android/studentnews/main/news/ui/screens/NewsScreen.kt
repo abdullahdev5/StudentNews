@@ -339,6 +339,10 @@ fun NewsScreen(
                                     navHostController.navigate(EventsDestination.REGISTERED_EVENTS_SCREEN)
                                 }
 
+                                MainNavigationDrawerList.REFERRAL_BONUS.name -> {
+                                    navHostController.navigate(MainDestination.REFERRAL_BONUS_SCREEN)
+                                }
+
                                 MainNavigationDrawerList.Settings.name -> {
                                     navHostController.navigate(SubGraph.SETTINGS)
                                 }
@@ -1148,6 +1152,7 @@ fun MainDrawerContent(
         MainNavigationDrawerList.Saved,
         MainNavigationDrawerList.Liked,
         MainNavigationDrawerList.Registered_Events,
+        MainNavigationDrawerList.REFERRAL_BONUS,
         MainNavigationDrawerList.Settings,
         MainNavigationDrawerList.Log_out,
     )

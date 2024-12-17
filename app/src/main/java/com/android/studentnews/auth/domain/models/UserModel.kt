@@ -7,6 +7,15 @@ data class UserModel(
     val registrationData: RegistrationData? = null,
     val profilePic: String? = "",
     val profilePicBgColor: Int? = 0,
+    val bonusPoints: Long? = 0L,
 ) {
-    constructor(): this ("", "", "", null, "", 0)
+    constructor(): this (
+        email = "",
+        password = "",
+        uid = "",
+        registrationData = null,
+        profilePic = "",
+        profilePicBgColor = 0,
+        bonusPoints = 0L
+    )
 }

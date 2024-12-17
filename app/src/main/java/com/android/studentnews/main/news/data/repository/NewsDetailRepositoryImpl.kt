@@ -11,6 +11,7 @@ import coil.request.ImageRequest
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.news.LIKES
 import com.android.studentnews.main.news.NEWS_ID
+import com.android.studentnews.main.news.SHARE_COUNT
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.resource.NewsState
@@ -215,7 +216,11 @@ class NewsDetailRepositoryImpl(
     override fun onShare(newsId: String) {
         newsColRef
             ?.document(newsId)
-            ?.update("shareCount", FieldValue.increment(1))
+            ?.update(SHARE_COUNT, FieldValue.increment(1))
+
+        userDocRef
+            ?.update("bonusPoints", FieldValue.increment(1))
+
     }
 
 

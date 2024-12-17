@@ -20,4 +20,5 @@ sealed class SubGraph {
 
     @Serializable
     data object SAVED: SubGraph()
+
 }

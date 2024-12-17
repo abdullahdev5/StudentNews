@@ -5,9 +5,12 @@ import kotlinx.serialization.Serializable
 sealed class MainDestination {
 
     @Serializable
-    object ACCOUNT_SCREEN: MainDestination()
+    data object ACCOUNT_SCREEN: MainDestination()
 
     @Serializable
-    object SEARCH_SCREEN: MainDestination()
+    data object SEARCH_SCREEN: MainDestination()
+
+    @Serializable
+    data object REFERRAL_BONUS_SCREEN: MainDestination()
 
 }

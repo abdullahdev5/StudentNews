@@ -5,6 +5,7 @@ package com.android.studentnews.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -25,6 +26,7 @@ import com.android.studentnews.auth.domain.models.RegistrationData
 import com.android.studentnews.auth.ui.AuthenticationScreen
 import com.android.studentnews.auth.ui.RegistrationFormScreen
 import com.android.studentnews.auth.ui.viewModel.AuthViewModel
+import com.android.studentnews.main.ReferralBonusScreen
 import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.EVENTS_REGISTRATION_URI
@@ -59,6 +61,8 @@ import org.koin.androidx.compose.koinViewModel
 import kotlin.reflect.typeOf
 import kotlin.to
 
+private const val NAVIGATION_TIME = 500
+
 @UnstableApi
 @Composable
 fun NavigationGraph(
@@ -87,16 +91,29 @@ fun NavigationGraph(
                         typeOf<RegistrationData>() to RegistrationDataNavType.registrationDataType
                     ),
                     enterTransition = {
-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     },
                     exitTransition = {
-                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     },
                     popEnterTransition = {
-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
+
                     },
                     popExitTransition = {
-                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     }
                 ) {
                     val arguments = it.toRoute<AuthDestination.AUTHENTICATION_SCREEN>()
@@ -154,16 +171,29 @@ fun NavigationGraph(
 
                     composable<NewsDestination.NEWS_LINK_SCREEN>(
                         enterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
                         },
                         exitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
                         },
                         popEnterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
+
                         },
                         popExitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
                         }
                     ) {
                         val arguments = it.toRoute<NewsDestination.NEWS_LINK_SCREEN>()
@@ -261,16 +291,29 @@ fun NavigationGraph(
 
                     composable<SavedDestination.SAVED_SCREEN>(
                         enterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
                         },
                         exitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
                         },
                         popEnterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
+
                         },
                         popExitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
                         }
                     ) {
 
@@ -281,20 +324,7 @@ fun NavigationGraph(
                         )
                     }
 
-                    composable<SavedDestination.SAVED_NEWS_SCREEN>(
-                        enterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                        },
-                        exitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                        },
-                        popEnterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                        },
-                        popExitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                        }
-                    ) {
+                    composable<SavedDestination.SAVED_NEWS_SCREEN> {
                         val savedNewsViewModel = koinViewModel<SavedNewsViewModel>()
 
                         SavedNewsScreen(
@@ -319,16 +349,29 @@ fun NavigationGraph(
                 // Liked News Screen
                 composable<NewsDestination.LIKED_NEWS_SCREEN>(
                     enterTransition = {
-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     },
                     exitTransition = {
-                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     },
                     popEnterTransition = {
-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
+
                     },
                     popExitTransition = {
-                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     }
                 ) {
                     val likedNewsViewModel = koinViewModel<LikedNewsViewModel>()
@@ -343,16 +386,29 @@ fun NavigationGraph(
                 // Registered Events Screen
                 composable<EventsDestination.REGISTERED_EVENTS_SCREEN>(
                     enterTransition = {
-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     },
                     exitTransition = {
-                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     },
                     popEnterTransition = {
-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
+
                     },
                     popExitTransition = {
-                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     }
                 ) {
                     val registeredEventsViewModel = koinViewModel<RegisteredEventsViewModel>()
@@ -371,16 +427,29 @@ fun NavigationGraph(
                     // Settings Screen
                     composable<SettingsDestination.SETTINGS_SCREEN>(
                         enterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
                         },
                         exitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
                         },
                         popEnterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
+
                         },
                         popExitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
                         }
                     ) {
                         SettingsScreen(
@@ -402,16 +471,29 @@ fun NavigationGraph(
 
                 composable<MainDestination.SEARCH_SCREEN>(
                     enterTransition = {
-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     },
                     exitTransition = {
-                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     },
                     popEnterTransition = {
-                        slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
+
                     },
                     popExitTransition = {
-                        slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
                     }
                 ) {
                     val searchViewModel = koinViewModel<SearchViewModel>()
@@ -421,6 +503,41 @@ fun NavigationGraph(
                         searchViewModel = searchViewModel,
                         animatedVisibilityScope = this,
                         sharedTransitionScope = this@SharedTransitionLayout
+                    )
+                }
+
+                // Referral Bonus Screen
+                composable<MainDestination.REFERRAL_BONUS_SCREEN>(
+                    enterTransition = {
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
+                    },
+                    exitTransition = {
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
+                    },
+                    popEnterTransition = {
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
+
+                    },
+                    popExitTransition = {
+                        slideOutOfContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(NAVIGATION_TIME)
+                        )
+                    }
+                ) {
+                    val accountViewModel = koinViewModel<AccountViewModel>()
+                    ReferralBonusScreen(
+                        navHostController = navHostController,
+                        accountViewModel = accountViewModel
                     )
                 }
 
