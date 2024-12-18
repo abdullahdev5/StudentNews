@@ -8,5 +8,6 @@ class FontSize {
         const val SMALL = 12
         const val MEDIUM = 16
         const val LARGE = 20
+        const val EXTRA_LARGE = 30
     }
 }
