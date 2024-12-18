@@ -105,4 +105,7 @@ dependencies {
     // paging 3
     implementation(libs.androidx.paging.runtime.ktx)
     implementation(libs.androidx.paging.compose)
+
+    // Lottie Animation
+    implementation(libs.airbnb.android.lottie.compose)
 }
