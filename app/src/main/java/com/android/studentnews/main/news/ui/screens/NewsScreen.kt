@@ -200,15 +200,11 @@ fun NewsScreen(
     val tabPagerState = rememberPagerState(pageCount = { 2 })
 
     // Top Bar Scroll Connection
-    val topBarMaxHeight: Int = with(density) { (50).dp.roundToPx() }
+    val topBarMaxHeight: Int = with(density) { (30).dp.roundToPx() }
     val topBarScrollConnection: CollapsingAppBarNestedScrollConnection =
         remember(topBarMaxHeight) {
             CollapsingAppBarNestedScrollConnection(topBarMaxHeight)
         }
-    val animatedTopBarOffset by animateFloatAsState(
-        targetValue = topBarScrollConnection.appBarOffset.toFloat(),
-        label = ""
-    )
 
     // Bottom Bar Scroll Connection
     val bottomBarMaxHeight: Int = with(density) { (50).dp.roundToPx() }
@@ -216,10 +212,6 @@ fun NewsScreen(
         remember(bottomBarMaxHeight) {
             CollapsingAppBarNestedScrollConnection(bottomBarMaxHeight)
         }
-    val animatedBottomBarOffset by animateFloatAsState(
-        targetValue = bottomBarScrollConnection.appBarOffset.toFloat(),
-        label = ""
-    )
 
 
     val tabList = listOf(
@@ -457,11 +449,11 @@ fun NewsScreen(
                                     with(density) {
                                         Modifier
                                             .height(
-                                                (topBarMaxHeight + animatedTopBarOffset.roundToInt()).toDp()
+                                                (topBarMaxHeight + topBarScrollConnection.appBarOffset).toDp()
                                             )
                                     }
                                 )
-                                .offset { IntOffset(0, animatedTopBarOffset.roundToInt()) }
+                                .offset { IntOffset(0, topBarScrollConnection.appBarOffset) }
                         )
 
                         MainTabRow(
@@ -504,7 +496,7 @@ fun NewsScreen(
                                 with(density) {
                                     Modifier
                                         .height(
-                                            (bottomBarMaxHeight + animatedTopBarOffset.roundToInt()).toDp()
+                                            (bottomBarMaxHeight + bottomBarScrollConnection.appBarOffset).toDp()
                                         )
                                 }
                             ),
@@ -515,7 +507,7 @@ fun NewsScreen(
                             containerColor = Color.Transparent,
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .offset { IntOffset(0, -animatedTopBarOffset.roundToInt()) },
+                                .offset { IntOffset(0, -bottomBarScrollConnection.appBarOffset) },
                         ) {
                             navBarList.forEachIndexed { index, item ->
                                 NavigationBarItem(

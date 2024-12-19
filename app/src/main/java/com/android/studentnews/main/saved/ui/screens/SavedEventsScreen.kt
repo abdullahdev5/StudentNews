@@ -326,7 +326,7 @@ fun SavedEventsItem(
                             }
                         )
                         .height(itemHeight)
-                        .background(color = Black)
+                        .background(color = if (isSystemInDarkTheme()) LightGray else Black)
                         .align(Alignment.CenterEnd)
                         .clickable {
                             item?.let {
@@ -343,7 +343,9 @@ fun SavedEventsItem(
                             imageVector = if (targetState)
                                 Icons.Default.Delete else Icons.Outlined.Delete,
                             contentDescription = "Icon for Remove Item from Saved List",
-                            tint = if (targetState) Red else White,
+                            tint = if (targetState) Red else {
+                                if (isSystemInDarkTheme()) Black else White
+                            },
                         )
                     }
                 }
@@ -367,19 +369,6 @@ fun SavedEventsItem(
                     }
                     .background(
                         color = if (isSystemInDarkTheme()) DarkColor else White
-                    )
-                    .then(
-                        if (isSystemInDarkTheme()
-                            && offsetX != 0f
-                            && offsetX.dp <= maxWidth()
-                            && isDragging
-                        ) {
-                            Modifier
-                                .border(
-                                    width = 1.dp,
-                                    color = White
-                                )
-                        } else Modifier
                     )
                     .clickable {
                         onItemClick(item?.eventId ?: "")
