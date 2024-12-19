@@ -5,6 +5,8 @@ package com.android.studentnews.navigation
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -136,6 +138,10 @@ fun NavigationGraph(
                                 uriPattern = "$NEWS_URI/newsId={newsId}"
                             }
                         ),
+                        enterTransition = { fadeIn() },
+                        exitTransition = { fadeOut() },
+                        popEnterTransition = { fadeIn() },
+                        popExitTransition = { fadeOut() },
                     ) {
                         val arguments = it.toRoute<NewsDestination.NEWS_DETAIL_SCREEN>()
                         val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
@@ -186,7 +192,11 @@ fun NavigationGraph(
                                         "/isComeForRegistration={isComeForRegistration}" +
                                         "/notificationId={notificationId}"
                             }
-                        )
+                        ),
+                        enterTransition = { fadeIn() },
+                        exitTransition = { fadeOut() },
+                        popEnterTransition = { fadeIn() },
+                        popExitTransition = { fadeOut() },
                     ) {
 
                         val arguments = it.toRoute<EventsDestination.EVENTS_DETAIL_SCREEN>()
@@ -281,20 +291,7 @@ fun NavigationGraph(
                         )
                     }
 
-                    composable<SavedDestination.SAVED_NEWS_SCREEN>(
-                        enterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                        },
-                        exitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                        },
-                        popEnterTransition = {
-                            slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right)
-                        },
-                        popExitTransition = {
-                            slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left)
-                        }
-                    ) {
+                    composable<SavedDestination.SAVED_NEWS_SCREEN>() {
                         val savedNewsViewModel = koinViewModel<SavedNewsViewModel>()
 
                         SavedNewsScreen(
@@ -390,7 +387,12 @@ fun NavigationGraph(
 
                 }
 
-                composable<MainDestination.ACCOUNT_SCREEN>() {
+                composable<MainDestination.ACCOUNT_SCREEN>(
+                    enterTransition = { fadeIn() },
+                    exitTransition = { fadeOut() },
+                    popEnterTransition = { fadeIn() },
+                    popExitTransition = { fadeOut() },
+                ) {
                     val accountViewModel = koinViewModel<AccountViewModel>()
                     AccountScreen(
                         navHostController = navHostController,
