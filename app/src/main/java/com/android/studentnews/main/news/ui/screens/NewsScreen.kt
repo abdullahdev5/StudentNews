@@ -11,7 +11,9 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -198,18 +200,26 @@ fun NewsScreen(
     val tabPagerState = rememberPagerState(pageCount = { 2 })
 
     // Top Bar Scroll Connection
-    val topBarMaxHeight = with(density) { (50).dp.toPx() }
+    val topBarMaxHeight: Int = with(density) { (50).dp.roundToPx() }
     val topBarScrollConnection: CollapsingAppBarNestedScrollConnection =
         remember(topBarMaxHeight) {
             CollapsingAppBarNestedScrollConnection(topBarMaxHeight)
         }
+    val animatedTopBarOffset by animateFloatAsState(
+        targetValue = topBarScrollConnection.appBarOffset.toFloat(),
+        label = ""
+    )
 
     // Bottom Bar Scroll Connection
-    val bottomBarMaxHeight = with(density) { (50).dp.toPx() }
+    val bottomBarMaxHeight: Int = with(density) { (50).dp.roundToPx() }
     val bottomBarScrollConnection: CollapsingAppBarNestedScrollConnection =
         remember(bottomBarMaxHeight) {
             CollapsingAppBarNestedScrollConnection(bottomBarMaxHeight)
         }
+    val animatedBottomBarOffset by animateFloatAsState(
+        targetValue = bottomBarScrollConnection.appBarOffset.toFloat(),
+        label = ""
+    )
 
 
     val tabList = listOf(
@@ -443,10 +453,11 @@ fun NewsScreen(
                                     with(density) {
                                         Modifier
                                             .height(
-                                                (topBarScrollConnection.currentAppBarHeight).toDp()
+                                                (topBarMaxHeight + animatedTopBarOffset.roundToInt()).toDp()
                                             )
                                     }
                                 )
+                                .offset { IntOffset(0, animatedTopBarOffset.roundToInt()) }
                         )
 
                         MainTabRow(
@@ -489,7 +500,7 @@ fun NewsScreen(
                                 with(density) {
                                     Modifier
                                         .height(
-                                            (bottomBarScrollConnection.currentAppBarHeight).toDp()
+                                            (bottomBarMaxHeight + animatedTopBarOffset.roundToInt()).toDp()
                                         )
                                 }
                             ),
@@ -500,6 +511,7 @@ fun NewsScreen(
                             containerColor = Color.Transparent,
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .offset { IntOffset(0, -animatedTopBarOffset.roundToInt()) },
                         ) {
                             navBarList.forEachIndexed { index, item ->
                                 NavigationBarItem(
@@ -545,7 +557,7 @@ fun NewsScreen(
                     ) {
 
                         val categoriesMaxHeight =
-                            with(density) { (50).dp.toPx() }
+                            with(density) { (50).dp.roundToPx() }
 
                         val categoriesScrollConnection = remember(categoriesMaxHeight) {
                             CollapsingAppBarNestedScrollConnection(
@@ -587,10 +599,16 @@ fun NewsScreen(
                                                         with(density) {
                                                             Modifier
                                                                 .height(
-                                                                    (categoriesScrollConnection.currentAppBarHeight).toDp()
+                                                                    (categoriesMaxHeight + categoriesScrollConnection.appBarOffset).toDp()
                                                                 )
                                                         }
-                                                    ),
+                                                    )
+                                                    .offset {
+                                                        IntOffset(
+                                                            0,
+                                                            categoriesScrollConnection.appBarOffset
+                                                        )
+                                                    },
                                             ) {
                                                 categoriesList
                                                     .itemSnapshotList
