@@ -4,19 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -31,10 +23,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -42,7 +34,6 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -74,28 +65,27 @@ fun ReferralBonusScreen(
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
 
-
     val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
 
 
-    val cardMaxHeight = with(density) { (configuration.screenHeightDp / 3).dp.toPx() }
-    var currentCardHeight by remember { mutableFloatStateOf(cardMaxHeight) }
+    val cardMaxHeightPx = with(density) { (configuration.screenHeightDp / 3).dp.toPx() }
+    var currentCardHeightPx by remember { mutableFloatStateOf(cardMaxHeightPx) }
 
-    val cardScrollConnection = remember(cardMaxHeight) {
+    val cardScrollConnection = remember(cardMaxHeightPx) {
         object : NestedScrollConnection {
             override fun onPreScroll(
                 available: Offset,
                 source: NestedScrollSource,
             ): Offset {
                 val delta = available.y
-                if (delta >= 0) {
+                if (delta >= 0f) {
                     return Offset.Zero
                 }
-                var newCardHeight = currentCardHeight + delta
-                var previousCardHeight = currentCardHeight
-                currentCardHeight = newCardHeight.coerceIn(0f, cardMaxHeight)
+                var newCardHeight = currentCardHeightPx + delta
+                var previousCardHeight = currentCardHeightPx
+                currentCardHeightPx = newCardHeight.coerceIn(0f, cardMaxHeightPx)
 
-                val consumed = currentCardHeight - previousCardHeight
+                val consumed = currentCardHeightPx - previousCardHeight
 
                 return Offset(0f, consumed)
             }
@@ -106,11 +96,11 @@ fun ReferralBonusScreen(
                 source: NestedScrollSource,
             ): Offset {
                 val delta = available.y
-                var newCardHeight = currentCardHeight + delta
-                var previousCardHeight = currentCardHeight
-                currentCardHeight = newCardHeight.coerceIn(0f, cardMaxHeight)
+                var newCardHeight = currentCardHeightPx + delta
+                var previousCardHeight = currentCardHeightPx
+                currentCardHeightPx = newCardHeight.coerceIn(0f, cardMaxHeightPx)
 
-                val consumed = currentCardHeight - previousCardHeight
+                val consumed = currentCardHeightPx - previousCardHeight
 
                 return Offset(0f, consumed)
             }
@@ -125,7 +115,7 @@ fun ReferralBonusScreen(
 
     val preloaderProgress by animateLottieCompositionAsState(
         composition = preloaderLottieComposition,
-        isPlaying = currentCardHeight != 0f,
+        isPlaying = currentCardHeightPx != 0f,
         restartOnPlay = true,
     )
 
@@ -184,7 +174,7 @@ fun ReferralBonusScreen(
                         with(density) {
                             Modifier
                                 .height(
-                                    currentCardHeight.toDp()
+                                    currentCardHeightPx.toDp()
                                 )
                         }
                     )
@@ -211,7 +201,7 @@ fun ReferralBonusScreen(
                         )
 
                         AnimatedVisibility(
-                            visible = currentCardHeight != 0f
+                            visible = currentCardHeightPx != 0f
                         ) {
                             Column(
                                 verticalArrangement = Arrangement.spacedBy(5.dp),
