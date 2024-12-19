@@ -153,14 +153,14 @@ fun NewsDetailScreen(
         }
     )
 
-    val horizontalPagerMaxHeight = with(density) { (300).dp.roundToPx() }
+    val horizontalPagerMaxHeight = with(density) { (300).dp.toPx() }
 
-    var horizontalPagerOffset by remember { mutableIntStateOf(horizontalPagerMaxHeight) }
+    var horizontalPagerOffset by remember { mutableFloatStateOf(horizontalPagerMaxHeight) }
 
     val horizontalPagerScrollConnection = remember(horizontalPagerMaxHeight) {
         object : NestedScrollConnection {
             override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                val delta = available.y.roundToInt()
+                val delta = available.y
 
                 if (delta >= 0) {
                     return Offset.Zero
@@ -169,11 +169,11 @@ fun NewsDetailScreen(
                 val newOffset = horizontalPagerOffset + delta
                 val previousOffset = horizontalPagerOffset
 
-                horizontalPagerOffset = newOffset.coerceIn(-horizontalPagerMaxHeight, 0)
+                horizontalPagerOffset = newOffset.coerceIn(0f, horizontalPagerMaxHeight)
 
                 val consumed = horizontalPagerOffset - previousOffset
 
-                return Offset(0f, consumed.toFloat())
+                return Offset(0f, consumed)
             }
 
             override fun onPostScroll(
@@ -181,16 +181,16 @@ fun NewsDetailScreen(
                 available: Offset,
                 source: NestedScrollSource
             ): Offset {
-                val delta = available.y.roundToInt()
+                val delta = available.y
 
                 val newOffset = horizontalPagerOffset + delta
                 val previousOffset = horizontalPagerOffset
 
-                horizontalPagerOffset = newOffset.coerceIn(-horizontalPagerMaxHeight, 0)
+                horizontalPagerOffset = newOffset.coerceIn(0f, horizontalPagerMaxHeight)
 
                 val consumed = horizontalPagerOffset - previousOffset
 
-                return Offset(0f, consumed.toFloat())
+                return Offset(0f, consumed)
             }
 
         }
@@ -339,7 +339,7 @@ fun NewsDetailScreen(
                             with(density) {
                                 Modifier
                                     .height(
-                                        (horizontalPagerMaxHeight + horizontalPagerOffset).toDp()
+                                        (horizontalPagerOffset.toInt()).toDp()
                                     )
                             }
                         )

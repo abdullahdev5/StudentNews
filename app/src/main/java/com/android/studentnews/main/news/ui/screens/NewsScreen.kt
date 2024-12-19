@@ -515,7 +515,7 @@ fun NewsScreen(
                             containerColor = Color.Transparent,
                             modifier = Modifier
                                 .fillMaxWidth()
-//                                .offset { IntOffset(0, -animatedTopBarOffset.roundToInt()) },
+                                .offset { IntOffset(0, -animatedTopBarOffset.roundToInt()) },
                         ) {
                             navBarList.forEachIndexed { index, item ->
                                 NavigationBarItem(
