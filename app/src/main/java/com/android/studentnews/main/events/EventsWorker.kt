@@ -1,7 +1,7 @@
 package com.android.studentnews.main.events
 
 import android.Manifest
-import android.R
+import com.android.studentnews.R
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -194,7 +194,7 @@ class EventsWorker(
 
                 val notification =
                     NotificationCompat.Builder(context, NotificationRelated.EVENTS_CHANNEL_ID)
-                        .setSmallIcon(R.mipmap.sym_def_app_icon)
+                        .setSmallIcon(R.mipmap.ic_launcher)
                         .setContentTitle("Hey $currentUserName, New Event is Here. Register?")
                         .setContentText(event?.title ?: "")
                         .setLargeIcon(bitmap)
@@ -214,7 +214,7 @@ class EventsWorker(
                                 HtmlCompat.fromHtml(
                                     "<font color=\"" + ContextCompat.getColor(
                                         context,
-                                        R.color.holo_green_light
+                                        R.color.green
                                     )
                                             + "\">" + "Save" + "</font>",
                                     HtmlCompat.FROM_HTML_MODE_LEGACY
@@ -228,7 +228,7 @@ class EventsWorker(
                                 HtmlCompat.fromHtml(
                                     "<font color=\"" + ContextCompat.getColor(
                                         context,
-                                        R.color.holo_green_light
+                                        R.color.green
                                     )
                                             + "\">" + "Register" + "</font>",
                                     HtmlCompat.FROM_HTML_MODE_LEGACY
