@@ -318,10 +318,6 @@ fun ReferralBonusScreen(
                 }
             }
 
-            (1..200).forEach {
-                Text("Test Item $it")
-            }
-
 
         }
 
