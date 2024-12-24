@@ -1,5 +1,7 @@
 package com.android.studentnews.auth.domain.models
 
+import com.android.studentnews.main.referral_bonus.domain.model.ReferralBonusModel
+
 data class UserModel(
     val email: String? = "",
     val password: String,
@@ -7,15 +9,15 @@ data class UserModel(
     val registrationData: RegistrationData? = null,
     val profilePic: String? = "",
     val profilePicBgColor: Int? = 0,
-    val bonusPoints: Long? = 0L,
+    var referralBonus: ReferralBonusModel? = null,
 ) {
-    constructor(): this (
+    constructor(): this(
         email = "",
         password = "",
         uid = "",
         registrationData = null,
         profilePic = "",
         profilePicBgColor = 0,
-        bonusPoints = 0L
+        referralBonus = null
     )
 }

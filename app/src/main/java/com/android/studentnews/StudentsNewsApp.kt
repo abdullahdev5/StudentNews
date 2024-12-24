@@ -15,6 +15,7 @@ import com.android.studentnews.core.data.module.firebaseModule
 import com.android.studentnews.core.data.module.notificationModule
 import com.android.studentnews.core.data.module.workManagerModule
 import com.android.studentnews.main.account.data.module.accountModule
+import com.android.studentnews.main.referral_bonus.data.module.referralBonusModule
 import com.android.studentnews.main.search.searchModule
 import com.android.studentnews.news.data.module.newsDetailModule
 import com.android.studentnews.news.data.module.newsModule
@@ -46,7 +47,8 @@ class StudentsNewsApp : Application(), KoinComponent, ImageLoaderFactory {
                     eventsModule,
                     searchModule,
                     notificationModule,
-                    accountModule
+                    accountModule,
+                    referralBonusModule,
                 )
             )
         }

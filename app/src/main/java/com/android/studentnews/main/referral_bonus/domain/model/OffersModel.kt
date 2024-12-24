@@ -1,4 +1,4 @@
-package com.android.studentnews.main.referral_bonus
+package com.android.studentnews.main.referral_bonus.domain.model
 
 import com.google.firebase.Timestamp
 

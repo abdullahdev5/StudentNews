@@ -23,4 +23,8 @@ val Red = Color.Red
 val DarkBackgroundColor = Color(0xff181717)
 val DropDownMenuColorLight = White
 val ItemBackgroundColor = Green.copy(0.1f)
-val ReferralBonusTopCardColor = Color.Magenta
+val ReferralScreenBgColorLight = Color(0xffEBEBEB)
+val ReferralScreenBgColorDark = Color(0xff2E2B2B)
+val ReferralLinearColor1 = Color(0xff003A4D)
+
+val ReferralLinearColor2 = Color(0xff993D3D)

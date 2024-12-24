@@ -214,13 +214,16 @@ class NewsDetailRepositoryImpl(
     }
 
     override fun onShare(newsId: String) {
-        newsColRef
-            ?.document(newsId)
-            ?.update(SHARE_COUNT, FieldValue.increment(1))
+        try {
+            newsColRef
+                ?.document(newsId)
+                ?.update(SHARE_COUNT, FieldValue.increment(1))
 
-        userDocRef
-            ?.update("bonusPoints", FieldValue.increment(1))
-
+            userDocRef
+                ?.update("referralBonus.totalPoints", FieldValue.increment(1.5))
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
 

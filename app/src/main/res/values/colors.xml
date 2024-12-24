@@ -11,4 +11,6 @@
     <color name="green">#2B922F</color>
     <color name="dark_bg">#181717</color>
     <color name="dark">#070505</color>
+    <color name="referral_screen_bg_color_light">#EBEBEB</color>
+    <color name="referral_screen_bg_color_dark">#2E2B2B</color>
 </resources>

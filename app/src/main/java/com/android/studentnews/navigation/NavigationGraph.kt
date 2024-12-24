@@ -23,7 +23,7 @@ import com.android.studentnews.auth.domain.models.RegistrationData
 import com.android.studentnews.auth.ui.AuthenticationScreen
 import com.android.studentnews.auth.ui.RegistrationFormScreen
 import com.android.studentnews.auth.ui.viewModel.AuthViewModel
-import com.android.studentnews.main.referral_bonus.ReferralBonusScreen
+import com.android.studentnews.main.referral_bonus.ui.screens.ReferralBonusScreen
 import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.EVENTS_REGISTRATION_URI
@@ -39,6 +39,7 @@ import com.android.studentnews.main.news.ui.screens.NewsDetailScreen
 import com.android.studentnews.main.news.ui.screens.NewsLinkScreen
 import com.android.studentnews.main.settings.saved.ui.screens.SavedNewsScreen
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
+import com.android.studentnews.main.referral_bonus.ui.viewModel.ReferralBonusViewModel
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
 import com.android.studentnews.main.search.SearchScreen
 import com.android.studentnews.main.search.SearchViewModel
@@ -543,9 +544,12 @@ fun NavigationGraph(
                     }
                 ) {
                     val accountViewModel = koinViewModel<AccountViewModel>()
+                    val referralBonusViewModel = koinViewModel<ReferralBonusViewModel>()
+
                     ReferralBonusScreen(
                         navHostController = navHostController,
                         accountViewModel = accountViewModel,
+                        referralBonusViewModel = referralBonusViewModel,
                         sharedTransitionScope = this@SharedTransitionLayout,
                         animatedVisibilityScope = this@composable
                     )
