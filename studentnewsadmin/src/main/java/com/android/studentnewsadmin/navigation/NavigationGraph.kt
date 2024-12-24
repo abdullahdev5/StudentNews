@@ -20,6 +20,8 @@ import com.android.studentnewsadmin.main.news.ui.screens.UploadCategoryScreen
 import com.android.studentnewsadmin.main.news.ui.screens.UploadNewsScreen
 import com.android.studentnewsadmin.main.news.ui.screens.NewsScreen
 import com.android.studentnewsadmin.main.news.ui.viewmodel.NewsViewModel
+import com.android.studentnewsadmin.main.offers.ui.screens.UploadOffersScreen
+import com.android.studentnewsadmin.main.offers.ui.viewModel.OffersViewModel
 import org.koin.androidx.compose.koinViewModel
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -85,6 +87,15 @@ fun NavigationGraph(
                 args = arguments.eventRelatedData,
                 navHostController = navHostController,
                 eventsViewModel = eventsViewModel,
+            )
+        }
+
+        composable<Destination.UPLOAD_OFFERS_SCREEN>() {
+            val offersViewModel = koinViewModel<OffersViewModel>()
+
+            UploadOffersScreen(
+                navHostController = navHostController,
+                offersViewModel = offersViewModel
             )
         }
 

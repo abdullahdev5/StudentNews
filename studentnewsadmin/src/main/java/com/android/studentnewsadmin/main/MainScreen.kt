@@ -15,8 +15,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.PostAdd
+import androidx.compose.material.icons.outlined.LocalOffer
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -82,7 +84,7 @@ fun MainScreen(
 
     LaunchedEffect(isActionButtonClick) {
         if (isActionButtonClick) {
-            animatedHeight.animateTo(150f)
+            animatedHeight.animateTo(200f)
         }
     }
 
@@ -135,6 +137,13 @@ fun MainScreen(
                                 navHostController.navigate(Destination.UPLOAD_EVENTS_SCREEN)
                             }
                         },
+                        onUploadOffers = {
+                            scope.launch {
+                                drawerState.close()
+                            }.invokeOnCompletion {
+                                navHostController.navigate(Destination.UPLOAD_OFFERS_SCREEN)
+                            }
+                        }
                     )
                 }
             }
@@ -223,6 +232,19 @@ fun MainScreen(
                                     )
                                 }
 
+                                SmallFloatingActionButton(
+                                    onClick = {
+                                        isActionButtonClick = false
+                                        navHostController.navigate(Destination.UPLOAD_OFFERS_SCREEN)
+                                    },
+                                    containerColor = if (isSystemInDarkTheme()) Color.DarkGray else Color.LightGray
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.LocalOffer,
+                                        contentDescription = "Icon for Offers"
+                                    )
+                                }
+
 
                             }
 
@@ -307,8 +329,9 @@ fun DrawerContent(
     onUploadNewsClick: () -> Unit,
     onUploadCategoryClick: () -> Unit,
     onUploadEvents: () -> Unit,
+    onUploadOffers: () -> Unit,
 ) {
-    // Add News
+    // Upload News
     NavigationDrawerItem(
         label = {
             Text(text = "Upload News")
@@ -329,7 +352,7 @@ fun DrawerContent(
         shape = RectangleShape,
     )
 
-    // Add Category
+    // Upload Category
     NavigationDrawerItem(
         label = {
             Text(text = "Upload Category")
@@ -350,7 +373,7 @@ fun DrawerContent(
         shape = RectangleShape,
     )
 
-    // Add Events
+    // Upload Events
     NavigationDrawerItem(
         label = {
             Text(text = "Upload Events")
@@ -370,4 +393,26 @@ fun DrawerContent(
         ),
         shape = RectangleShape,
     )
+
+    // Upload Offers
+    NavigationDrawerItem(
+        label = {
+            Text(text = "Upload Offers")
+        },
+        onClick = {
+            onUploadOffers.invoke()
+        },
+        icon = {
+            Icon(
+                imageVector = Icons.Outlined.LocalOffer,
+                contentDescription = "Icon for Offers"
+            )
+        },
+        selected = false,
+        colors = NavigationDrawerItemDefaults.colors(
+            unselectedContainerColor = Color.Transparent,
+        ),
+        shape = RectangleShape,
+    )
+
 }

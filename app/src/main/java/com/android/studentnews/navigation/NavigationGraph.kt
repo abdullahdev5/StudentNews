@@ -8,14 +8,9 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.core.net.toUri
 import androidx.media3.common.util.UnstableApi
-import androidx.navigation.NavDestination
 import androidx.navigation.NavHostController
-import androidx.navigation.NavigatorProvider
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
@@ -28,7 +23,7 @@ import com.android.studentnews.auth.domain.models.RegistrationData
 import com.android.studentnews.auth.ui.AuthenticationScreen
 import com.android.studentnews.auth.ui.RegistrationFormScreen
 import com.android.studentnews.auth.ui.viewModel.AuthViewModel
-import com.android.studentnews.main.ReferralBonusScreen
+import com.android.studentnews.main.referral_bonus.ReferralBonusScreen
 import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.EVENTS_REGISTRATION_URI
@@ -36,7 +31,6 @@ import com.android.studentnews.main.events.EVENTS_URI
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.settings.registered_events.RegisteredEventsScreen
 import com.android.studentnews.main.events.ui.screens.EventsDetailScreen
-import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.settings.saved.ui.screens.SavedEventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
@@ -58,7 +52,6 @@ import com.android.studentnews.main.settings.saved.ui.screens.SavedScreen
 import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.ui.NewsScreen
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
-import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import org.koin.androidx.compose.koinViewModel
 import kotlin.reflect.typeOf
 import kotlin.to

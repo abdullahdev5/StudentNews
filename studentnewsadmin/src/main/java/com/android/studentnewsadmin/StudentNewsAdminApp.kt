@@ -14,6 +14,7 @@ import com.android.studentnewsadmin.core.data.module.firebaseModule
 import com.android.studentnewsadmin.core.data.module.workManagerModule
 import com.android.studentnewsadmin.main.events.data.module.eventsModule
 import com.android.studentnewsadmin.main.news.data.module.newsModule
+import com.android.studentnewsadmin.main.offers.data.module.offersModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.androidx.workmanager.koin.workManagerFactory
@@ -35,6 +36,7 @@ class StudentNewsAdminApp : Application(), KoinComponent, ImageLoaderFactory {
                     workManagerModule,
                     newsModule,
                     eventsModule,
+                    offersModule
                 )
             )
         }

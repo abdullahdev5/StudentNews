@@ -1,4 +1,4 @@
-package com.android.studentnews.main
+package com.android.studentnews.main.referral_bonus
 
 import com.android.studentnews.R
 import androidx.compose.animation.AnimatedVisibility
@@ -52,6 +52,8 @@ import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.ui.theme.ReferralBonusTopCardColor
 import com.android.studentnews.ui.theme.White
+import kotlin.collections.forEach
+import kotlin.ranges.coerceIn
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable

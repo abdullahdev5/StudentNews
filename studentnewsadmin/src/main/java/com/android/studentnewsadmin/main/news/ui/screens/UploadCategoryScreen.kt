@@ -46,6 +46,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,7 +81,7 @@ fun UploadCategoryScreen(
 
 
     var isImagePickerDialogOpen by remember { mutableStateOf(false) }
-    var progress by remember { mutableStateOf(0f) }
+    var progress by remember { mutableFloatStateOf(0f) }
     var categoryAddingStatus by remember { mutableStateOf("") }
 
 
@@ -323,6 +324,7 @@ fun UploadCategoryScreen(
         if (categoryAddingStatus == Status.Loading) {
             val animatedProgress by animateFloatAsState(
                 targetValue = progress,
+                label = "",
             )
             CircularIndicatorWithProgress(animatedProgress)
         }

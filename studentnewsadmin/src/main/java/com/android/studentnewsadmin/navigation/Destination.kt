@@ -23,4 +23,8 @@ sealed class Destination {
         val eventRelatedData: EditEventModel
     ): Destination()
 
+
+    @Serializable
+    data object UPLOAD_OFFERS_SCREEN: Destination()
+
 }
