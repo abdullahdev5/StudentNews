@@ -10,6 +10,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.rememberScrollableState
 import androidx.compose.foundation.gestures.scrollable
@@ -56,21 +57,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.Measurable
-import androidx.compose.ui.layout.MeasureResult
-import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.node.DelegatableNode
-import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
@@ -113,6 +106,9 @@ fun ReferralBonusScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
+
+    // For Only Seeing the Dialog
+    var isCollectingPointsDialogOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         referralBonusViewModel.getOffers()
@@ -274,6 +270,9 @@ fun ReferralBonusScreen(
                             ),
                             shape = RoundedCornerShape(20.dp)
                         )
+                        .clickable {
+                            isCollectingPointsDialogOpen = true
+                        }
                 ) {
                     Box(
                         modifier = Modifier
@@ -379,7 +378,20 @@ fun ReferralBonusScreen(
                 }
             }
 
+        }
 
+        if (isCollectingPointsDialogOpen) {
+            PointsCollectingDialog(
+                descriptionText = {
+                    "Collect these referral points for Sharing with Friend. (For Only Seeing the Dialog)"
+                },
+                onCollect = {
+                    isCollectingPointsDialogOpen = false
+                },
+                onDismiss = {
+                    isCollectingPointsDialogOpen = false
+                }
+            )
         }
 
     }

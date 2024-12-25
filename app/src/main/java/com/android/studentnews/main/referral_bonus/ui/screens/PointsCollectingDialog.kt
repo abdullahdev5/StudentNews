@@ -21,11 +21,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,7 +43,7 @@ import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 
 @Composable
-fun PointsCollectDialog(
+fun PointsCollectingDialog(
     descriptionText: () -> String,
     onCollect: () -> Unit,
     onDismiss: () -> Unit,
@@ -84,17 +82,6 @@ fun PointsCollectDialog(
                 modifier = Modifier
                     .fillMaxWidth()
             ) {
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Cancel,
-                        contentDescription = "Icon for Dismiss"
-                    )
-                }
-
                 Column(
                     verticalArrangement = Arrangement.spacedBy(20.dp),
                     modifier = Modifier
@@ -143,6 +130,18 @@ fun PointsCollectDialog(
                     }
 
                 }
+
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Cancel,
+                        contentDescription = "Icon for Dismiss"
+                    )
+                }
+
             }
 
         }

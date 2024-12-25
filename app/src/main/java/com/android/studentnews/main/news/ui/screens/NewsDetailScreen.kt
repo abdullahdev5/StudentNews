@@ -3,7 +3,6 @@
 package com.android.studentnews.main.news.ui.screens
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -98,7 +97,7 @@ import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
-import com.android.studentnews.main.referral_bonus.ui.screens.PointsCollectDialog
+import com.android.studentnews.main.referral_bonus.ui.screens.PointsCollectingDialog
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
@@ -198,14 +197,14 @@ fun NewsDetailScreen(
         }
     }
 
-    var isCollectPointsDialogOpen = remember(currentUser?.isUserShareTheNews) {
+    var isCollectingPointsDialogOpen = remember(currentUser?.isUserShareTheNews) {
         derivedStateOf {
             currentUser?.isUserShareTheNews ?: false
         }
     }.value
 
-    LaunchedEffect(isCollectPointsDialogOpen) {
-        println("Collect Dialog State: $isCollectPointsDialogOpen")
+    LaunchedEffect(isCollectingPointsDialogOpen) {
+        println("Collect Dialog State: $isCollectingPointsDialogOpen")
     }
 
 
@@ -744,13 +743,13 @@ fun NewsDetailScreen(
 
                 }
 
-                if (isCollectPointsDialogOpen) {
-                    PointsCollectDialog(
+                if (isCollectingPointsDialogOpen) {
+                    PointsCollectingDialog(
                         descriptionText = {
                             "Collect these referral points for Sharing with Friend."
                         },
                         onCollect = {
-                            isCollectPointsDialogOpen = false
+                            isCollectingPointsDialogOpen = false
                             newsDetailViewModel.onReferralPointsCollect(newsId)
                             scope.launch {
                                 SnackBarController.sendEvent(
@@ -761,7 +760,7 @@ fun NewsDetailScreen(
                             }
                         },
                         onDismiss = {
-                            isCollectPointsDialogOpen = false
+                            isCollectingPointsDialogOpen = false
                             newsDetailViewModel.onReferralPointsCollectDismiss()
                         }
                     )
