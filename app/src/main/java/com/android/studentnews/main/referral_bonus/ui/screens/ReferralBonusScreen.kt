@@ -1,10 +1,18 @@
 package com.android.studentnews.main.referral_bonus.ui.screens
 
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.rememberScrollableState
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,17 +23,17 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,7 +48,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -49,17 +59,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.Measurable
+import androidx.compose.ui.layout.MeasureResult
+import androidx.compose.ui.layout.MeasureScope
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.node.DelegatableNode
+import androidx.compose.ui.node.LayoutModifierNode
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.core.domain.constants.FontSize
@@ -69,15 +87,23 @@ import com.android.studentnews.main.referral_bonus.domain.model.OffersModel
 import com.android.studentnews.main.referral_bonus.ui.viewModel.ReferralBonusViewModel
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Gray
-import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.ReferralScreenBgColorLight
 import com.android.studentnews.ui.theme.ReferralLinearColor1
 import com.android.studentnews.ui.theme.ReferralLinearColor2
 import com.android.studentnews.ui.theme.ReferralScreenBgColorDark
 import com.android.studentnews.ui.theme.White
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlin.math.abs
+import kotlin.math.roundToInt
+import kotlin.math.sign
 import kotlin.ranges.coerceIn
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
+
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
 fun ReferralBonusScreen(
     navHostController: NavHostController,
@@ -100,44 +126,81 @@ fun ReferralBonusScreen(
     val offersList by referralBonusViewModel.offersList.collectAsStateWithLifecycle()
 
 
-    val cardMaxHeightPx = with(density) { (320).dp.toPx() }
-    var currentCardHeightPx by remember { mutableFloatStateOf(cardMaxHeightPx) }
+    class MyOverScrollEffect(val scope: CoroutineScope) : OverscrollEffect {
 
-    val cardScrollConnection = remember(cardMaxHeightPx) {
-        object : NestedScrollConnection {
-            override fun onPreScroll(
-                available: Offset,
-                source: NestedScrollSource,
-            ): Offset {
-                val delta = available.y
-                if (delta >= 0f) {
-                    return Offset.Zero
+        private val overScrollOffset = Animatable(0f)
+
+        override fun applyToScroll(
+            delta: Offset,
+            source: NestedScrollSource,
+            performScroll: (Offset) -> Offset,
+        ): Offset {
+            // in pre scroll we relax the overscroll if needed
+            // relaxation: when we are in progress of the overscroll and user scrolls in the
+            // different direction = substract the overscroll first
+
+            val sameDirection = sign(delta.y) == sign(overScrollOffset.value)
+            val consumedByPreScroll =
+                if (abs(overScrollOffset.value) > 0.5 && !sameDirection) {
+                    val previousOverScrollValue = overScrollOffset.value
+                    val newOverScrollValue = overScrollOffset.value + delta.y
+
+                    if (sign(previousOverScrollValue) != sign(newOverScrollValue)) {
+                        // sign changed, coerce to start scrolling and exit
+                        scope.launch { overScrollOffset.snapTo(0f) }
+                        Offset(x = 0f, y = delta.y + previousOverScrollValue)
+                    } else {
+                        scope.launch { overScrollOffset.snapTo(overScrollOffset.value + delta.y) }
+                        delta.copy(x = 0f)
+                    }
+                } else {
+                    Offset.Zero
                 }
-                var newCardHeight = currentCardHeightPx + delta
-                var previousCardHeight = currentCardHeightPx
-                currentCardHeightPx = newCardHeight.coerceIn(0f, cardMaxHeightPx)
 
-                val consumed = currentCardHeightPx - previousCardHeight
-
-                return Offset(0f, consumed)
+            val leftForScroll = delta - consumedByPreScroll
+            val consumedByScroll = performScroll(leftForScroll)
+            val overScrollDelta = leftForScroll - consumedByScroll
+            // if it is a drag, not a fling, add the delta left to our scroll value
+            if (abs(overScrollDelta.y) > 0.5 && source == NestedScrollSource.UserInput) {
+                scope.launch {
+                    overScrollOffset.snapTo(overScrollOffset.value + overScrollDelta.y * 0.1f)
+                }
             }
 
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource,
-            ): Offset {
-                val delta = available.y
-                var newCardHeight = currentCardHeightPx + delta
-                var previousCardHeight = currentCardHeightPx
-                currentCardHeightPx = newCardHeight.coerceIn(0f, cardMaxHeightPx)
-
-                val consumed = currentCardHeightPx - previousCardHeight
-
-                return Offset(0f, consumed)
-            }
+            return consumedByPreScroll + consumedByScroll
         }
+
+        override suspend fun applyToFling(
+            velocity: Velocity,
+            performFling: suspend (Velocity) -> Velocity,
+        ) {
+            val consumed = performFling(velocity)
+
+            // When the filing happens - we just gradually animate our overScroll to 0
+            val remaining = velocity - consumed
+
+            overScrollOffset.animateTo(
+                targetValue = 0f,
+                initialVelocity = remaining.y,
+                animationSpec = spring()
+            )
+        }
+
+        override val effectModifier: Modifier
+            get() = Modifier.offset { IntOffset(x = 0, y = overScrollOffset.value.roundToInt()) }
+
+        override val isInProgress: Boolean
+            get() = overScrollOffset.value != 0f
     }
+
+
+    val scope = rememberCoroutineScope()
+
+    val overScroll = remember(scope) { MyOverScrollEffect(scope) }
+
+    var offset by remember { mutableFloatStateOf(0f) }
+
+    val scrollStateRange = (-512f).rangeTo(512f)
 
 //    val preloaderLottieComposition by rememberLottieComposition(
 //        spec = LottieCompositionSpec.RawRes(
@@ -176,7 +239,6 @@ fun ReferralBonusScreen(
         },
         modifier = Modifier
             .fillMaxSize()
-            .nestedScroll(cardScrollConnection)
     ) { innerPadding ->
 
         Column(
@@ -190,129 +252,139 @@ fun ReferralBonusScreen(
                 ),
         ) {
 
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.Transparent
-                ),
-                shape = RoundedCornerShape(20.dp),
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .then(
-                        with(density) {
-                            Modifier
-                                .height(
-                                    currentCardHeightPx.toDp()
-                                )
-                        }
+                    .scrollable(
+                        orientation = Orientation.Vertical,
+                        overscrollEffect = overScroll,
+                        state = rememberScrollableState { delta ->
+                            val oldValue = offset
+
+                            offset = (offset + delta).coerceIn(scrollStateRange)
+
+                            offset - oldValue
+                        },
                     )
-                    .padding(all = 20.dp)
-                    .background(
-                        brush = Brush.linearGradient(
-                            listOf(
-                                ReferralLinearColor1,
-                                ReferralLinearColor2,
-                            ),
-                        ),
-                        shape = RoundedCornerShape(20.dp)
-                    )
+                    .overscroll(overScroll)
             ) {
-                Box(
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.Transparent
+                    ),
+                    shape = RoundedCornerShape(20.dp),
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
+                        .height(320.dp)
+                        .padding(all = 20.dp)
+                        .background(
+                            brush = Brush.linearGradient(
+                                listOf(
+                                    ReferralLinearColor1,
+                                    ReferralLinearColor2,
+                                ),
+                            ),
+                            shape = RoundedCornerShape(20.dp)
+                        )
                 ) {
-                    Column(
-                        verticalArrangement = Arrangement.Center,
+                    Box(
                         modifier = Modifier
-                            .fillMaxHeight()
-                            .padding(all = 20.dp)
+                            .fillMaxSize()
                     ) {
-                        // Total Points
                         Column(
-                            verticalArrangement = Arrangement.spacedBy(5.dp),
+                            verticalArrangement = Arrangement.Center,
                             modifier = Modifier
+                                .fillMaxHeight()
                                 .padding(all = 20.dp)
                         ) {
-                            Text(
-                                text = "Total Points",
-                                style = TextStyle(
-                                    fontSize = FontSize.MEDIUM.sp,
-                                    color = White,
-                                ),
-                            )
-
-                            Text(
-                                text = (currentUser?.referralBonus?.totalPoints ?: 0.0).toString(),
-                                style = TextStyle(
-                                    fontSize = FontSize.EXTRA_LARGE.sp,
-                                    color = White
+                            // Total Points
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(5.dp),
+                                modifier = Modifier
+                                    .padding(all = 20.dp)
+                            ) {
+                                Text(
+                                    text = "Total Points",
+                                    style = TextStyle(
+                                        fontSize = FontSize.MEDIUM.sp,
+                                        color = White,
+                                    ),
                                 )
-                            )
-                        }
 
-                        // Used Points
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(5.dp),
-                            modifier = Modifier
-                                .padding(all = 20.dp)
-                        ) {
-                            Text(
-                                text = "Used Points",
-                                style = TextStyle(
-                                    fontSize = FontSize.MEDIUM.sp,
-                                    color = White,
-                                ),
-                            )
-
-                            Text(
-                                text = (currentUser?.referralBonus?.usedPoints ?: 0.0).toString(),
-                                style = TextStyle(
-                                    fontSize = FontSize.EXTRA_LARGE.sp,
-                                    color = White
+                                Text(
+                                    text = (currentUser?.referralBonus?.totalPoints
+                                        ?: 0.0).toString(),
+                                    style = TextStyle(
+                                        fontSize = FontSize.EXTRA_LARGE.sp,
+                                        color = White
+                                    )
                                 )
-                            )
+                            }
+
+                            // Used Points
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(5.dp),
+                                modifier = Modifier
+                                    .padding(all = 20.dp)
+                            ) {
+                                Text(
+                                    text = "Used Points",
+                                    style = TextStyle(
+                                        fontSize = FontSize.MEDIUM.sp,
+                                        color = White,
+                                    ),
+                                )
+
+                                Text(
+                                    text = (currentUser?.referralBonus?.usedPoints
+                                        ?: 0.0).toString(),
+                                    style = TextStyle(
+                                        fontSize = FontSize.EXTRA_LARGE.sp,
+                                        color = White
+                                    )
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            AnimatedVisibility(
-                visible = referralBonusViewModel.offersListStatus != Status.Loading,
-            ) {
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
+                this@Column.AnimatedVisibility(
+                    visible = referralBonusViewModel.offersListStatus != Status.Loading,
                 ) {
 
-                    Row(
+                    Column(
                         modifier = Modifier
-                            .padding(all = 10.dp)
-                            .padding(bottom = 10.dp)
+                            .fillMaxWidth()
                     ) {
-                        Text(
-                            text = FirestoreNodes.OFFERS_COL,
-                            style = TextStyle(
-                                fontSize = FontSize.LARGE.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Icon(
-                            imageVector = Icons.Default.ArrowForward,
-                            contentDescription = null
-                        )
-                    }
-                    LazyRow(
-                        modifier = Modifier
-//                            .weight(1f)
-                    ) {
-                        items(offersList.size) { index ->
-                            val item = offersList[index]
 
-                            OffersListItem(
-                                item = item,
-                                currentUser = currentUser
+                        Row(
+                            modifier = Modifier
+                                .padding(all = 10.dp)
+                                .padding(bottom = 10.dp)
+                        ) {
+                            Text(
+                                text = FirestoreNodes.OFFERS_COL,
+                                style = TextStyle(
+                                    fontSize = FontSize.LARGE.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
                             )
+                            Spacer(modifier = Modifier.weight(1f))
+                            Icon(
+                                imageVector = Icons.Default.ArrowForward,
+                                contentDescription = null
+                            )
+                        }
+                        LazyRow {
+                            items(offersList.size) { index ->
+                                val item = offersList[index]
+
+                                OffersListItem(
+                                    item = item,
+                                    currentUser = currentUser,
+                                    density = density,
+                                    context = context
+                                )
+                            }
                         }
                     }
                 }
@@ -330,7 +402,12 @@ fun ReferralBonusScreen(
 fun OffersListItem(
     item: OffersModel,
     currentUser: UserModel?,
+    density: Density,
+    context: Context,
 ) {
+
+    var itemWidthWithPadding by remember { mutableStateOf(50.dp) }
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (isSystemInDarkTheme()) DarkColor else White
@@ -341,7 +418,11 @@ fun OffersListItem(
         Column(
             modifier = Modifier
                 .padding(all = 10.dp)
+                .onSizeChanged { coordinates ->
+                    itemWidthWithPadding = with(density) { coordinates.width.toDp() }
+                }
         ) {
+
             Text(
                 text = item.offerName ?: "",
                 style = TextStyle(
@@ -352,7 +433,7 @@ fun OffersListItem(
             )
 
             Text(
-                text = "${item.pointsWhenAbleToCollect ?: 0.0} points need to collect",
+                text = item.offerDescription ?: "",
                 style = TextStyle(
                     color = Gray,
                     fontSize = FontSize.SMALL.sp
@@ -369,7 +450,7 @@ fun OffersListItem(
                 enabled = (currentUser?.referralBonus?.totalPoints ?: 0.0)
                         > (item.pointsWhenAbleToCollect ?: 0.0),
                 modifier = Modifier
-                    .fillMaxWidth()
+                    .width(itemWidthWithPadding)
                     .padding(all = 5.dp)
             ) {
                 Text(text = "Collect")
