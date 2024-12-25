@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.core.content.FileProvider
 import coil.imageLoader
 import coil.request.ImageRequest
+import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.news.LIKES
 import com.android.studentnews.main.news.NEWS_ID
@@ -213,14 +214,49 @@ class NewsDetailRepositoryImpl(
         }
     }
 
-    override fun onShare(newsId: String) {
+    override fun onCompletelyShared(newsId: String) {
         try {
+
+            userDocRef
+                ?.update(
+                    "isUserShareTheNews", true,
+                    "referralBonus.isUserCollectThePoints", false,
+                )
+
             newsColRef
                 ?.document(newsId)
                 ?.update(SHARE_COUNT, FieldValue.increment(1))
 
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onReferralPointsCollect(newsId: String) {
+        try {
+
             userDocRef
-                ?.update("referralBonus.totalPoints", FieldValue.increment(1.5))
+                ?.update(
+                    "isUserShareTheNews", false,
+                    "referralBonus.totalPoints", FieldValue.increment(1.5),
+                    "referralBonus.isUserCollectThePoints", true,
+                )
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onReferralPointsCollectDismiss() {
+        try {
+
+            userDocRef
+                ?.update(
+                    "isUserShareTheNews", false,
+                    "referralBonus.isUserCollectThePoints", false,
+                    "referralBonus.unCollectedPoints", FieldValue.increment(1.5)
+                )
+
         } catch (e: Exception) {
             e.printStackTrace()
         }

@@ -41,6 +41,7 @@ import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
@@ -116,6 +117,7 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
                 }
 
             } catch (e: Exception) {
+                e.printStackTrace()
                 scope.cancel()
             }
 
@@ -208,6 +210,7 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
                         }
                 }
             } catch (e: Exception) {
+                e.printStackTrace()
                 scope.cancel()
             }
 
@@ -217,11 +220,17 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
         if (intent?.action == SHARE_NEWS_ACTION) {
 
             val newsDetailRepository: NewsDetailRepository by inject()
+            val scope = CoroutineScope(Dispatchers.Default)
 
             val newsId = intent.getStringExtra(NEWS_ID)
 
-            newsDetailRepository
-                .onShare(newsId!!)
+
+            scope.launch {
+                delay(3000)
+                newsDetailRepository
+                    .onCompletelyShared(newsId!!)
+                scope.cancel()
+            }
         }
 
 

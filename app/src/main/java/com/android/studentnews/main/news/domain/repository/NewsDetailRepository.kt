@@ -14,6 +14,7 @@ interface NewsDetailRepository {
     val newsColRef: CollectionReference?
     val savedNewsColRef: CollectionReference?
 
+
     fun getNewsById(newsId: String): Flow<NewsState<NewsModel?>>
     fun onNewsShare(
         imageUrl: String,
@@ -28,6 +29,9 @@ interface NewsDetailRepository {
     // Like
     fun onNewsLike(newsId: String): Flow<NewsState<String>>
     fun onNewsUnlike(newsId: String): Flow<NewsState<String>>
-    fun onShare(newsId: String)
+    fun onCompletelyShared(newsId: String)
+
+    fun onReferralPointsCollect(newsId: String)
+    fun onReferralPointsCollectDismiss()
 
 }

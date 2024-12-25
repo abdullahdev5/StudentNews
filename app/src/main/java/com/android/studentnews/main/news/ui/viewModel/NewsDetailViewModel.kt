@@ -7,7 +7,6 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
@@ -278,6 +277,14 @@ class NewsDetailViewModel(
                 }
         }
     }
+
+    fun onReferralPointsCollect(newsId: String) =
+        newsDetailRepository.onReferralPointsCollect(newsId)
+
+    fun onReferralPointsCollectDismiss() =
+        newsDetailRepository.onReferralPointsCollectDismiss()
+
+
 
     override fun onCleared() {
         isNewsSaved = null

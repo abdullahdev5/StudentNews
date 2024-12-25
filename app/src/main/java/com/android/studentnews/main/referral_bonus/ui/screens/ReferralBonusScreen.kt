@@ -82,6 +82,7 @@ import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.referral_bonus.domain.model.OffersModel
 import com.android.studentnews.main.referral_bonus.ui.viewModel.ReferralBonusViewModel
@@ -201,18 +202,6 @@ fun ReferralBonusScreen(
     var offset by remember { mutableFloatStateOf(0f) }
 
     val scrollStateRange = (-512f).rangeTo(512f)
-
-//    val preloaderLottieComposition by rememberLottieComposition(
-//        spec = LottieCompositionSpec.RawRes(
-//            resId = R.raw.bonus_gift
-//        )
-//    )
-//
-//    val preloaderProgress by animateLottieCompositionAsState(
-//        composition = preloaderLottieComposition,
-//        isPlaying = currentCardHeightPx != 0f,
-//        restartOnPlay = true,
-//    )
 
 
     Scaffold(
@@ -447,6 +436,7 @@ fun OffersListItem(
 
                 },
                 shape = RoundedCornerShape(5.dp),
+                colors = ButtonColors(),
                 enabled = (currentUser?.referralBonus?.totalPoints ?: 0.0)
                         > (item.pointsWhenAbleToCollect ?: 0.0),
                 modifier = Modifier
