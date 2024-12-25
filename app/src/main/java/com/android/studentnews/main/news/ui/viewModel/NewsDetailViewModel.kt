@@ -278,8 +278,8 @@ class NewsDetailViewModel(
         }
     }
 
-    fun onReferralPointsCollect(newsId: String) =
-        newsDetailRepository.onReferralPointsCollect(newsId)
+    fun onReferralPointsCollect() =
+        newsDetailRepository.onReferralPointsCollect()
 
     fun onReferralPointsCollectDismiss() =
         newsDetailRepository.onReferralPointsCollectDismiss()

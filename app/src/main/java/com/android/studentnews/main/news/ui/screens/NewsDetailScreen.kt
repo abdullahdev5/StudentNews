@@ -750,7 +750,7 @@ fun NewsDetailScreen(
                         },
                         onCollect = {
                             isCollectingPointsDialogOpen = false
-                            newsDetailViewModel.onReferralPointsCollect(newsId)
+                            newsDetailViewModel.onReferralPointsCollect()
                             scope.launch {
                                 SnackBarController.sendEvent(
                                     SnackBarEvents(

@@ -232,7 +232,7 @@ class NewsDetailRepositoryImpl(
         }
     }
 
-    override fun onReferralPointsCollect(newsId: String) {
+    override fun onReferralPointsCollect() {
         try {
 
             userDocRef
