@@ -14,6 +14,7 @@ import com.android.studentnews.main.news.LIKES
 import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.SHARE_COUNT
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
+import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.resource.NewsState
 import com.google.firebase.auth.FirebaseAuth
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import java.io.File
 import java.io.FileOutputStream
+import java.util.UUID
 
 private val TAG = "NewsDetailRepositoryImpl"
 
@@ -217,10 +219,15 @@ class NewsDetailRepositoryImpl(
     override fun onCompletelyShared(newsId: String) {
         try {
 
+            val earnedPointsModel = EarnedPointsModel(
+                earnedPoints = 1.5,
+                earnedPointId = UUID.randomUUID().toString()
+            )
+
             userDocRef
                 ?.update(
-                    "isUserShareTheNews", true,
-                    "referralBonus.isUserCollectThePoints", false,
+                    "referralBonus.earnedPointsList",
+                    FieldValue.arrayUnion(earnedPointsModel)
                 )
 
             newsColRef
@@ -232,29 +239,17 @@ class NewsDetailRepositoryImpl(
         }
     }
 
-    override fun onReferralPointsCollect() {
+    override fun onReferralPointsCollect(
+        earnedPointsListItem: EarnedPointsModel,
+    ) {
         try {
 
             userDocRef
                 ?.update(
-                    "isUserShareTheNews", false,
-                    "referralBonus.totalPoints", FieldValue.increment(1.5),
-                    "referralBonus.isUserCollectThePoints", true,
-                )
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    override fun onReferralPointsCollectDismiss() {
-        try {
-
-            userDocRef
-                ?.update(
-                    "isUserShareTheNews", false,
-                    "referralBonus.isUserCollectThePoints", false,
-                    "referralBonus.unCollectedPoints", FieldValue.increment(1.5)
+                    "referralBonus.totalPoints",
+                    FieldValue.increment(earnedPointsListItem.earnedPoints ?: 0.0),
+                    "referralBonus.earnedPointsList",
+                    FieldValue.arrayRemove(earnedPointsListItem)
                 )
 
         } catch (e: Exception) {

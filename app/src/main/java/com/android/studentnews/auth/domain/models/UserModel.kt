@@ -10,8 +10,6 @@ data class UserModel(
     val registrationData: RegistrationData? = null,
     val profilePic: String? = "",
     val profilePicBgColor: Int? = 0,
-    @field:JvmField
-    var isUserShareTheNews: Boolean? = false,
     var referralBonus: ReferralBonusModel? = null,
 ) {
     constructor(): this(
@@ -21,7 +19,6 @@ data class UserModel(
         registrationData = null,
         profilePic = "",
         profilePicBgColor = 0,
-        isUserShareTheNews = false,
         referralBonus = null
     )
 }

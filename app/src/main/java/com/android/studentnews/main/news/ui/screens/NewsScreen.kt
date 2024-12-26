@@ -11,9 +11,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -152,6 +150,8 @@ import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.main.MainNavigationDrawerList
 import com.android.studentnews.main.MainTabRowList
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
+import com.android.studentnews.main.referral_bonus.ui.screens.PointsCollectingListItem
+import com.android.studentnews.main.referral_bonus.ui.screens.PointsCollectingDialog
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
@@ -165,7 +165,6 @@ import com.google.firebase.Timestamp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
-import kotlin.math.roundToInt
 
 @SuppressLint(
     "RememberReturnType", "FrequentlyChangedStateReadInComposition"
@@ -180,6 +179,10 @@ fun NewsScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
 ) {
+
+    var isCollectingPointsDialogOpen by rememberSaveable { mutableStateOf(false) }
+    var isCollectingPointsRemovedByUser by rememberSaveable { mutableStateOf(false) }
+
 
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
@@ -764,6 +767,111 @@ fun NewsScreen(
                                                         sharedTransitionScope = sharedTransitionScope,
                                                     )
 
+                                                    val itemIndex =
+                                                        newsList.itemSnapshotList.indexOf(item)
+
+                                                    val earnedPointsList =
+                                                        currentUser?.referralBonus?.earnedPointsList
+
+                                                    if (
+                                                        itemIndex == 2
+                                                        && !earnedPointsList.isNullOrEmpty()
+                                                        && !isCollectingPointsRemovedByUser
+                                                    ) {
+                                                        Column(
+                                                            verticalArrangement = Arrangement.spacedBy(
+                                                                10.dp
+                                                            ),
+                                                            modifier = Modifier
+                                                        ) {
+                                                            Text(
+                                                                text = "Referral Points",
+                                                                style = TextStyle(
+                                                                    fontSize = FontSize.MEDIUM.sp,
+                                                                    fontWeight = FontWeight.Bold
+                                                                ),
+                                                                modifier = Modifier
+                                                                    .padding(
+                                                                        start = 10.dp,
+                                                                    )
+                                                            )
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                            ) {
+                                                                earnedPointsList
+                                                                    .subList(0, 1)
+                                                                    .forEach { item ->
+                                                                        PointsCollectingListItem(
+                                                                            item = item,
+                                                                            onCollect = { thisItem ->
+                                                                                newsViewModel.earnedPointsListItemWhenCollectClick =
+                                                                                    item
+                                                                                isCollectingPointsDialogOpen =
+                                                                                    true
+
+                                                                                earnedPointsList
+                                                                                    .toMutableList()
+                                                                                    .remove(thisItem)
+                                                                            },
+                                                                            onDismiss = {
+                                                                                isCollectingPointsRemovedByUser = true
+                                                                            }
+                                                                        )
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    if (
+                                                        itemIndex == 8
+                                                        && !earnedPointsList.isNullOrEmpty()
+                                                        && earnedPointsList.size > 1
+                                                        && !isCollectingPointsRemovedByUser
+                                                    ) {
+                                                        Column(
+                                                            verticalArrangement = Arrangement.spacedBy(
+                                                                10.dp
+                                                            ),
+                                                            modifier = Modifier
+                                                        ) {
+                                                            Row {
+                                                                Text(
+                                                                    text = "Referral Points",
+                                                                    style = TextStyle(
+                                                                        fontSize = FontSize.MEDIUM.sp,
+                                                                        fontWeight = FontWeight.Bold
+                                                                    ),
+                                                                    modifier = Modifier
+                                                                        .padding(
+                                                                            start = 10.dp,
+                                                                        )
+                                                                )
+                                                            }
+                                                            Row(
+                                                                modifier = Modifier
+                                                                    .fillMaxWidth()
+                                                            ) {
+                                                                earnedPointsList
+                                                                    .subList(1, 2)
+                                                                    .forEach { item ->
+                                                                        PointsCollectingListItem(
+                                                                            item = item,
+                                                                            onCollect = { thisItem ->
+                                                                                newsViewModel.earnedPointsListItemWhenCollectClick =
+                                                                                    item
+                                                                                isCollectingPointsDialogOpen =
+                                                                                    true
+                                                                            },
+                                                                            onDismiss = {
+                                                                                isCollectingPointsRemovedByUser = true
+                                                                            }
+                                                                        )
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+
                                                 }
                                             }
 
@@ -885,6 +993,28 @@ fun NewsScreen(
                             }
                         )
                     }
+                }
+
+                if (
+                    isCollectingPointsDialogOpen
+                    && newsViewModel.earnedPointsListItemWhenCollectClick != null
+                ) {
+                    PointsCollectingDialog(
+                        descriptionText = {
+                            "Collect these referral points for Sharing with Friend."
+                        },
+                        onCollect = {
+                            isCollectingPointsDialogOpen = false
+                            newsViewModel.onReferralPointsCollect(
+                                earnedPointsListItem = newsViewModel.earnedPointsListItemWhenCollectClick!!
+                            )
+                            newsViewModel.earnedPointsListItemWhenCollectClick = null
+                        },
+                        onDismiss = {
+                            isCollectingPointsDialogOpen = false
+                            newsViewModel.earnedPointsListItemWhenCollectClick = null
+                        }
+                    )
                 }
 
             }

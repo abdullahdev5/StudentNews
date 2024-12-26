@@ -278,13 +278,6 @@ class NewsDetailViewModel(
         }
     }
 
-    fun onReferralPointsCollect() =
-        newsDetailRepository.onReferralPointsCollect()
-
-    fun onReferralPointsCollectDismiss() =
-        newsDetailRepository.onReferralPointsCollectDismiss()
-
-
 
     override fun onCleared() {
         isNewsSaved = null

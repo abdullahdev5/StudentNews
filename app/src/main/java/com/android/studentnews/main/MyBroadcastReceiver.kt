@@ -130,7 +130,6 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
             val scope = CoroutineScope(Dispatchers.Default)
 
 
-
             val notificationId = intent.getIntExtra(NOTIFICATION_ID, 1)
             notificationManager.cancel(notificationId)
 
@@ -220,17 +219,11 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
         if (intent?.action == SHARE_NEWS_ACTION) {
 
             val newsDetailRepository: NewsDetailRepository by inject()
-            val scope = CoroutineScope(Dispatchers.Default)
 
             val newsId = intent.getStringExtra(NEWS_ID)
 
-
-            scope.launch {
-                delay(3000)
-                newsDetailRepository
-                    .onCompletelyShared(newsId!!)
-                scope.cancel()
-            }
+            newsDetailRepository
+                .onCompletelyShared(newsId!!)
         }
 
 

@@ -1,43 +1,29 @@
 package com.android.studentnews.news.ui.viewModel
 
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.internal.isLiveLiteralsEnabled
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
 import androidx.paging.PagingData
-import androidx.paging.PagingSource
-import androidx.paging.PagingState
 import androidx.paging.cachedIn
 import com.android.studentnews.auth.domain.repository.AuthRepository
-import com.android.studentnews.core.data.snackbar_controller.SnackBarController
-import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
-import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.main.MainNavigationDrawerList
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
+import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
 import com.android.studentnews.news.data.repository.NEWS_CATEGORY_LIST_PAGE_SIZE
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
-import com.android.studentnews.news.domain.resource.NewsState
-import com.google.firebase.Timestamp
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.launch
-import org.koin.core.qualifier.qualifier
 
 @OptIn(FlowPreview::class)
 class NewsViewModel(
     private val newsRepository: NewsRepository,
     private val authRepository: AuthRepository,
+    private val newsDetailRepository: NewsDetailRepository,
 ) : ViewModel() {
 
     private val _newsList = MutableStateFlow<PagingData<NewsModel>>(PagingData.empty())
@@ -48,7 +34,9 @@ class NewsViewModel(
 
     var isRefreshing by mutableStateOf(false)
 
-    var newsIdWhenMoreOptionClick by mutableStateOf<String?>(null)
+    var newsIdWhenMoreOptionClick by mutableStateOf<String?>(null) // When More Options Click
+
+    var earnedPointsListItemWhenCollectClick by mutableStateOf<EarnedPointsModel?>(null) // When Collect Click
 
 
     init {
@@ -68,6 +56,11 @@ class NewsViewModel(
         }
     }
 
+    fun onReferralPointsCollect(
+        earnedPointsListItem: EarnedPointsModel
+    ) = newsDetailRepository.onReferralPointsCollect(earnedPointsListItem)
+
+
     fun signOut() = authRepository.signOut()
 
     fun setupPeriodicNewsWorkRequest() = newsRepository.setupPeriodicNewsWorkRequest()
@@ -76,6 +69,7 @@ class NewsViewModel(
 
     override fun onCleared() {
         newsIdWhenMoreOptionClick = null
+        earnedPointsListItemWhenCollectClick = null
     }
 
 }

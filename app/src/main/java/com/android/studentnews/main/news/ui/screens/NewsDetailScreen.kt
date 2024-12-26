@@ -197,16 +197,6 @@ fun NewsDetailScreen(
         }
     }
 
-    var isCollectingPointsDialogOpen = remember(currentUser?.isUserShareTheNews) {
-        derivedStateOf {
-            currentUser?.isUserShareTheNews ?: false
-        }
-    }.value
-
-    LaunchedEffect(isCollectingPointsDialogOpen) {
-        println("Collect Dialog State: $isCollectingPointsDialogOpen")
-    }
-
 
     Scaffold(
         bottomBar = {
@@ -741,29 +731,6 @@ fun NewsDetailScreen(
 
                     }
 
-                }
-
-                if (isCollectingPointsDialogOpen) {
-                    PointsCollectingDialog(
-                        descriptionText = {
-                            "Collect these referral points for Sharing with Friend."
-                        },
-                        onCollect = {
-                            isCollectingPointsDialogOpen = false
-                            newsDetailViewModel.onReferralPointsCollect()
-                            scope.launch {
-                                SnackBarController.sendEvent(
-                                    SnackBarEvents(
-                                        message = "Points Added to Your Referral Account"
-                                    )
-                                )
-                            }
-                        },
-                        onDismiss = {
-                            isCollectingPointsDialogOpen = false
-                            newsDetailViewModel.onReferralPointsCollectDismiss()
-                        }
-                    )
                 }
 
             }

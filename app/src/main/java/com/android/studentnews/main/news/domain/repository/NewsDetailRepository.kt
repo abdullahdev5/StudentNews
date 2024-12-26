@@ -2,6 +2,7 @@ package com.android.studentnews.main.news.domain.repository
 
 import android.content.Context
 import android.net.Uri
+import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.resource.NewsState
 import com.google.firebase.firestore.CollectionReference
@@ -31,7 +32,6 @@ interface NewsDetailRepository {
     fun onNewsUnlike(newsId: String): Flow<NewsState<String>>
     fun onCompletelyShared(newsId: String)
 
-    fun onReferralPointsCollect()
-    fun onReferralPointsCollectDismiss()
+    fun onReferralPointsCollect(earnedPointsListItem: EarnedPointsModel)
 
 }
