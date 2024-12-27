@@ -1,12 +1,15 @@
 package com.android.studentnews.main.referral_bonus.data.repository
 
 import com.android.studentnews.core.domain.constants.FirestoreNodes
+import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
 import com.android.studentnews.main.referral_bonus.domain.model.OffersModel
 import com.android.studentnews.main.referral_bonus.domain.repository.ReferralBonusRepository
 import com.android.studentnews.main.referral_bonus.domain.resource.ReferralBonusState
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Source
 import com.google.firebase.storage.FirebaseStorage
@@ -20,12 +23,15 @@ class ReferralBonusRepositoryImpl(
     private val firestore: FirebaseFirestore,
 ) : ReferralBonusRepository {
 
-    override val userDocRef: DocumentReference?
-        get() = firestore.collection(FirestoreNodes.USERS_COL)
+    override val userDocRef: DocumentReference? =
+        firestore.collection(FirestoreNodes.USERS_COL)
             .document(auth.currentUser?.uid.toString())
 
-    override val offersColRef: CollectionReference?
-        get() = firestore.collection(FirestoreNodes.OFFERS_COL)
+    override val offersColRef: CollectionReference? =
+        firestore.collection(FirestoreNodes.OFFERS_COL)
+
+    override val collectedOffersColRef: CollectionReference? =
+        userDocRef?.collection(FirestoreNodes.COLLECTED_OFFERS_COL)
 
 
     override suspend fun getOffers(): Flow<ReferralBonusState<List<OffersModel>>> {
@@ -43,11 +49,11 @@ class ReferralBonusRepositoryImpl(
                     it.toObject(OffersModel::class.java)
                 }
 
-                trySend(ReferralBonusState.Success(offersList!!))
+                trySend(ReferralBonusState.Success(data = offersList!!))
 
             } catch (e: Exception) {
                 e.printStackTrace()
-                trySend(ReferralBonusState.Failed(e))
+                trySend(ReferralBonusState.Failed(error = e))
             }
 
 
@@ -57,5 +63,43 @@ class ReferralBonusRepositoryImpl(
         }
     }
 
+    override fun onReferralPointsCollect(earnedPointsModel: EarnedPointsModel) {
+        try {
+            userDocRef
+                ?.update(
+                    "referralBonus.totalPoints", FieldValue.increment(earnedPointsModel.earnedPoints ?: 0.0),
+                    "referralBonus.earnedPointsList", FieldValue.arrayRemove(earnedPointsModel),
+                    "referralBonus.prevCollectedPointsTimestamp", Timestamp.now()
+
+                )
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+
+    override fun onOfferCollect(offersModel: OffersModel): Flow<ReferralBonusState<String>> {
+        return callbackFlow {
+
+            collectedOffersColRef
+                ?.document(offersModel.offerId.toString())
+                ?.set(offersModel)
+                ?.addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        trySend(ReferralBonusState.Success(
+                            data = "Offer has been added to Your Collected Offers Collection"
+                        ))
+                    } else {
+                        trySend(ReferralBonusState.Failed(error = task.exception!!))
+                    }
+                }
+
+
+            awaitClose {
+                close()
+            }
+        }
+    }
 
 }

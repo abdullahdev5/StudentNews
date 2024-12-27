@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.studentnews.core.domain.constants.Status
+import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
 import com.android.studentnews.main.referral_bonus.domain.model.OffersModel
 import com.android.studentnews.main.referral_bonus.domain.repository.ReferralBonusRepository
 import com.android.studentnews.main.referral_bonus.domain.resource.ReferralBonusState
@@ -47,6 +48,14 @@ class ReferralBonusViewModel(
                 }
         }
     }
+
+    fun onReferralPointsCollect(
+        earnedPointsModel: EarnedPointsModel
+    ) = referralBonusRepository.onReferralPointsCollect(earnedPointsModel)
+
+    suspend fun onOfferCollect(
+        offersModel: OffersModel
+    ) = referralBonusRepository.onOfferCollect(offersModel)
 
 
 }

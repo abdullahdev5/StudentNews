@@ -2,6 +2,7 @@
 
 package com.android.studentnews.navigation
 
+import com.android.studentnews.R
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -13,6 +14,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.dialog
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
@@ -39,6 +41,11 @@ import com.android.studentnews.main.news.ui.screens.NewsDetailScreen
 import com.android.studentnews.main.news.ui.screens.NewsLinkScreen
 import com.android.studentnews.main.settings.saved.ui.screens.SavedNewsScreen
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
+import com.android.studentnews.main.referral_bonus.domain.EarnedPointsModelNavType
+import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
+import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
+import com.android.studentnews.main.referral_bonus.ui.composables.PointsCollectingDialog
+import com.android.studentnews.main.referral_bonus.ui.composables.CongratulationDialpg
 import com.android.studentnews.main.referral_bonus.ui.viewModel.ReferralBonusViewModel
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
 import com.android.studentnews.main.search.SearchScreen
@@ -515,44 +522,101 @@ fun NavigationGraph(
                     )
                 }
 
-                // Referral Bonus Screen
-                composable<MainDestination.REFERRAL_BONUS_SCREEN>(
-                    enterTransition = {
-                        slideIntoContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                            animationSpec = tween(NAVIGATION_TIME)
-                        )
-                    },
-                    exitTransition = {
-                        slideOutOfContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                            animationSpec = tween(NAVIGATION_TIME)
-                        )
-                    },
-                    popEnterTransition = {
-                        slideIntoContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.Left,
-                            animationSpec = tween(NAVIGATION_TIME)
-                        )
+                // Referral Bonus Graph
+                navigation<SubGraph.REFERRAL_BONUS>(
+                    startDestination = ReferralBonusDestinations.REFERRAL_BONUS_SCREEN
+                ) {
+                    // Referral Bonus Screen
+                    composable<ReferralBonusDestinations.REFERRAL_BONUS_SCREEN>(
+                        enterTransition = {
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
+                        },
+                        exitTransition = {
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
+                        },
+                        popEnterTransition = {
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
 
-                    },
-                    popExitTransition = {
-                        slideOutOfContainer(
-                            towards = AnimatedContentTransitionScope.SlideDirection.Right,
-                            animationSpec = tween(NAVIGATION_TIME)
+                        },
+                        popExitTransition = {
+                            slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                                animationSpec = tween(NAVIGATION_TIME)
+                            )
+                        }
+                    ) {
+                        val accountViewModel = koinViewModel<AccountViewModel>()
+                        val referralBonusViewModel = koinViewModel<ReferralBonusViewModel>()
+
+                        ReferralBonusScreen(
+                            navHostController = navHostController,
+                            accountViewModel = accountViewModel,
+                            referralBonusViewModel = referralBonusViewModel,
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            animatedVisibilityScope = this@composable
                         )
                     }
-                ) {
-                    val accountViewModel = koinViewModel<AccountViewModel>()
-                    val referralBonusViewModel = koinViewModel<ReferralBonusViewModel>()
 
-                    ReferralBonusScreen(
-                        navHostController = navHostController,
-                        accountViewModel = accountViewModel,
-                        referralBonusViewModel = referralBonusViewModel,
-                        sharedTransitionScope = this@SharedTransitionLayout,
-                        animatedVisibilityScope = this@composable
-                    )
+                    dialog<ReferralBonusDestinations.COLLECTING_POINTS_DIALOG>(
+                        typeMap = mapOf(
+                            typeOf<EarnedPointsModel>() to EarnedPointsModelNavType.earnedPointsModelType
+                        )
+                    ) {
+                        val arguments =
+                            it.toRoute<ReferralBonusDestinations.COLLECTING_POINTS_DIALOG>()
+                        val referralBonusViewModel = koinViewModel<ReferralBonusViewModel>()
+
+                        PointsCollectingDialog(
+                            titlText = {
+                                arguments.titleText
+                            },
+                            descriptionText = {
+                                arguments.descriptionText
+                            },
+                            onCollect = {
+                                referralBonusViewModel.onReferralPointsCollect(
+                                    arguments.earnedPointsModel
+                                )
+                                navHostController.navigateUp()
+                            },
+                            onDismiss = {
+                                navHostController.navigateUp()
+                                navHostController.navigate(
+                                    ReferralBonusDestinations.CONGRATULATION_DIALOG(
+                                        resId = R.raw.reward_anim,
+                                        lottieHeight = 200,
+                                        titleText = "Congratulations",
+                                        descriptionText = "You Earned" +
+                                                " ${arguments.earnedPointsModel.earnedPoints}" +
+                                                " Points."
+                                    )
+                                )
+                            }
+                        )
+                    }
+
+                    dialog<ReferralBonusDestinations.CONGRATULATION_DIALOG>() { entry ->
+                        val arguments = entry.toRoute<ReferralBonusDestinations.CONGRATULATION_DIALOG>()
+
+                        CongratulationDialpg(
+                            resId = { arguments.resId },
+                            lottieHeight = { arguments.lottieHeight },
+                            titleText = { arguments.titleText },
+                            descriptionText = { arguments.descriptionText },
+                            onConfirm = { navHostController.navigateUp() },
+                            onDismiss = { navHostController.navigateUp() }
+                        )
+                    }
+
                 }
 
             }

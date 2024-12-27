@@ -52,7 +52,7 @@ core-splashscreen = { group = "androidx.core", name = "core-splashscreen", versi
 # Koin
 koin-android = { group = "io.insert-koin", name = "koin-android", version.ref = "koin-version" }
 koin-androidx-compose = { group = "io.insert-koin", name = "koin-androidx-compose", version.ref = "koin-version" }
-koin-androidx-navigation = { group = "io.insert-koin", name = "koin-androidx-navigation", version.ref = "koin-version" }
+koin-androidx-compose-navigation = { group = "io.insert-koin", name = "koin-androidx-compose-navigation", version.ref = "koin-version" }
 koin-core = { group = "io.insert-koin", name = "koin-core", version.ref = "koin-version" }
 koin-androidx-workmanager = { group = "io.insert-koin", name = "koin-androidx-workmanager", version.ref = "koin-version" }
 koin-test-junit4 = { group = "io.insert-koin", name = "koin-test-junit4", version.ref = "koin-version" }

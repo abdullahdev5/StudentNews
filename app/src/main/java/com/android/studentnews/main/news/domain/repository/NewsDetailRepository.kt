@@ -32,6 +32,4 @@ interface NewsDetailRepository {
     fun onNewsUnlike(newsId: String): Flow<NewsState<String>>
     fun onCompletelyShared(newsId: String)
 
-    fun onReferralPointsCollect(earnedPointsListItem: EarnedPointsModel)
-
 }

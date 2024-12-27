@@ -21,4 +21,6 @@ sealed class SubGraph {
     @Serializable
     data object SAVED: SubGraph()
 
+    @Serializable
+    data object REFERRAL_BONUS: SubGraph()
 }

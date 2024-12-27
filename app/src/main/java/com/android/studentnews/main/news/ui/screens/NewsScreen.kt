@@ -5,7 +5,6 @@ package com.android.studentnews.news.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -135,10 +134,11 @@ import com.android.studentnews.core.data.paginator.LENGTH_ERROR
 import com.android.studentnews.core.domain.common.CollapsingAppBarNestedScrollConnection
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.common.formatDateOrTimeToAgo
-import com.android.studentnews.core.domain.common.formatDateToDay
 import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.MainBottomNavigationBarList
+import com.android.studentnews.main.MainNavigationDrawerList
+import com.android.studentnews.main.MainTabRowList
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
@@ -146,14 +146,12 @@ import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.domain.model.CategoryModel
+import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
+import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
+import com.android.studentnews.main.referral_bonus.ui.composables.PointsCollectingListItem
 import com.android.studentnews.navigation.SubGraph
 import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
-import com.android.studentnews.main.MainNavigationDrawerList
-import com.android.studentnews.main.MainTabRowList
-import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
-import com.android.studentnews.main.referral_bonus.ui.screens.PointsCollectingListItem
-import com.android.studentnews.main.referral_bonus.ui.screens.PointsCollectingDialog
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
@@ -186,7 +184,6 @@ fun NewsScreen(
 
     val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
 
-    var isCollectingPointsDialogOpen by rememberSaveable { mutableStateOf(false) }
     var isCollectingPointsRemovedByUser by rememberSaveable { mutableStateOf(false) }
 
 
@@ -237,7 +234,7 @@ fun NewsScreen(
     val newsList = newsViewModel.newsList.collectAsLazyPagingItems()
     val categoriesList = newsViewModel.categoriesList.collectAsLazyPagingItems()
 
-    val earnedPointsListRandomItem = remember(currentUser) {
+    val earnedPointsListFirstItem = remember(currentUser) {
         derivedStateOf {
             if (!currentUser?.referralBonus?.earnedPointsList.isNullOrEmpty())
                 currentUser?.referralBonus?.earnedPointsList?.first()
@@ -379,7 +376,7 @@ fun NewsScreen(
                                 }
 
                                 MainNavigationDrawerList.REFERRAL_BONUS.name -> {
-                                    navHostController.navigate(MainDestination.REFERRAL_BONUS_SCREEN)
+                                    navHostController.navigate(SubGraph.REFERRAL_BONUS)
                                 }
 
                                 MainNavigationDrawerList.Settings.name -> {
@@ -806,10 +803,10 @@ fun NewsScreen(
 
                                                     if (
                                                         isIndexReached
-                                                        && earnedPointsListRandomItem != null
+                                                        && earnedPointsListFirstItem != null
                                                         && !isCollectingPointsRemovedByUser
                                                         && (timestampDate == null
-                                                                || today  == nextDay)
+                                                                || today == nextDay)
                                                     ) {
                                                         Column(
                                                             verticalArrangement = Arrangement.spacedBy(
@@ -833,12 +830,16 @@ fun NewsScreen(
                                                                     .fillMaxWidth()
                                                             ) {
                                                                 PointsCollectingListItem(
-                                                                    item = earnedPointsListRandomItem,
+                                                                    item = earnedPointsListFirstItem,
                                                                     onCollect = { thisItem ->
-                                                                        newsViewModel.earnedPointsListItemWhenCollectClick =
-                                                                            earnedPointsListRandomItem
-                                                                        isCollectingPointsDialogOpen =
-                                                                            true
+                                                                        navHostController
+                                                                            .navigate(
+                                                                                ReferralBonusDestinations.COLLECTING_POINTS_DIALOG(
+                                                                                    titleText = "Referral Points",
+                                                                                    descriptionText = "Collect these referral points for Sharing with Friend.",
+                                                                                    earnedPointsModel = thisItem
+                                                                                )
+                                                                            )
                                                                     },
                                                                     onDismiss = {
                                                                         isCollectingPointsRemovedByUser =
@@ -970,31 +971,6 @@ fun NewsScreen(
                             }
                         )
                     }
-                }
-
-                if (
-                    isCollectingPointsDialogOpen
-                    && newsViewModel.earnedPointsListItemWhenCollectClick != null
-                ) {
-                    PointsCollectingDialog(
-                        title = {
-                            "Referral Points"
-                        },
-                        descriptionText = {
-                            "Collect these referral points for Sharing with Friend."
-                        },
-                        onCollect = {
-                            isCollectingPointsDialogOpen = false
-                            newsViewModel.onReferralPointsCollect(
-                                earnedPointsListItem = newsViewModel.earnedPointsListItemWhenCollectClick!!
-                            )
-                            newsViewModel.earnedPointsListItemWhenCollectClick = null
-                        },
-                        onDismiss = {
-                            isCollectingPointsDialogOpen = false
-                            newsViewModel.earnedPointsListItemWhenCollectClick = null
-                        }
-                    )
                 }
 
             }

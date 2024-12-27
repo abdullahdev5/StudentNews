@@ -36,9 +36,6 @@ class NewsViewModel(
 
     var newsIdWhenMoreOptionClick by mutableStateOf<String?>(null) // When More Options Click
 
-    var earnedPointsListItemWhenCollectClick by mutableStateOf<EarnedPointsModel?>(null) // When Collect Click
-
-
     init {
         isRefreshing = true
         setupPeriodicNewsWorkRequest()
@@ -56,10 +53,6 @@ class NewsViewModel(
         }
     }
 
-    fun onReferralPointsCollect(
-        earnedPointsListItem: EarnedPointsModel
-    ) = newsDetailRepository.onReferralPointsCollect(earnedPointsListItem)
-
 
     fun signOut() = authRepository.signOut()
 
@@ -69,7 +62,6 @@ class NewsViewModel(
 
     override fun onCleared() {
         newsIdWhenMoreOptionClick = null
-        earnedPointsListItemWhenCollectClick = null
     }
 
 }

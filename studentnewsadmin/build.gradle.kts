@@ -77,7 +77,7 @@ dependencies {
     // Koin
     implementation(libs.koin.android)
     implementation(libs.koin.androidx.compose)
-    implementation(libs.koin.androidx.navigation)
+    implementation(libs.koin.androidx.compose.navigation)
     implementation(libs.koin.core)
     implementation(libs.koin.androidx.workmanager)
     testImplementation(libs.koin.test.junit4)

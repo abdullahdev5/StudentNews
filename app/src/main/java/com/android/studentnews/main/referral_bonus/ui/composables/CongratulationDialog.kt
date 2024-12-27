@@ -1,6 +1,8 @@
-package com.android.studentnews.main.referral_bonus.ui.screens
+package com.android.studentnews.main.referral_bonus.ui.composables
 
-import com.android.studentnews.R
+
+import androidx.annotation.RawRes
+import androidx.compose.runtime.Composable
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -13,7 +15,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -21,7 +22,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,16 +44,18 @@ import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 
 @Composable
-fun PointsCollectingDialog(
-    title: () -> String,
+fun CongratulationDialpg(
+    @RawRes resId: () -> Int,
+    lottieHeight: () -> Int,
+    titleText: () -> String,
     descriptionText: () -> String,
-    onCollect: () -> Unit,
-    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
 ) {
 
     val preloaderLottieComposition by rememberLottieComposition(
         spec = LottieCompositionSpec.RawRes(
-            resId = R.raw.bonus_gift
+            resId = resId()
         )
     )
 
@@ -96,11 +98,11 @@ fun PointsCollectingDialog(
                         alignment = Alignment.Center,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(max = 250.dp)
+                            .heightIn(max = lottieHeight().dp)
                     )
 
                     Text(
-                        text = title(),
+                        text = titleText(),
                         style = TextStyle(
                             fontSize = FontSize.LARGE.sp,
                             fontWeight = FontWeight.Bold,
@@ -121,14 +123,14 @@ fun PointsCollectingDialog(
                     )
 
                     Button(
-                        onClick = onCollect,
+                        onClick = onConfirm,
                         shape = RoundedCornerShape(5.dp),
                         colors = ButtonColors(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(all = 10.dp)
                     ) {
-                        Text(text = "collect")
+                        Text(text = "OK")
                     }
 
                 }

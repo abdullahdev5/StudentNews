@@ -1,4 +1,4 @@
-package com.android.studentnews.main.referral_bonus.ui.screens
+package com.android.studentnews.main.referral_bonus.ui.composables
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column

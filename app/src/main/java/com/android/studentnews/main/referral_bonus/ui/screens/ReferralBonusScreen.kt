@@ -6,9 +6,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.background
@@ -29,7 +27,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.rememberScrollState
@@ -48,7 +45,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -88,15 +84,16 @@ import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
+import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
 import com.android.studentnews.main.referral_bonus.domain.model.OffersModel
 import com.android.studentnews.main.referral_bonus.ui.viewModel.ReferralBonusViewModel
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
-import com.android.studentnews.ui.theme.ReferralScreenBgColorLight
 import com.android.studentnews.ui.theme.ReferralLinearColor1
 import com.android.studentnews.ui.theme.ReferralLinearColor2
 import com.android.studentnews.ui.theme.ReferralScreenBgColorDark
+import com.android.studentnews.ui.theme.ReferralScreenBgColorLight
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -119,9 +116,6 @@ fun ReferralBonusScreen(
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
-
-    // For Only Seeing the Dialog
-    var isCollectingPointsDialogOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         referralBonusViewModel.getOffers()
@@ -284,7 +278,14 @@ fun ReferralBonusScreen(
                             shape = RoundedCornerShape(20.dp)
                         )
                         .clickable {
-                            isCollectingPointsDialogOpen = true
+                            navHostController
+                                .navigate(
+                                    ReferralBonusDestinations.COLLECTING_POINTS_DIALOG(
+                                        titleText = "Referral Points",
+                                        descriptionText = "Collect these referral points for Sharing with Friend. (For Only Seeing the Dialog)",
+                                        earnedPointsModel = currentUser?.referralBonus?.earnedPointsList?.first()!!
+                                    )
+                                )
                         }
                 ) {
                     Box(
@@ -398,23 +399,6 @@ fun ReferralBonusScreen(
                 }
             }
 
-        }
-
-        if (isCollectingPointsDialogOpen) {
-            PointsCollectingDialog(
-                title = {
-                    "Referral Points"
-                },
-                descriptionText = {
-                    "Collect these referral points for Sharing with Friend. (For Only Seeing the Dialog)"
-                },
-                onCollect = {
-                    isCollectingPointsDialogOpen = false
-                },
-                onDismiss = {
-                    isCollectingPointsDialogOpen = false
-                }
-            )
         }
 
     }

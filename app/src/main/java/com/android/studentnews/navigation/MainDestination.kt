@@ -10,7 +10,4 @@ sealed class MainDestination {
     @Serializable
     data object SEARCH_SCREEN: MainDestination()
 
-    @Serializable
-    data object REFERRAL_BONUS_SCREEN: MainDestination()
-
 }

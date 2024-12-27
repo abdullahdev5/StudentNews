@@ -240,23 +240,5 @@ class NewsDetailRepositoryImpl(
         }
     }
 
-    override fun onReferralPointsCollect(
-        earnedPointsListItem: EarnedPointsModel,
-    ) {
-        try {
-
-            userDocRef
-                ?.update(
-                    "referralBonus.totalPoints", FieldValue.increment(earnedPointsListItem.earnedPoints ?: 0.0),
-                    "referralBonus.earnedPointsList", FieldValue.arrayRemove(earnedPointsListItem),
-                    "referralBonus.prevCollectedPointsTimestamp", Timestamp.now()
-
-                )
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
 
 }
