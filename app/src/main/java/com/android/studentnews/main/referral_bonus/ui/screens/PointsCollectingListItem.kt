@@ -56,7 +56,7 @@ fun PointsCollectingListItem(
                 )
             }
             Text(
-                text = "Collect and Add ${item.earnedPoints} Points to your Referral Wallet",
+                text = "Collect These ${item.earnedPoints} Points to your Referral Wallet",
                 style = TextStyle(
                     fontSize = FontSize.MEDIUM.sp,
                     fontWeight = FontWeight.Bold

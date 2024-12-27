@@ -45,6 +45,7 @@ import com.android.studentnews.ui.theme.White
 
 @Composable
 fun PointsCollectingDialog(
+    title: () -> String,
     descriptionText: () -> String,
     onCollect: () -> Unit,
     onDismiss: () -> Unit,
@@ -99,7 +100,7 @@ fun PointsCollectingDialog(
                     )
 
                     Text(
-                        text = "Referral Points",
+                        text = title(),
                         style = TextStyle(
                             fontSize = FontSize.LARGE.sp,
                             fontWeight = FontWeight.Bold,

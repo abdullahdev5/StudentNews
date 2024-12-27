@@ -5,6 +5,7 @@ package com.android.studentnews.news.ui
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -134,6 +135,7 @@ import com.android.studentnews.core.data.paginator.LENGTH_ERROR
 import com.android.studentnews.core.domain.common.CollapsingAppBarNestedScrollConnection
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.common.formatDateOrTimeToAgo
+import com.android.studentnews.core.domain.common.formatDateToDay
 import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.MainBottomNavigationBarList
@@ -165,6 +167,8 @@ import com.google.firebase.Timestamp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
+import java.time.LocalDate
+import java.time.ZoneId
 
 @SuppressLint(
     "RememberReturnType", "FrequentlyChangedStateReadInComposition"
@@ -179,6 +183,8 @@ fun NewsScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
 ) {
+
+    val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
 
     var isCollectingPointsDialogOpen by rememberSaveable { mutableStateOf(false) }
     var isCollectingPointsRemovedByUser by rememberSaveable { mutableStateOf(false) }
@@ -230,7 +236,33 @@ fun NewsScreen(
 
     val newsList = newsViewModel.newsList.collectAsLazyPagingItems()
     val categoriesList = newsViewModel.categoriesList.collectAsLazyPagingItems()
-    val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
+
+    val earnedPointsListRandomItem = remember(currentUser) {
+        derivedStateOf {
+            if (!currentUser?.referralBonus?.earnedPointsList.isNullOrEmpty())
+                currentUser?.referralBonus?.earnedPointsList?.first()
+            else return@derivedStateOf null
+        }
+    }.value
+
+
+    val today = LocalDate.now(ZoneId.systemDefault())
+    val timestampDate = remember(currentUser) {
+        derivedStateOf {
+            currentUser?.referralBonus?.prevCollectedPointsTimestamp?.let {
+                currentUser?.referralBonus?.prevCollectedPointsTimestamp
+                    ?.toDate()?.toInstant()?.atZone(ZoneId.systemDefault())?.toLocalDate()
+            } ?: return@derivedStateOf null
+        }
+    }.value
+
+    val nextDay = remember(timestampDate) {
+        derivedStateOf {
+            timestampDate?.let {
+                timestampDate.plusDays(1)
+            } ?: return@derivedStateOf null
+        }
+    }.value
 
     val categoryPagerState = rememberPagerState(
         pageCount = {
@@ -770,13 +802,14 @@ fun NewsScreen(
                                                     val itemIndex =
                                                         newsList.itemSnapshotList.indexOf(item)
 
-                                                    val earnedPointsList =
-                                                        currentUser?.referralBonus?.earnedPointsList
+                                                    val isIndexReached = itemIndex == 6
 
                                                     if (
-                                                        itemIndex == 2
-                                                        && !earnedPointsList.isNullOrEmpty()
+                                                        isIndexReached
+                                                        && earnedPointsListRandomItem != null
                                                         && !isCollectingPointsRemovedByUser
+                                                        && (timestampDate == null
+                                                                || today  == nextDay)
                                                     ) {
                                                         Column(
                                                             verticalArrangement = Arrangement.spacedBy(
@@ -799,75 +832,19 @@ fun NewsScreen(
                                                                 modifier = Modifier
                                                                     .fillMaxWidth()
                                                             ) {
-                                                                earnedPointsList
-                                                                    .subList(0, 1)
-                                                                    .forEach { item ->
-                                                                        PointsCollectingListItem(
-                                                                            item = item,
-                                                                            onCollect = { thisItem ->
-                                                                                newsViewModel.earnedPointsListItemWhenCollectClick =
-                                                                                    item
-                                                                                isCollectingPointsDialogOpen =
-                                                                                    true
-
-                                                                                earnedPointsList
-                                                                                    .toMutableList()
-                                                                                    .remove(thisItem)
-                                                                            },
-                                                                            onDismiss = {
-                                                                                isCollectingPointsRemovedByUser = true
-                                                                            }
-                                                                        )
+                                                                PointsCollectingListItem(
+                                                                    item = earnedPointsListRandomItem,
+                                                                    onCollect = { thisItem ->
+                                                                        newsViewModel.earnedPointsListItemWhenCollectClick =
+                                                                            earnedPointsListRandomItem
+                                                                        isCollectingPointsDialogOpen =
+                                                                            true
+                                                                    },
+                                                                    onDismiss = {
+                                                                        isCollectingPointsRemovedByUser =
+                                                                            true
                                                                     }
-                                                            }
-                                                        }
-                                                    }
-
-                                                    if (
-                                                        itemIndex == 8
-                                                        && !earnedPointsList.isNullOrEmpty()
-                                                        && earnedPointsList.size > 1
-                                                        && !isCollectingPointsRemovedByUser
-                                                    ) {
-                                                        Column(
-                                                            verticalArrangement = Arrangement.spacedBy(
-                                                                10.dp
-                                                            ),
-                                                            modifier = Modifier
-                                                        ) {
-                                                            Row {
-                                                                Text(
-                                                                    text = "Referral Points",
-                                                                    style = TextStyle(
-                                                                        fontSize = FontSize.MEDIUM.sp,
-                                                                        fontWeight = FontWeight.Bold
-                                                                    ),
-                                                                    modifier = Modifier
-                                                                        .padding(
-                                                                            start = 10.dp,
-                                                                        )
                                                                 )
-                                                            }
-                                                            Row(
-                                                                modifier = Modifier
-                                                                    .fillMaxWidth()
-                                                            ) {
-                                                                earnedPointsList
-                                                                    .subList(1, 2)
-                                                                    .forEach { item ->
-                                                                        PointsCollectingListItem(
-                                                                            item = item,
-                                                                            onCollect = { thisItem ->
-                                                                                newsViewModel.earnedPointsListItemWhenCollectClick =
-                                                                                    item
-                                                                                isCollectingPointsDialogOpen =
-                                                                                    true
-                                                                            },
-                                                                            onDismiss = {
-                                                                                isCollectingPointsRemovedByUser = true
-                                                                            }
-                                                                        )
-                                                                    }
                                                             }
                                                         }
                                                     }
@@ -1000,6 +977,9 @@ fun NewsScreen(
                     && newsViewModel.earnedPointsListItemWhenCollectClick != null
                 ) {
                     PointsCollectingDialog(
+                        title = {
+                            "Referral Points"
+                        },
                         descriptionText = {
                             "Collect these referral points for Sharing with Friend."
                         },

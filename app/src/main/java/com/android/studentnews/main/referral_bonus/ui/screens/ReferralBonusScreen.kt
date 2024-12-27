@@ -6,7 +6,9 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.background
@@ -27,6 +29,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.overscroll
 import androidx.compose.foundation.rememberScrollState
@@ -39,20 +42,25 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -62,8 +70,11 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
@@ -81,12 +92,14 @@ import com.android.studentnews.main.referral_bonus.domain.model.OffersModel
 import com.android.studentnews.main.referral_bonus.ui.viewModel.ReferralBonusViewModel
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.Gray
+import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.ReferralScreenBgColorLight
 import com.android.studentnews.ui.theme.ReferralLinearColor1
 import com.android.studentnews.ui.theme.ReferralLinearColor2
 import com.android.studentnews.ui.theme.ReferralScreenBgColorDark
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -336,7 +349,7 @@ fun ReferralBonusScreen(
                 }
 
                 this@Column.AnimatedVisibility(
-                    visible = referralBonusViewModel.offersListStatus != Status.Loading,
+                    visible = referralBonusViewModel.offersListStatus == Status.SUCCESS,
                 ) {
 
                     Column(
@@ -376,12 +389,22 @@ fun ReferralBonusScreen(
                         }
                     }
                 }
+
+                if (referralBonusViewModel.offersListStatus == Status.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                    )
+                }
             }
 
         }
 
         if (isCollectingPointsDialogOpen) {
             PointsCollectingDialog(
+                title = {
+                    "Referral Points"
+                },
                 descriptionText = {
                     "Collect these referral points for Sharing with Friend. (For Only Seeing the Dialog)"
                 },
@@ -409,6 +432,77 @@ fun OffersListItem(
 
     var itemWidthWithPadding by remember { mutableStateOf(50.dp) }
 
+    val totalPoints = 40 // currentUser?.referralBonus?.totalPoints ?: 0.0
+
+    val offersPoints = 50.0 // item.pointsWhenAbleToCollect ?: 0.0
+
+    val isTotalLessThanOfferPoints = remember {
+        derivedStateOf {
+            totalPoints < offersPoints
+        }
+    }.value
+
+
+    val animatedProgress = remember {
+        Animatable(0f)
+    }
+
+    LaunchedEffect(Unit) {
+        delay(1000)
+        animatedProgress.animateTo(
+            (totalPoints.toFloat()) / (offersPoints.toFloat())
+        )
+    }
+
+    val annotatedTitleAndDescription = buildAnnotatedString {
+        // Title
+        withStyle(
+            SpanStyle(
+                fontSize = FontSize.MEDIUM.sp
+            )
+        ) {
+            append(item.offerName ?: "")
+        }
+        // Description
+        withStyle(
+            SpanStyle(
+                color = Gray,
+                fontSize = FontSize.SMALL.sp
+            )
+        ) {
+            append("\n${item.offerDescription ?: ""}")
+        }
+    }
+
+
+    val annotatedTotalAndOfferPoints = buildAnnotatedString {
+        withStyle(
+            SpanStyle(
+                fontSize = if (isTotalLessThanOfferPoints)
+                    FontSize.MEDIUM.sp else FontSize.LARGE.sp,
+                fontWeight = if (isTotalLessThanOfferPoints)
+                    FontWeight.Normal else FontWeight.Bold
+            )
+        ) {
+            append("$totalPoints")
+        }
+
+        withStyle(
+            SpanStyle(
+                fontSize = if (isTotalLessThanOfferPoints)
+                    FontSize.LARGE.sp else FontSize.MEDIUM.sp,
+                fontWeight = if (isTotalLessThanOfferPoints)
+                    FontWeight.Bold else FontWeight.Normal
+            )
+        ) {
+            append(" /")
+            append("$offersPoints")
+        }
+    }
+
+
+
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = if (isSystemInDarkTheme()) DarkColor else White
@@ -425,23 +519,47 @@ fun OffersListItem(
         ) {
 
             Text(
-                text = item.offerName ?: "",
-                style = TextStyle(
-                    fontSize = FontSize.MEDIUM.sp
-                ),
+                text = annotatedTitleAndDescription,
                 modifier = Modifier
                     .padding(all = 5.dp)
             )
 
-            Text(
-                text = item.offerDescription ?: "",
-                style = TextStyle(
-                    color = Gray,
-                    fontSize = FontSize.SMALL.sp
-                ),
+            Column(
                 modifier = Modifier
+                    .width(itemWidthWithPadding)
                     .padding(all = 5.dp)
-            )
+            ) {
+
+                Text(text = annotatedTotalAndOfferPoints)
+
+                LinearProgressIndicator(
+                    progress = {
+                        animatedProgress.value
+                    },
+                    color = if (
+                        isTotalLessThanOfferPoints
+                        || animatedProgress.value != (totalPoints.toFloat()) / (offersPoints.toFloat())
+                    ) Green else Gray,
+                )
+
+                AnimatedVisibility(
+                    visible = animatedProgress.value == (totalPoints.toFloat()) / (offersPoints.toFloat())
+                ) {
+                    Text(
+                        text = if (totalPoints < offersPoints)
+                            "Reach $offersPoints Points to collect This"
+                        else
+                            "You Reached $offersPoints Points, collect This",
+                        style = TextStyle(
+                            fontSize = FontSize.SMALL.sp,
+                            color = if (totalPoints < offersPoints) Gray else Green
+                        ),
+                        modifier = Modifier
+                            .padding(top = 5.dp)
+                    )
+                }
+
+            }
 
             Button(
                 onClick = {
@@ -449,8 +567,7 @@ fun OffersListItem(
                 },
                 shape = RoundedCornerShape(5.dp),
                 colors = ButtonColors(),
-                enabled = (currentUser?.referralBonus?.totalPoints ?: 0.0)
-                        > (item.pointsWhenAbleToCollect ?: 0.0),
+                enabled = totalPoints >= offersPoints,
                 modifier = Modifier
                     .width(itemWidthWithPadding)
                     .padding(all = 5.dp)

@@ -36,7 +36,7 @@ class ReferralBonusRepositoryImpl(
             try {
 
                 val data = offersColRef
-                    ?.get(Source.SERVER)
+                    ?.get()
                     ?.await()
 
                 val offersList = data?.map {

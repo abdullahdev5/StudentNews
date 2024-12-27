@@ -17,6 +17,7 @@ import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.resource.NewsState
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
@@ -246,10 +247,10 @@ class NewsDetailRepositoryImpl(
 
             userDocRef
                 ?.update(
-                    "referralBonus.totalPoints",
-                    FieldValue.increment(earnedPointsListItem.earnedPoints ?: 0.0),
-                    "referralBonus.earnedPointsList",
-                    FieldValue.arrayRemove(earnedPointsListItem)
+                    "referralBonus.totalPoints", FieldValue.increment(earnedPointsListItem.earnedPoints ?: 0.0),
+                    "referralBonus.earnedPointsList", FieldValue.arrayRemove(earnedPointsListItem),
+                    "referralBonus.prevCollectedPointsTimestamp", Timestamp.now()
+
                 )
 
         } catch (e: Exception) {
