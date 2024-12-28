@@ -11,11 +11,11 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.Source
-import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.firestore.snapshots
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 
 class ReferralBonusRepositoryImpl(
@@ -34,22 +34,34 @@ class ReferralBonusRepositoryImpl(
         userDocRef?.collection(FirestoreNodes.COLLECTED_OFFERS_COL)
 
 
-    override suspend fun getOffers(): Flow<ReferralBonusState<List<OffersModel>>> {
+    override suspend fun getOffers(): Flow<ReferralBonusState<List<OffersModel>?>> {
         return callbackFlow {
 
             trySend(ReferralBonusState.Loading)
 
             try {
 
-                val data = offersColRef
+                val collectedOfferIds = collectedOffersColRef
                     ?.get()
                     ?.await()
+                    ?.documents
+                    ?.mapNotNull { document ->
+                        document.getString("offerId")
+                    } ?: emptyList()
 
-                val offersList = data?.map {
-                    it.toObject(OffersModel::class.java)
-                }
+                val query = if (collectedOfferIds.isEmpty())
+                    offersColRef
+                else offersColRef?.whereNotIn("offerId", collectedOfferIds)
 
-                trySend(ReferralBonusState.Success(data = offersList!!))
+                query
+                    ?.addSnapshotListener { value, error ->
+                        if (error != null) {
+                            trySend(ReferralBonusState.Failed(error))
+                        }
+
+                        val offersList = value?.toObjects(OffersModel::class.java)
+                        trySend(ReferralBonusState.Success(offersList))
+                    }
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -67,9 +79,12 @@ class ReferralBonusRepositoryImpl(
         try {
             userDocRef
                 ?.update(
-                    "referralBonus.totalPoints", FieldValue.increment(earnedPointsModel.earnedPoints ?: 0.0),
-                    "referralBonus.earnedPointsList", FieldValue.arrayRemove(earnedPointsModel),
-                    "referralBonus.prevCollectedPointsTimestamp", Timestamp.now()
+                    "referralBonus.totalPoints",
+                    FieldValue.increment(earnedPointsModel.earnedPoints ?: 0.0),
+                    "referralBonus.earnedPointsList",
+                    FieldValue.arrayRemove(earnedPointsModel),
+                    "referralBonus.prevCollectedPointsTimestamp",
+                    Timestamp.now()
 
                 )
 
@@ -87,9 +102,11 @@ class ReferralBonusRepositoryImpl(
                 ?.set(offersModel)
                 ?.addOnCompleteListener { task ->
                     if (task.isSuccessful) {
-                        trySend(ReferralBonusState.Success(
-                            data = "Offer has been added to Your Collected Offers Collection"
-                        ))
+                        trySend(
+                            ReferralBonusState.Success(
+                                data = "Offer has been added to Your Collected Offers Collection"
+                            )
+                        )
                     } else {
                         trySend(ReferralBonusState.Failed(error = task.exception!!))
                     }

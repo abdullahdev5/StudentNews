@@ -14,7 +14,7 @@ interface ReferralBonusRepository {
     val collectedOffersColRef: CollectionReference?
 
 
-    suspend fun getOffers(): Flow<ReferralBonusState<List<OffersModel>>>
+    suspend fun getOffers(): Flow<ReferralBonusState<List<OffersModel>?>>
 
     fun onReferralPointsCollect(
         earnedPointsModel: EarnedPointsModel

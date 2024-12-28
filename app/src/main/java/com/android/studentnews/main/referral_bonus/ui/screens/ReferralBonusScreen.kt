@@ -1,6 +1,9 @@
 package com.android.studentnews.main.referral_bonus.ui.screens
 
+import com.android.studentnews.R
 import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -66,10 +69,18 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.LinkInteractionListener
+import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -79,7 +90,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.android.studentnews.auth.domain.models.UserModel
-import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.ButtonColors
@@ -95,6 +105,7 @@ import com.android.studentnews.ui.theme.ReferralLinearColor2
 import com.android.studentnews.ui.theme.ReferralScreenBgColorDark
 import com.android.studentnews.ui.theme.ReferralScreenBgColorLight
 import com.android.studentnews.ui.theme.White
+import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -122,6 +133,7 @@ fun ReferralBonusScreen(
     }
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
 
@@ -197,14 +209,73 @@ fun ReferralBonusScreen(
             get() = overScrollOffset.value != 0f
     }
 
-
-    val scope = rememberCoroutineScope()
-
     val overScroll = remember(scope) { MyOverScrollEffect(scope) }
 
     var offset by remember { mutableFloatStateOf(0f) }
 
     val scrollStateRange = (-512f).rangeTo(512f)
+
+
+    val lineHeight = 35
+
+    val annotatedTotalAndUsedPointsString = buildAnnotatedString {
+
+        // Total Points String
+        withStyle(
+            style = ParagraphStyle(
+                lineHeight = lineHeight.sp
+            )
+        ) {
+            withStyle(
+                style = SpanStyle(
+                    fontSize = FontSize.MEDIUM.sp,
+                    color = White,
+                )
+            ) {
+                appendLine("Total Points")
+            }
+            // Actual Total Points
+            withStyle(
+                style = SpanStyle(
+                    fontSize = FontSize.EXTRA_LARGE.sp,
+                    color = White,
+                )
+            ) {
+                appendLine(
+                    (currentUser?.referralBonus?.totalPoints
+                        ?: 0.0).toString()
+                )
+            }
+        }
+
+        // Used Points String
+        withStyle(
+            style = ParagraphStyle(
+                lineHeight = lineHeight.sp
+            )
+        ) {
+            withStyle(
+                style = SpanStyle(
+                    fontSize = FontSize.MEDIUM.sp,
+                    color = White,
+                )
+            ) {
+                appendLine("Used Points")
+            }
+            // Actual Used Points
+            withStyle(
+                style = SpanStyle(
+                    fontSize = FontSize.EXTRA_LARGE.sp,
+                    color = White,
+                )
+            ) {
+                appendLine(
+                    (currentUser?.referralBonus?.usedPoints
+                        ?: 0.0).toString()
+                )
+            }
+        }
+    }
 
 
     Scaffold(
@@ -277,15 +348,10 @@ fun ReferralBonusScreen(
                             ),
                             shape = RoundedCornerShape(20.dp)
                         )
-                        .clickable {
-                            navHostController
-                                .navigate(
-                                    ReferralBonusDestinations.COLLECTING_POINTS_DIALOG(
-                                        titleText = "Referral Points",
-                                        descriptionText = "Collect these referral points for Sharing with Friend. (For Only Seeing the Dialog)",
-                                        earnedPointsModel = currentUser?.referralBonus?.earnedPointsList?.first()!!
-                                    )
-                                )
+                        .clickable(
+                            enabled = false
+                        ) {
+
                         }
                 ) {
                     Box(
@@ -298,59 +364,18 @@ fun ReferralBonusScreen(
                                 .fillMaxHeight()
                                 .padding(all = 20.dp)
                         ) {
-                            // Total Points
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(5.dp),
+                            // Total and Used Points
+                            Text(
+                                text = annotatedTotalAndUsedPointsString,
                                 modifier = Modifier
                                     .padding(all = 20.dp)
-                            ) {
-                                Text(
-                                    text = "Total Points",
-                                    style = TextStyle(
-                                        fontSize = FontSize.MEDIUM.sp,
-                                        color = White,
-                                    ),
-                                )
-
-                                Text(
-                                    text = (currentUser?.referralBonus?.totalPoints
-                                        ?: 0.0).toString(),
-                                    style = TextStyle(
-                                        fontSize = FontSize.EXTRA_LARGE.sp,
-                                        color = White
-                                    )
-                                )
-                            }
-
-                            // Used Points
-                            Column(
-                                verticalArrangement = Arrangement.spacedBy(5.dp),
-                                modifier = Modifier
-                                    .padding(all = 20.dp)
-                            ) {
-                                Text(
-                                    text = "Used Points",
-                                    style = TextStyle(
-                                        fontSize = FontSize.MEDIUM.sp,
-                                        color = White,
-                                    ),
-                                )
-
-                                Text(
-                                    text = (currentUser?.referralBonus?.usedPoints
-                                        ?: 0.0).toString(),
-                                    style = TextStyle(
-                                        fontSize = FontSize.EXTRA_LARGE.sp,
-                                        color = White
-                                    )
-                                )
-                            }
+                            )
                         }
                     }
                 }
 
                 this@Column.AnimatedVisibility(
-                    visible = referralBonusViewModel.offersListStatus == Status.SUCCESS,
+                    visible = referralBonusViewModel.offersListStatus != Status.Loading,
                 ) {
 
                     Column(
@@ -364,28 +389,70 @@ fun ReferralBonusScreen(
                                 .padding(bottom = 10.dp)
                         ) {
                             Text(
-                                text = FirestoreNodes.OFFERS_COL,
+                                text = "Offers For You",
                                 style = TextStyle(
                                     fontSize = FontSize.LARGE.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             )
-                            Spacer(modifier = Modifier.weight(1f))
-                            Icon(
-                                imageVector = Icons.Default.ArrowForward,
-                                contentDescription = null
-                            )
-                        }
-                        LazyRow {
-                            items(offersList.size) { index ->
-                                val item = offersList[index]
-
-                                OffersListItem(
-                                    item = item,
-                                    currentUser = currentUser,
-                                    density = density,
-                                    context = context
+                            if ((offersList?.size ?: 0) > 1) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Icon(
+                                    imageVector = Icons.Default.ArrowForward,
+                                    contentDescription = null
                                 )
+                            }
+                        }
+                        LazyRow(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                        ) {
+                            offersList?.let { mOffersList ->
+                                items(mOffersList.size) { index ->
+                                    val item = mOffersList[index]
+
+                                    OffersListItem(
+                                        item = item,
+                                        currentUser = currentUser,
+                                        density = density,
+                                        context = context,
+                                        onCollect = { thisItem ->
+
+                                            val offer = OffersModel(
+                                                offerName = thisItem.offerName,
+                                                offerDescription = thisItem.offerDescription,
+                                                offerId = thisItem.offerId,
+                                                offerImageUrl = thisItem.offerImageUrl,
+                                                pointsWhenAbleToCollect = thisItem.pointsWhenAbleToCollect,
+                                                timestamp = Timestamp.now()
+                                            )
+
+                                            referralBonusViewModel
+                                                .onOfferCollect(offer)
+
+                                            navHostController.navigate(
+                                                ReferralBonusDestinations.CONGRATULATION_DIALOG(
+                                                    resId = R.raw.reward_anim,
+                                                    lottieHeight = 200,
+                                                    titleText = "Congratulations",
+                                                    descriptionText = "You Won The Prize.",
+                                                )
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
+                        if (offersList.isNullOrEmpty()
+                            && referralBonusViewModel.offersListStatus != Status.Loading
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                            ) {
+                                Text(text = "No Offers for You Yet!")
                             }
                         }
                     }
@@ -412,13 +479,14 @@ fun OffersListItem(
     currentUser: UserModel?,
     density: Density,
     context: Context,
+    onCollect: (item: OffersModel) -> Unit,
 ) {
 
     var itemWidthWithPadding by remember { mutableStateOf(50.dp) }
 
-    val totalPoints = 40 // currentUser?.referralBonus?.totalPoints ?: 0.0
+    val totalPoints = currentUser?.referralBonus?.totalPoints ?: 0.0
 
-    val offersPoints = 50.0 // item.pointsWhenAbleToCollect ?: 0.0
+    val offersPoints = item.pointsWhenAbleToCollect ?: 0.0
 
     val isTotalLessThanOfferPoints = remember {
         derivedStateOf {
@@ -445,7 +513,7 @@ fun OffersListItem(
                 fontSize = FontSize.MEDIUM.sp
             )
         ) {
-            append(item.offerName ?: "")
+            appendLine(item.offerName ?: "")
         }
         // Description
         withStyle(
@@ -454,12 +522,13 @@ fun OffersListItem(
                 fontSize = FontSize.SMALL.sp
             )
         ) {
-            append("\n${item.offerDescription ?: ""}")
+            appendLine(item.offerDescription ?: "")
         }
     }
 
 
     val annotatedTotalAndOfferPoints = buildAnnotatedString {
+        // Total Points
         withStyle(
             SpanStyle(
                 fontSize = if (isTotalLessThanOfferPoints)
@@ -470,7 +539,7 @@ fun OffersListItem(
         ) {
             append("$totalPoints")
         }
-
+        // Offer Points When Able to Collect
         withStyle(
             SpanStyle(
                 fontSize = if (isTotalLessThanOfferPoints)
@@ -481,6 +550,24 @@ fun OffersListItem(
         ) {
             append(" /")
             append("$offersPoints")
+        }
+    }
+
+    val annotatedOfferStatusString = buildAnnotatedString {
+        withStyle(
+            SpanStyle(
+                fontSize = FontSize.SMALL.sp,
+                color = if (
+                    totalPoints < offersPoints
+                ) Gray else Green
+            )
+        ) {
+            append(
+                if (totalPoints < offersPoints)
+                    "Reach $offersPoints Points to collect This"
+                else
+                    "You Reached $offersPoints Points, collect This"
+            )
         }
     }
 
@@ -497,8 +584,8 @@ fun OffersListItem(
         Column(
             modifier = Modifier
                 .padding(all = 10.dp)
-                .onSizeChanged { coordinates ->
-                    itemWidthWithPadding = with(density) { coordinates.width.toDp() }
+                .onSizeChanged { size ->
+                    itemWidthWithPadding = with(density) { size.width.toDp() }
                 }
         ) {
 
@@ -520,24 +607,16 @@ fun OffersListItem(
                     progress = {
                         animatedProgress.value
                     },
-                    color = if (
-                        isTotalLessThanOfferPoints
-                        || animatedProgress.value != (totalPoints.toFloat()) / (offersPoints.toFloat())
-                    ) Green else Gray,
+                    color = Green,
+                    modifier = Modifier
+                        .fillMaxWidth()
                 )
 
                 AnimatedVisibility(
                     visible = animatedProgress.value == (totalPoints.toFloat()) / (offersPoints.toFloat())
                 ) {
                     Text(
-                        text = if (totalPoints < offersPoints)
-                            "Reach $offersPoints Points to collect This"
-                        else
-                            "You Reached $offersPoints Points, collect This",
-                        style = TextStyle(
-                            fontSize = FontSize.SMALL.sp,
-                            color = if (totalPoints < offersPoints) Gray else Green
-                        ),
+                        text = annotatedOfferStatusString,
                         modifier = Modifier
                             .padding(top = 5.dp)
                     )
@@ -547,7 +626,7 @@ fun OffersListItem(
 
             Button(
                 onClick = {
-
+                    onCollect(item)
                 },
                 shape = RoundedCornerShape(5.dp),
                 colors = ButtonColors(),

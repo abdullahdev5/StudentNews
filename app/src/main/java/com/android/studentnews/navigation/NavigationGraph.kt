@@ -583,13 +583,10 @@ fun NavigationGraph(
                                 arguments.descriptionText
                             },
                             onCollect = {
+                                navHostController.navigateUp()
                                 referralBonusViewModel.onReferralPointsCollect(
                                     arguments.earnedPointsModel
                                 )
-                                navHostController.navigateUp()
-                            },
-                            onDismiss = {
-                                navHostController.navigateUp()
                                 navHostController.navigate(
                                     ReferralBonusDestinations.CONGRATULATION_DIALOG(
                                         resId = R.raw.reward_anim,
@@ -600,6 +597,9 @@ fun NavigationGraph(
                                                 " Points."
                                     )
                                 )
+                            },
+                            onDismiss = {
+                                navHostController.navigateUp()
                             }
                         )
                     }

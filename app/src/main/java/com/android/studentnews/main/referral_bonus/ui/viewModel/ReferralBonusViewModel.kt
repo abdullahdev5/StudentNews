@@ -1,31 +1,37 @@
 package com.android.studentnews.main.referral_bonus.ui.viewModel
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.studentnews.core.data.snackbar_controller.SnackBarController
+import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
 import com.android.studentnews.main.referral_bonus.domain.model.OffersModel
 import com.android.studentnews.main.referral_bonus.domain.repository.ReferralBonusRepository
 import com.android.studentnews.main.referral_bonus.domain.resource.ReferralBonusState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class ReferralBonusViewModel(
-    private val referralBonusRepository: ReferralBonusRepository
-): ViewModel() {
+    private val referralBonusRepository: ReferralBonusRepository,
+) : ViewModel() {
 
 
-    private val _offersList = MutableStateFlow<List<OffersModel>>(emptyList())
+    private val _offersList = MutableStateFlow<List<OffersModel>?>(null)
     val offersList = _offersList.asStateFlow()
 
     var offersListStatus by mutableStateOf("")
         private set
-
 
 
     fun getOffers() {
@@ -36,10 +42,18 @@ class ReferralBonusViewModel(
                     when (result) {
                         is ReferralBonusState.Failed -> {
                             offersListStatus = Status.FAILED
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage ?: ""
+                                    )
+                                )
                         }
+
                         ReferralBonusState.Loading -> {
                             offersListStatus = Status.Loading
                         }
+
                         is ReferralBonusState.Success -> {
                             _offersList.value = result.data
                             offersListStatus = Status.SUCCESS
@@ -50,12 +64,44 @@ class ReferralBonusViewModel(
     }
 
     fun onReferralPointsCollect(
-        earnedPointsModel: EarnedPointsModel
+        earnedPointsModel: EarnedPointsModel,
     ) = referralBonusRepository.onReferralPointsCollect(earnedPointsModel)
 
-    suspend fun onOfferCollect(
-        offersModel: OffersModel
-    ) = referralBonusRepository.onOfferCollect(offersModel)
+    fun onOfferCollect(
+        offersModel: OffersModel,
+    ) {
+        _offersList.update {
+            it?.filter {
+                offersModel.offerId != it.offerId
+            }
+        }
+        viewModelScope.launch {
+            referralBonusRepository
+                .onOfferCollect(offersModel)
+                .collectLatest { result ->
+                    when (result) {
+                        is ReferralBonusState.Failed -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage ?: ""
+                                    )
+                                )
+                        }
+                        is ReferralBonusState.Success -> {
+                            SnackBarController
+                                .sendEvent(
+                                    SnackBarEvents(
+                                        message = result.data
+                                    )
+                                )
+                        }
+
+                        else -> {}
+                    }
+                }
+        }
+    }
 
 
 }
