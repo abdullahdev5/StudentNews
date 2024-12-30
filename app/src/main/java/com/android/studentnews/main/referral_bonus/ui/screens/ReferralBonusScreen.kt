@@ -47,11 +47,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -204,10 +206,13 @@ fun ReferralBonusScreen(
         }
     }
 
-    val topTextMaxHeight = with(density) { (90).dp.toPx() }
-    val topTextNestedScroll = remember(topTextMaxHeight) {
-        CollapsingTopBarButAppearWhenTopReached(topTextMaxHeight)
-    }
+//    val topTextMaxHeight = with(density) { (90).dp.toPx() }
+//    val topTextNestedScroll = remember(topTextMaxHeight) {
+//        CollapsingTopBarButAppearWhenTopReached(topTextMaxHeight)
+//    }
+
+    val topBarScrollConnection =
+        TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
     val topBarColor = if (isSystemInDarkTheme())
         ReferralScreenBgColorDark else ReferralScreenBgColorLight
@@ -215,70 +220,43 @@ fun ReferralBonusScreen(
 
     Scaffold(
         topBar = {
-            Column(
-                modifier = Modifier
-                    .background(color = topBarColor)
-            ) {
-                TopAppBar(
-                    title = {
-                        AnimatedVisibility(
-                            visible = topTextNestedScroll.topBarOffsetFloat == 0f,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                        ) {
-                            Text(text = "Referral Wallet")
-                        }
-                    },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = {
-                                navHostController.navigateUp()
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Icon for Navigate back",
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = topBarColor,
-                    ),
-                )
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(
-                            style = ParagraphStyle(
-                                lineHeight = 40.sp
-                            )
-                        ) {
-                            withStyle(
-                                style = SpanStyle(
-                                    fontSize = FontSize.EXTRA_LARGE.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                )
+            LargeTopAppBar(
+                title = {
+                    Text(
+                        text = buildAnnotatedString {
+                            if (
+                                topBarScrollConnection.state.heightOffset
+                                >= topBarScrollConnection.state.heightOffsetLimit / 2
                             ) {
-                                appendLine("Welcome to")
-                                appendLine("Your Referral Wallet")
+                                append("Welcome to\nYour Referral Wallet")
+                            } else {
+                                append("Referral Wallet")
                             }
                         }
-                    },
-                    modifier = Modifier
-                        .then(
-                            with(density) {
-                                Modifier
-                                    .height(
-                                        (topTextNestedScroll.topBarOffsetFloat.toInt()).toDp()
-                                    )
-                            }
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            navHostController.navigateUp()
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Icon for Navigate back",
                         )
-                        .padding(all = 10.dp)
-                )
-            }
+                    }
+                },
+                scrollBehavior = topBarScrollConnection,
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = topBarColor,
+                    scrolledContainerColor = topBarColor
+                ),
+            )
         },
         modifier = Modifier
             .fillMaxSize()
-            .nestedScroll(topTextNestedScroll)
+            .nestedScroll(topBarScrollConnection.nestedScrollConnection)
     ) { innerPadding ->
 
         Column(
