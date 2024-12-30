@@ -27,7 +27,7 @@ class ReferralBonusViewModel(
 ) : ViewModel() {
 
 
-    private val _offersList = MutableStateFlow<List<OffersModel>?>(null)
+    private val _offersList = MutableStateFlow<List<OffersModel>>(emptyList())
     val offersList = _offersList.asStateFlow()
 
     var offersListStatus by mutableStateOf("")
@@ -68,16 +68,16 @@ class ReferralBonusViewModel(
     ) = referralBonusRepository.onReferralPointsCollect(earnedPointsModel)
 
     fun onOfferCollect(
-        offersModel: OffersModel,
+        offerId: String,
     ) {
         _offersList.update {
-            it?.filter {
-                offersModel.offerId != it.offerId
+            it.filter {
+                offerId != it.offerId
             }
         }
         viewModelScope.launch {
             referralBonusRepository
-                .onOfferCollect(offersModel)
+                .onOfferCollect(offerId = offerId)
                 .collectLatest { result ->
                     when (result) {
                         is ReferralBonusState.Failed -> {

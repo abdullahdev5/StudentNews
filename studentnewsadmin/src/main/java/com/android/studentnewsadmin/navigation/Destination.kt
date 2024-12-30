@@ -6,16 +6,16 @@ import kotlinx.serialization.Serializable
 sealed class Destination {
 
     @Serializable
-    object MAIN_SCREEN: Destination()
+    data object MAIN_SCREEN: Destination()
 
     @Serializable
-    object UPLOAD_NEWS_SCREEN: Destination()
+    data object UPLOAD_NEWS_SCREEN: Destination()
 
     @Serializable
-    object UPLOAD_CATEGORY_SCREEN: Destination()
+    data object UPLOAD_CATEGORY_SCREEN: Destination()
 
     @Serializable
-    object UPLOAD_EVENTS_SCREEN: Destination()
+    data object UPLOAD_EVENTS_SCREEN: Destination()
 
     @Serializable
     data class EDIT_EVENT_SCREEN(
@@ -26,5 +26,10 @@ sealed class Destination {
 
     @Serializable
     data object UPLOAD_OFFERS_SCREEN: Destination()
+
+    @Serializable
+    data class EDIT_OFFER_SCREEN(
+        val offerId: String
+    )
 
 }

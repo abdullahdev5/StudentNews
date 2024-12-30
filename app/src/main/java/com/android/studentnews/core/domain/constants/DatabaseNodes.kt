@@ -9,7 +9,7 @@ class FirestoreNodes {
         const val EVENTS_COL = "Events"
         const val SAVED_EVENTS = "SavedEvents"
         const val OFFERS_COL = "Offers"
-        const val COLLECTED_OFFERS_COL = "CollectedOffers"
+        const val REDEEMED_OFFERS_COL = "RedeemedOffers"
     }
 }
 

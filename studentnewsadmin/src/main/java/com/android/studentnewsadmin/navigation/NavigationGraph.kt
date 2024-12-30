@@ -20,6 +20,7 @@ import com.android.studentnewsadmin.main.news.ui.screens.UploadCategoryScreen
 import com.android.studentnewsadmin.main.news.ui.screens.UploadNewsScreen
 import com.android.studentnewsadmin.main.news.ui.screens.NewsScreen
 import com.android.studentnewsadmin.main.news.ui.viewmodel.NewsViewModel
+import com.android.studentnewsadmin.main.offers.ui.screens.EditOfferScreen
 import com.android.studentnewsadmin.main.offers.ui.screens.UploadOffersScreen
 import com.android.studentnewsadmin.main.offers.ui.viewModel.OffersViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -96,6 +97,17 @@ fun NavigationGraph(
             UploadOffersScreen(
                 navHostController = navHostController,
                 offersViewModel = offersViewModel
+            )
+        }
+
+        composable<Destination.EDIT_OFFER_SCREEN>() {
+            val offersViewModel = koinViewModel<OffersViewModel>()
+            val arguments = it.toRoute<Destination.EDIT_OFFER_SCREEN>()
+
+            EditOfferScreen(
+                offerId = arguments.offerId,
+                navHostController = navHostController,
+                offersViewModel = offersViewModel,
             )
         }
 

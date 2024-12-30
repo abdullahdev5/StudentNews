@@ -10,7 +10,7 @@ sealed class ReferralBonusDestinations {
     data object REFERRAL_BONUS_SCREEN: ReferralBonusDestinations()
 
     @Serializable
-    data class COLLECTING_POINTS_DIALOG(
+    data class CLAIM_POINTS_DIALOG(
         val titleText: String,
         val descriptionText: String,
         val earnedPointsModel: EarnedPointsModel,

@@ -43,10 +43,10 @@ import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
 
 @Composable
-fun PointsCollectingDialog(
-    titlText: () -> String,
+fun PointsClaimDialog(
+    titleText: () -> String,
     descriptionText: () -> String,
-    onCollect: () -> Unit,
+    onClaim: () -> Unit,
     onDismiss: () -> Unit,
 ) {
 
@@ -99,7 +99,7 @@ fun PointsCollectingDialog(
                     )
 
                     Text(
-                        text = titlText(),
+                        text = titleText(),
                         style = TextStyle(
                             fontSize = FontSize.LARGE.sp,
                             fontWeight = FontWeight.Bold,
@@ -120,14 +120,14 @@ fun PointsCollectingDialog(
                     )
 
                     Button(
-                        onClick = onCollect,
+                        onClick = onClaim,
                         shape = RoundedCornerShape(5.dp),
                         colors = ButtonColors(),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(all = 10.dp)
                     ) {
-                        Text(text = "collect")
+                        Text(text = "claim")
                     }
 
                 }

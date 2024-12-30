@@ -1,6 +1,7 @@
 package com.android.studentnews.main.referral_bonus.data.repository
 
 import com.android.studentnews.core.domain.constants.FirestoreNodes
+import com.android.studentnews.main.referral_bonus.domain.model.RedeemedOffersModel
 import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
 import com.android.studentnews.main.referral_bonus.domain.model.OffersModel
 import com.android.studentnews.main.referral_bonus.domain.repository.ReferralBonusRepository
@@ -11,11 +12,9 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.snapshots
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 
 class ReferralBonusRepositoryImpl(
@@ -31,10 +30,10 @@ class ReferralBonusRepositoryImpl(
         firestore.collection(FirestoreNodes.OFFERS_COL)
 
     override val collectedOffersColRef: CollectionReference? =
-        userDocRef?.collection(FirestoreNodes.COLLECTED_OFFERS_COL)
+        userDocRef?.collection(FirestoreNodes.REDEEMED_OFFERS_COL)
 
 
-    override suspend fun getOffers(): Flow<ReferralBonusState<List<OffersModel>?>> {
+    override suspend fun getOffers(): Flow<ReferralBonusState<List<OffersModel>>> {
         return callbackFlow {
 
             trySend(ReferralBonusState.Loading)
@@ -59,7 +58,9 @@ class ReferralBonusRepositoryImpl(
                             trySend(ReferralBonusState.Failed(error))
                         }
 
-                        val offersList = value?.toObjects(OffersModel::class.java)
+                        val offersList = value?.mapNotNull {
+                            it.toObject(OffersModel::class.java)
+                        } ?: emptyList()
                         trySend(ReferralBonusState.Success(offersList))
                     }
 
@@ -94,12 +95,17 @@ class ReferralBonusRepositoryImpl(
     }
 
 
-    override fun onOfferCollect(offersModel: OffersModel): Flow<ReferralBonusState<String>> {
+    override fun onOfferCollect(offerId: String): Flow<ReferralBonusState<String>> {
         return callbackFlow {
 
+            val collectedOffer = RedeemedOffersModel(
+                offerId = offerId,
+                collectedAt = Timestamp.now()
+            )
+
             collectedOffersColRef
-                ?.document(offersModel.offerId.toString())
-                ?.set(offersModel)
+                ?.document(offerId)
+                ?.set(collectedOffer)
                 ?.addOnCompleteListener { task ->
                     if (task.isSuccessful) {
                         trySend(

@@ -44,7 +44,7 @@ import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.main.referral_bonus.domain.EarnedPointsModelNavType
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
 import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
-import com.android.studentnews.main.referral_bonus.ui.composables.PointsCollectingDialog
+import com.android.studentnews.main.referral_bonus.ui.composables.PointsClaimDialog
 import com.android.studentnews.main.referral_bonus.ui.composables.CongratulationDialpg
 import com.android.studentnews.main.referral_bonus.ui.viewModel.ReferralBonusViewModel
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
@@ -566,23 +566,23 @@ fun NavigationGraph(
                         )
                     }
 
-                    dialog<ReferralBonusDestinations.COLLECTING_POINTS_DIALOG>(
+                    dialog<ReferralBonusDestinations.CLAIM_POINTS_DIALOG>(
                         typeMap = mapOf(
                             typeOf<EarnedPointsModel>() to EarnedPointsModelNavType.earnedPointsModelType
                         )
                     ) {
                         val arguments =
-                            it.toRoute<ReferralBonusDestinations.COLLECTING_POINTS_DIALOG>()
+                            it.toRoute<ReferralBonusDestinations.CLAIM_POINTS_DIALOG>()
                         val referralBonusViewModel = koinViewModel<ReferralBonusViewModel>()
 
-                        PointsCollectingDialog(
-                            titlText = {
+                        PointsClaimDialog(
+                            titleText = {
                                 arguments.titleText
                             },
                             descriptionText = {
                                 arguments.descriptionText
                             },
-                            onCollect = {
+                            onClaim = {
                                 navHostController.navigateUp()
                                 referralBonusViewModel.onReferralPointsCollect(
                                     arguments.earnedPointsModel

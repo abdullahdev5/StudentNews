@@ -2,14 +2,15 @@ package com.android.studentnews.main.referral_bonus.ui.screens
 
 import com.android.studentnews.R
 import android.content.Context
-import android.content.Intent
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.background
@@ -32,6 +33,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.overscroll
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PageSize
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -59,6 +63,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -69,18 +74,11 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.platform.UriHandler
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.LinkInteractionListener
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.withLink
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
@@ -94,6 +92,7 @@ import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
+import com.android.studentnews.main.referral_bonus.domain.common.calculatePercentage
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
 import com.android.studentnews.main.referral_bonus.domain.model.OffersModel
 import com.android.studentnews.main.referral_bonus.ui.viewModel.ReferralBonusViewModel
@@ -105,9 +104,11 @@ import com.android.studentnews.ui.theme.ReferralLinearColor2
 import com.android.studentnews.ui.theme.ReferralScreenBgColorDark
 import com.android.studentnews.ui.theme.ReferralScreenBgColorLight
 import com.android.studentnews.ui.theme.White
-import com.google.firebase.Timestamp
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.compose
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -395,7 +396,7 @@ fun ReferralBonusScreen(
                                     fontWeight = FontWeight.Bold
                                 )
                             )
-                            if ((offersList?.size ?: 0) > 1) {
+                            if (offersList.size > 1) {
                                 Spacer(modifier = Modifier.weight(1f))
                                 Icon(
                                     imageVector = Icons.Default.ArrowForward,
@@ -403,48 +404,43 @@ fun ReferralBonusScreen(
                                 )
                             }
                         }
+                        // Offers List
                         LazyRow(
                             modifier = Modifier
                                 .fillMaxWidth()
                         ) {
-                            offersList?.let { mOffersList ->
-                                items(mOffersList.size) { index ->
-                                    val item = mOffersList[index]
+                            items(
+                                count = offersList.size,
+                                key = { index ->
+                                    offersList[index].offerId
+                                },
+                            ) { index ->
+                                val item = offersList[index]
 
-                                    OffersListItem(
-                                        item = item,
-                                        currentUser = currentUser,
-                                        density = density,
-                                        context = context,
-                                        onCollect = { thisItem ->
+                                OffersListItem(
+                                    item = item,
+                                    currentUser = currentUser,
+                                    density = density,
+                                    context = context,
+                                    onRedeem = { thisOfferId ->
 
-                                            val offer = OffersModel(
-                                                offerName = thisItem.offerName,
-                                                offerDescription = thisItem.offerDescription,
-                                                offerId = thisItem.offerId,
-                                                offerImageUrl = thisItem.offerImageUrl,
-                                                pointsWhenAbleToCollect = thisItem.pointsWhenAbleToCollect,
-                                                timestamp = Timestamp.now()
+                                        referralBonusViewModel
+                                            .onOfferCollect(thisOfferId)
+
+                                        navHostController.navigate(
+                                            ReferralBonusDestinations.CONGRATULATION_DIALOG(
+                                                resId = R.raw.reward_anim,
+                                                lottieHeight = 200,
+                                                titleText = "Congratulations",
+                                                descriptionText = "You Won The Prize.",
                                             )
-
-                                            referralBonusViewModel
-                                                .onOfferCollect(offer)
-
-                                            navHostController.navigate(
-                                                ReferralBonusDestinations.CONGRATULATION_DIALOG(
-                                                    resId = R.raw.reward_anim,
-                                                    lottieHeight = 200,
-                                                    titleText = "Congratulations",
-                                                    descriptionText = "You Won The Prize.",
-                                                )
-                                            )
-                                        }
-                                    )
-                                }
+                                        )
+                                    }
+                                )
                             }
                         }
 
-                        if (offersList.isNullOrEmpty()
+                        if (offersList.isEmpty()
                             && referralBonusViewModel.offersListStatus != Status.Loading
                         ) {
                             Row(
@@ -479,14 +475,14 @@ fun OffersListItem(
     currentUser: UserModel?,
     density: Density,
     context: Context,
-    onCollect: (item: OffersModel) -> Unit,
+    onRedeem: (offerId: String) -> Unit,
 ) {
 
     var itemWidthWithPadding by remember { mutableStateOf(50.dp) }
 
     val totalPoints = currentUser?.referralBonus?.totalPoints ?: 0.0
 
-    val offersPoints = item.pointsWhenAbleToCollect ?: 0.0
+    val offersPoints = item.pointsRequired
 
     val isTotalLessThanOfferPoints = remember {
         derivedStateOf {
@@ -500,9 +496,15 @@ fun OffersListItem(
     }
 
     LaunchedEffect(Unit) {
-        delay(1000)
         animatedProgress.animateTo(
-            (totalPoints.toFloat()) / (offersPoints.toFloat())
+            targetValue = calculatePercentage(
+                totalPoints.toInt(),
+                offersPoints.toInt()
+            ),
+            animationSpec = tween(
+                durationMillis = 1000,
+                easing = LinearEasing
+            )
         )
     }
 
@@ -513,7 +515,7 @@ fun OffersListItem(
                 fontSize = FontSize.MEDIUM.sp
             )
         ) {
-            appendLine(item.offerName ?: "")
+            appendLine(item.offerName)
         }
         // Description
         withStyle(
@@ -522,56 +524,9 @@ fun OffersListItem(
                 fontSize = FontSize.SMALL.sp
             )
         ) {
-            appendLine(item.offerDescription ?: "")
+            appendLine(item.offerDescription)
         }
     }
-
-
-    val annotatedTotalAndOfferPoints = buildAnnotatedString {
-        // Total Points
-        withStyle(
-            SpanStyle(
-                fontSize = if (isTotalLessThanOfferPoints)
-                    FontSize.MEDIUM.sp else FontSize.LARGE.sp,
-                fontWeight = if (isTotalLessThanOfferPoints)
-                    FontWeight.Normal else FontWeight.Bold
-            )
-        ) {
-            append("$totalPoints")
-        }
-        // Offer Points When Able to Collect
-        withStyle(
-            SpanStyle(
-                fontSize = if (isTotalLessThanOfferPoints)
-                    FontSize.LARGE.sp else FontSize.MEDIUM.sp,
-                fontWeight = if (isTotalLessThanOfferPoints)
-                    FontWeight.Bold else FontWeight.Normal
-            )
-        ) {
-            append(" /")
-            append("$offersPoints")
-        }
-    }
-
-    val annotatedOfferStatusString = buildAnnotatedString {
-        withStyle(
-            SpanStyle(
-                fontSize = FontSize.SMALL.sp,
-                color = if (
-                    totalPoints < offersPoints
-                ) Gray else Green
-            )
-        ) {
-            append(
-                if (totalPoints < offersPoints)
-                    "Reach $offersPoints Points to collect This"
-                else
-                    "You Reached $offersPoints Points, collect This"
-            )
-        }
-    }
-
-
 
 
     Card(
@@ -601,32 +556,56 @@ fun OffersListItem(
                     .padding(all = 5.dp)
             ) {
 
-                Text(text = annotatedTotalAndOfferPoints)
+                Text(
+                    text = buildAnnotatedString {
+                        // Progress
+                        withStyle(
+                            SpanStyle(
+                                fontSize = FontSize.LARGE.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        ) {
+                            append("${animatedProgress.value.toInt()}%")
+                        }
+                    }
+                )
 
                 LinearProgressIndicator(
                     progress = {
-                        animatedProgress.value
+                        animatedProgress.value / 100f
                     },
                     color = Green,
                     modifier = Modifier
                         .fillMaxWidth()
                 )
 
-                AnimatedVisibility(
-                    visible = animatedProgress.value == (totalPoints.toFloat()) / (offersPoints.toFloat())
-                ) {
-                    Text(
-                        text = annotatedOfferStatusString,
-                        modifier = Modifier
-                            .padding(top = 5.dp)
-                    )
-                }
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(
+                            SpanStyle(
+                                fontSize = FontSize.SMALL.sp,
+                                color = if (
+                                    isTotalLessThanOfferPoints
+                                ) Gray else Green
+                            )
+                        ) {
+                            append(
+                                if (isTotalLessThanOfferPoints)
+                                    "Reach $offersPoints Points to Redeemed This"
+                                else
+                                    "You Reached $offersPoints Points, Redeem This"
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(top = 5.dp)
+                )
 
             }
 
             Button(
                 onClick = {
-                    onCollect(item)
+                    onRedeem(item.offerId)
                 },
                 shape = RoundedCornerShape(5.dp),
                 colors = ButtonColors(),
@@ -635,7 +614,7 @@ fun OffersListItem(
                     .width(itemWidthWithPadding)
                     .padding(all = 5.dp)
             ) {
-                Text(text = "Collect")
+                Text(text = "Redeem")
             }
         }
     }

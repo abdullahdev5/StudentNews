@@ -27,9 +27,9 @@ import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.LightGray
 
 @Composable
-fun PointsCollectingListItem(
+fun PointsClaimListItem(
     item: EarnedPointsModel,
-    onCollect: (earnedPointsListItem: EarnedPointsModel) -> Unit,
+    onClaim: (earnedPointsListItem: EarnedPointsModel) -> Unit,
     onDismiss: () -> Unit,
 ) {
 
@@ -56,7 +56,7 @@ fun PointsCollectingListItem(
                 )
             }
             Text(
-                text = "Collect These ${item.earnedPoints} Points to your Referral Wallet",
+                text = "Claim These ${item.earnedPoints} Points to your Referral Wallet",
                 style = TextStyle(
                     fontSize = FontSize.MEDIUM.sp,
                     fontWeight = FontWeight.Bold
@@ -72,7 +72,7 @@ fun PointsCollectingListItem(
 
             Button(
                 onClick = {
-                    onCollect(item)
+                    onClaim(item)
                 },
                 colors = ButtonColors(),
                 shape = RoundedCornerShape(20.dp),
@@ -80,7 +80,7 @@ fun PointsCollectingListItem(
                     .align(Alignment.End)
                     .padding(all = 10.dp)
             ) {
-                Text(text = "collect")
+                Text(text = "claim")
             }
         }
     }

@@ -148,7 +148,7 @@ import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
-import com.android.studentnews.main.referral_bonus.ui.composables.PointsCollectingListItem
+import com.android.studentnews.main.referral_bonus.ui.composables.PointsClaimListItem
 import com.android.studentnews.navigation.SubGraph
 import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
@@ -821,22 +821,20 @@ fun NewsScreen(
                                                                     fontWeight = FontWeight.Bold
                                                                 ),
                                                                 modifier = Modifier
-                                                                    .padding(
-                                                                        start = 10.dp,
-                                                                    )
+                                                                    .padding(start = 10.dp)
                                                             )
                                                             Row(
                                                                 modifier = Modifier
                                                                     .fillMaxWidth()
                                                             ) {
-                                                                PointsCollectingListItem(
+                                                                PointsClaimListItem(
                                                                     item = earnedPointsListFirstItem,
-                                                                    onCollect = { thisItem ->
+                                                                    onClaim = { thisItem ->
                                                                         navHostController
                                                                             .navigate(
-                                                                                ReferralBonusDestinations.COLLECTING_POINTS_DIALOG(
+                                                                                ReferralBonusDestinations.CLAIM_POINTS_DIALOG(
                                                                                     titleText = "Referral Points",
-                                                                                    descriptionText = "Collect these referral points for Sharing with Friend.",
+                                                                                    descriptionText = "Claim these referral points for Sharing with Friend.",
                                                                                     earnedPointsModel = thisItem
                                                                                 )
                                                                             )

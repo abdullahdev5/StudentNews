@@ -3,10 +3,12 @@ package com.android.studentnewsadmin.main.offers.ui.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,7 +29,10 @@ import androidx.compose.material.icons.filled.PhotoAlbum
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -37,8 +42,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.asDoubleState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,13 +59,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.android.studentnewsadmin.core.domain.constants.Status
-import com.android.studentnewsadmin.core.ui.common.LoadingDialog
 import com.android.studentnewsadmin.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnewsadmin.main.navigation.Destination
+import com.android.studentnewsadmin.main.offers.domain.constant.OfferTypes
 import com.android.studentnewsadmin.main.offers.ui.viewModel.OffersViewModel
 import com.android.studentnewsadmin.ui.theme.Green
 import kotlin.let
@@ -80,15 +82,22 @@ fun UploadOffersScreen(
     val focusManager = LocalFocusManager.current
 
 
-    var offerName by rememberSaveable { mutableStateOf("Best Offer of tis month, for you") }
-    var offerDescription by rememberSaveable { mutableStateOf("collect this offer until ") }
-    var pointsWhenAbleToCollectString by rememberSaveable { mutableStateOf("10") }
-    var pointsWhenAbleToCollectDouble = remember(pointsWhenAbleToCollectString) {
-        derivedStateOf {
-            if (pointsWhenAbleToCollectString.isNotEmpty())
-                pointsWhenAbleToCollectString.toDouble() else 0.0
-        }
-    }.asDoubleState().doubleValue
+    var offerName by rememberSaveable { mutableStateOf("10% Off Your First Purchase") }
+    var offerDescription by rememberSaveable { mutableStateOf("Enjoy a 10% discount on your first order with us.") }
+    var pointsRequiredString by rememberSaveable { mutableStateOf("15") }
+
+    val offerTypesList = listOf(
+        OfferTypes.ACTIVE,
+        OfferTypes.DISCOUNT,
+        OfferTypes.INACTIVE,
+        OfferTypes.EXPIRED,
+    )
+    var selectedOfferType by rememberSaveable { mutableStateOf(OfferTypes.ACTIVE) }
+    var isOfferTypesDropDownMenuVisible by rememberSaveable { mutableStateOf(false) }
+
+    var discountAmountString by rememberSaveable { mutableStateOf("10") }
+
+    var offerTermsAndCondition by rememberSaveable { mutableStateOf("This offer is valid for first-time customers only.") }
 
     var offerImageUri by rememberSaveable { mutableStateOf<Uri>(Uri.EMPTY) }
 
@@ -103,7 +112,7 @@ fun UploadOffersScreen(
 
 
     val animatedProgress by animateFloatAsState(
-        targetValue = offersViewModel.progress,
+        targetValue = offersViewModel.uploadingProgress,
         label = ""
     )
 
@@ -112,8 +121,10 @@ fun UploadOffersScreen(
             offerImageUri = Uri.EMPTY
             offerName = ""
             offerDescription = ""
-            pointsWhenAbleToCollectString = ""
-            pointsWhenAbleToCollectDouble = 0.0
+            pointsRequiredString = ""
+            selectedOfferType = ""
+            discountAmountString = ""
+            offerTermsAndCondition = ""
 
             navHostController.navigate(Destination.MAIN_SCREEN) {
                 popUpTo(Destination.UPLOAD_OFFERS_SCREEN) {
@@ -145,14 +156,19 @@ fun UploadOffersScreen(
                     offersViewModel
                         .onOfferUpload(
                             offerName = offerName,
-                            offerDescription = offerDescription,
                             offerImageUri = offerImageUri,
-                            pointsWhenAbleToCollect = pointsWhenAbleToCollectDouble,
+                            offerDescription = offerDescription,
+                            pointsRequired = pointsRequiredString.toDouble(),
+                            offerType = selectedOfferType,
+                            discountAmount = discountAmountString.ifEmpty { null }?.toDouble(),
+                            offerTermsAndCondition = offerTermsAndCondition,
                             context = context,
                         )
                 },
                 enabled = offerImageUri != Uri.EMPTY
-                        && offerName.isNotEmpty() && pointsWhenAbleToCollectString.isNotEmpty(),
+                        && offerName.isNotEmpty() && offerDescription.isNotEmpty()
+                        && pointsRequiredString.isNotEmpty() && if (selectedOfferType == OfferTypes.DISCOUNT)
+                    discountAmountString.isNotEmpty() else true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 10.dp)
@@ -259,15 +275,15 @@ fun UploadOffersScreen(
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(all = 20.dp)
+                            .padding(all = 10.dp)
                             .focusRequester(focusRequester)
                     )
 
                     // Offer Description
                     Text(
-                        text = "Offer Description (optional)",
+                        text = "Offer Description",
                         modifier = Modifier
-                            .padding(start = 20.dp)
+                            .padding(all = 10.dp)
                     )
 
                     TextField(
@@ -286,20 +302,20 @@ fun UploadOffersScreen(
                             .padding(all = 20.dp)
                     )
 
-                    // Points When Able to Collect
+                    // Points Required
                     Text(
-                        text = "Points When Able to Collect?",
+                        text = "Points Required",
                         modifier = Modifier
-                            .padding(start = 20.dp)
+                            .padding(start = 10.dp)
                     )
 
                     TextField(
-                        value = pointsWhenAbleToCollectString,
+                        value = pointsRequiredString,
                         onValueChange = {
-                            pointsWhenAbleToCollectString = it
+                            pointsRequiredString = it
                         },
                         label = {
-                            Text(text = "Points When Able to Collect")
+                            Text(text = "Points Required")
                         },
                         colors = OutlinedTextFieldColors(),
                         keyboardOptions = KeyboardOptions(
@@ -316,6 +332,125 @@ fun UploadOffersScreen(
                             .fillMaxWidth()
                             .padding(all = 20.dp)
                     )
+
+                    // Offer Type
+                    Text(
+                        text = "Offer Type",
+                        modifier = Modifier
+                            .padding(all = 10.dp)
+                    )
+
+                    ExposedDropdownMenuBox(
+                        expanded = isOfferTypesDropDownMenuVisible,
+                        onExpandedChange = {
+                            isOfferTypesDropDownMenuVisible = it
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp)
+                    ) {
+                        TextField(
+                            value = selectedOfferType,
+                            onValueChange = {},
+                            placeholder = {
+                                Text(text = "Offer Type")
+                            },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(
+                                    isOfferTypesDropDownMenuVisible
+                                )
+                            },
+                            colors = OutlinedTextFieldColors(),
+                            readOnly = true,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = isOfferTypesDropDownMenuVisible,
+                            onDismissRequest = {
+                                isOfferTypesDropDownMenuVisible = false
+                            },
+                            modifier = Modifier
+                                .background(color = if (isSystemInDarkTheme()) Color.DarkGray else Color.White)
+                        ) {
+                            for (offerType in offerTypesList) {
+                                DropdownMenuItem(
+                                    text = { Text(text = offerType) },
+                                    onClick = {
+                                        selectedOfferType = offerType
+                                        isOfferTypesDropDownMenuVisible = false
+                                        if (offerType != OfferTypes.DISCOUNT) {
+                                            discountAmountString = ""
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    AnimatedVisibility(selectedOfferType == OfferTypes.DISCOUNT) {
+                        Column {
+                            // Discount Amount
+                            Text(
+                                text = "Discount Amount",
+                                modifier = Modifier
+                                    .padding(all = 10.dp)
+                            )
+
+                            TextField(
+                                value = discountAmountString,
+                                onValueChange = {
+                                    discountAmountString = it
+                                },
+                                label = {
+                                    Text(text = "Discount Amount")
+                                },
+                                colors = OutlinedTextFieldColors(),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Decimal,
+                                    imeAction = ImeAction.Done,
+                                ),
+                                keyboardActions = KeyboardActions(
+                                    onDone = {
+                                        focusManager.clearFocus()
+                                    }
+                                ),
+                                singleLine = true,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(all = 20.dp)
+                            )
+                        }
+                    }
+
+                    // Offer Terms and Condition
+                    Text(
+                        text = "Offer Terms and Condition (optional)",
+                        modifier = Modifier
+                            .padding(all = 10.dp)
+                    )
+
+                    TextField(
+                        value = offerTermsAndCondition,
+                        onValueChange = {
+                            offerTermsAndCondition = it
+                        },
+                        label = {
+                            Text(text = "Terms and Condition")
+                        },
+                        colors = OutlinedTextFieldColors(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text,
+                        ),
+                        singleLine = false,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp)
+                    )
+
+
                 }
 
             }

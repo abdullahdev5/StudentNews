@@ -1,21 +1,32 @@
 package com.android.studentnewsadmin.main.offers.domain.model
 
+import com.android.studentnewsadmin.main.offers.domain.constant.OfferTypes
 import com.google.firebase.Timestamp
 
 data class OffersModel(
-    val offerName: String? = "",
-    val offerImageUrl: String? = "",
-    val offerId: String? = "",
-    val pointsWhenAbleToCollect: Double? = 0.0,
-    val offerDescription: String? = "",
-    val timestamp: Timestamp? = null,
+    val offerName: String = "", // Offer Name
+    val offerId: String = "", // Offer Id
+    val offerImageUrl: String = "", // Offer Image Url
+    val offerDescription: String = "", // Offer Description
+    val pointsRequired: Double = 0.0, // Points Required
+    val offerType: String = OfferTypes.ACTIVE, // Offer Type Like Active, In Active, or Expired
+    val discountAmount: Double? = null, // Discount Amount
+    val offerTermsAndCondition: String? = "", // Offer Terms & Condition
+    val createdAt: Timestamp = Timestamp.now(), // Created At
+    val updatedAt: Timestamp? = null, // Updated At
+    val offerExpiryDate: Timestamp? = null, // Offer ExpiryDate If 'offerType' is Expired
 ) {
     constructor(): this(
         offerName = "",
-        offerImageUrl = "",
         offerId = "",
-        pointsWhenAbleToCollect = 0.0,
+        offerImageUrl = "",
         offerDescription = "",
-        timestamp = null,
+        pointsRequired = 0.0,
+        offerType = OfferTypes.ACTIVE,
+        discountAmount = null,
+        offerTermsAndCondition = "",
+        createdAt = Timestamp.now(),
+        updatedAt = null,
+        offerExpiryDate = null,
     )
 }

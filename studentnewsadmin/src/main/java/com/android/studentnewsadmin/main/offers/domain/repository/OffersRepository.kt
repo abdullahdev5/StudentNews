@@ -1,6 +1,7 @@
 package com.android.studentnewsadmin.main.offers.domain.repository
 
 import android.net.Uri
+import com.android.studentnewsadmin.main.offers.domain.model.OffersModel
 import com.android.studentnewsadmin.main.offers.domain.resource.OffersState
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.storage.StorageReference
@@ -16,7 +17,28 @@ interface OffersRepository {
         offerName: String,
         offerDescription: String,
         offerImageUri: Uri,
-        pointsWhenAbleToCollect: Double,
+        pointsRequired: Double,
+        offerType: String,
+        discountAmount: Double?,
+        offerTermsAndCondition: String,
+
+    ): Flow<OffersState<String>>
+
+
+    fun getOffersList(): Flow<OffersState<List<OffersModel>>>
+
+    fun getOfferById(offerId: String): Flow<OffersState<OffersModel>>
+
+    fun onOfferUpdate(
+        offerId: String,
+        offerName: String,
+        offerDescription: String,
+        prevImageUri: Uri,
+        newOfferImageUri: Uri,
+        pointsRequired: Double,
+        offerType: String,
+        discountAmount: Double?,
+        offerTermsAndCondition: String,
     ): Flow<OffersState<String>>
 
 }

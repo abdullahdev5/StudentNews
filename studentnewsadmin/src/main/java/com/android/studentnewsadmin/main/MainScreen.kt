@@ -60,6 +60,8 @@ import com.android.studentnewsadmin.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnewsadmin.main.navigation.Destination
 import com.android.studentnewsadmin.main.news.ui.screens.NewsScreen
 import com.android.studentnewsadmin.main.news.ui.viewmodel.NewsViewModel
+import com.android.studentnewsadmin.main.offers.ui.screens.OffersScreen
+import com.android.studentnewsadmin.main.offers.ui.viewModel.OffersViewModel
 import com.android.studentnewsadmin.ui.theme.Green
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -155,7 +157,7 @@ fun MainScreen(
                         title = {
                             Text(
                                 text = if (selectedIndex == 0) "News" else if (selectedIndex == 1)
-                                    "Events" else ""
+                                    "Events" else if (selectedIndex == 2) "Offers" else ""
                             )
                         },
                         navigationIcon = {
@@ -298,6 +300,12 @@ fun MainScreen(
                             onClick = { selectedIndex = 1 },
                             text = { Text("Events") }
                         )
+
+                        Tab(
+                            selected = selectedIndex == 2,
+                            onClick = { selectedIndex = 2 },
+                            text = { Text("Offers") }
+                        )
                     }
 
                     when (selectedIndex) {
@@ -314,6 +322,14 @@ fun MainScreen(
                             EventsScreen(
                                 navHostController = navHostController,
                                 eventsViewModel = eventsViewModel
+                            )
+                        }
+
+                        2 -> {
+                            val offersViewModel = koinViewModel<OffersViewModel>()
+                            OffersScreen(
+                                navHostController = navHostController,
+                                offersViewModel = offersViewModel
                             )
                         }
                     }
