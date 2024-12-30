@@ -8,9 +8,10 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.background
@@ -33,9 +34,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.overscroll
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PageSize
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -45,7 +43,6 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -53,6 +50,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,13 +61,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -88,6 +86,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.android.studentnews.auth.domain.models.UserModel
+import com.android.studentnews.core.domain.common.CollapsingTopBarButAppearWhenTopReached
+import com.android.studentnews.core.domain.common.MyOverScrollEffect
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.ButtonColors
@@ -105,16 +105,11 @@ import com.android.studentnews.ui.theme.ReferralScreenBgColorDark
 import com.android.studentnews.ui.theme.ReferralScreenBgColorLight
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.compose
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.math.sign
 import kotlin.ranges.coerceIn
-
 
 @OptIn(
     ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class,
@@ -143,83 +138,14 @@ fun ReferralBonusScreen(
     val offersList by referralBonusViewModel.offersList.collectAsStateWithLifecycle()
 
 
-    class MyOverScrollEffect(val scope: CoroutineScope) : OverscrollEffect {
-
-        private val overScrollOffset = Animatable(0f)
-
-        override fun applyToScroll(
-            delta: Offset,
-            source: NestedScrollSource,
-            performScroll: (Offset) -> Offset,
-        ): Offset {
-            // in pre scroll we relax the overscroll if needed
-            // relaxation: when we are in progress of the overscroll and user scrolls in the
-            // different direction = substract the overscroll first
-
-            val sameDirection = sign(delta.y) == sign(overScrollOffset.value)
-            val consumedByPreScroll =
-                if (abs(overScrollOffset.value) > 0.5 && !sameDirection) {
-                    val previousOverScrollValue = overScrollOffset.value
-                    val newOverScrollValue = overScrollOffset.value + delta.y
-
-                    if (sign(previousOverScrollValue) != sign(newOverScrollValue)) {
-                        // sign changed, coerce to start scrolling and exit
-                        scope.launch { overScrollOffset.snapTo(0f) }
-                        Offset(x = 0f, y = delta.y + previousOverScrollValue)
-                    } else {
-                        scope.launch { overScrollOffset.snapTo(overScrollOffset.value + delta.y) }
-                        delta.copy(x = 0f)
-                    }
-                } else {
-                    Offset.Zero
-                }
-
-            val leftForScroll = delta - consumedByPreScroll
-            val consumedByScroll = performScroll(leftForScroll)
-            val overScrollDelta = leftForScroll - consumedByScroll
-            // if it is a drag, not a fling, add the delta left to our scroll value
-            if (abs(overScrollDelta.y) > 0.5 && source == NestedScrollSource.UserInput) {
-                scope.launch {
-                    overScrollOffset.snapTo(overScrollOffset.value + overScrollDelta.y * 0.1f)
-                }
-            }
-
-            return consumedByPreScroll + consumedByScroll
-        }
-
-        override suspend fun applyToFling(
-            velocity: Velocity,
-            performFling: suspend (Velocity) -> Velocity,
-        ) {
-            val consumed = performFling(velocity)
-
-            // When the filing happens - we just gradually animate our overScroll to 0
-            val remaining = velocity - consumed
-
-            overScrollOffset.animateTo(
-                targetValue = 0f,
-                initialVelocity = remaining.y,
-                animationSpec = spring()
-            )
-        }
-
-        override val effectModifier: Modifier
-            get() = Modifier.offset { IntOffset(x = 0, y = overScrollOffset.value.roundToInt()) }
-
-        override val isInProgress: Boolean
-            get() = overScrollOffset.value != 0f
-    }
-
-    val overScroll = remember(scope) { MyOverScrollEffect(scope) }
-
+    val overScroll = remember() { MyOverScrollEffect(scope) }
     var offset by remember { mutableFloatStateOf(0f) }
-
     val scrollStateRange = (-512f).rangeTo(512f)
 
 
-    val lineHeight = 35
-
     val annotatedTotalAndUsedPointsString = buildAnnotatedString {
+
+        val lineHeight = 35
 
         // Total Points String
         withStyle(
@@ -278,31 +204,81 @@ fun ReferralBonusScreen(
         }
     }
 
+    val topTextMaxHeight = with(density) { (90).dp.toPx() }
+    val topTextNestedScroll = remember(topTextMaxHeight) {
+        CollapsingTopBarButAppearWhenTopReached(topTextMaxHeight)
+    }
+
+    val topBarColor = if (isSystemInDarkTheme())
+        ReferralScreenBgColorDark else ReferralScreenBgColorLight
+
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {},
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            navHostController.navigateUp()
+            Column(
+                modifier = Modifier
+                    .background(color = topBarColor)
+            ) {
+                TopAppBar(
+                    title = {
+                        AnimatedVisibility(
+                            visible = topTextNestedScroll.topBarOffsetFloat == 0f,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                        ) {
+                            Text(text = "Referral Wallet")
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Icon for Navigate back",
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = if (isSystemInDarkTheme())
-                        ReferralScreenBgColorDark else ReferralScreenBgColorLight
+                    },
+                    navigationIcon = {
+                        IconButton(
+                            onClick = {
+                                navHostController.navigateUp()
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowBack,
+                                contentDescription = "Icon for Navigate back",
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = topBarColor,
+                    ),
                 )
-            )
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(
+                            style = ParagraphStyle(
+                                lineHeight = 40.sp
+                            )
+                        ) {
+                            withStyle(
+                                style = SpanStyle(
+                                    fontSize = FontSize.EXTRA_LARGE.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            ) {
+                                appendLine("Welcome to")
+                                appendLine("Your Referral Wallet")
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .then(
+                            with(density) {
+                                Modifier
+                                    .height(
+                                        (topTextNestedScroll.topBarOffsetFloat.toInt()).toDp()
+                                    )
+                            }
+                        )
+                        .padding(all = 10.dp)
+                )
+            }
         },
         modifier = Modifier
             .fillMaxSize()
+            .nestedScroll(topTextNestedScroll)
     ) { innerPadding ->
 
         Column(
@@ -315,16 +291,29 @@ fun ReferralBonusScreen(
                         ReferralScreenBgColorDark else ReferralScreenBgColorLight
                 ),
         ) {
-
             Column(
                 modifier = Modifier
                     .scrollable(
                         orientation = Orientation.Vertical,
                         overscrollEffect = overScroll,
                         state = rememberScrollableState { delta ->
+                            val distanceFromEdge = minOf(
+                                abs(offset - scrollStateRange.start),
+                                abs(offset - scrollStateRange.endInclusive),
+                            )
+
+                            val frictionFactor =
+                                distanceFromEdge / (scrollStateRange.endInclusive - scrollStateRange.start)
+
+                            val adjustedDelta = if (distanceFromEdge > 0) {
+                                delta * (frictionFactor * MyOverScrollEffect.overScrollFriction)
+                            } else {
+                                delta
+                            }
+
                             val oldValue = offset
 
-                            offset = (offset + delta).coerceIn(scrollStateRange)
+                            offset = (offset + adjustedDelta).coerceIn(scrollStateRange)
 
                             offset - oldValue
                         },
@@ -390,10 +379,10 @@ fun ReferralBonusScreen(
                                 .padding(bottom = 10.dp)
                         ) {
                             Text(
-                                text = "Offers For You",
+                                text = "Offers for You",
                                 style = TextStyle(
                                     fontSize = FontSize.LARGE.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.SemiBold
                                 )
                             )
                             if (offersList.size > 1) {

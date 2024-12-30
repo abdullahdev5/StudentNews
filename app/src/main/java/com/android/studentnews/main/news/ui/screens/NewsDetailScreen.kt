@@ -54,16 +54,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -86,6 +82,7 @@ import androidx.media3.ui.PlayerView
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import com.android.studentnews.core.domain.common.CollapsingTopBarButAppearWhenTopReached
 import com.android.studentnews.core.domain.common.formatDateToDay
 import com.android.studentnews.core.domain.common.formatDateToMonthName
 import com.android.studentnews.core.domain.common.formatDateToYear
@@ -152,45 +149,8 @@ fun NewsDetailScreen(
 
     val horizontalPagerMaxHeight = with(density) { (300).dp.toPx() }
 
-    var horizontalPagerOffset by remember { mutableFloatStateOf(horizontalPagerMaxHeight) }
-
     val horizontalPagerScrollConnection = remember(horizontalPagerMaxHeight) {
-        object : NestedScrollConnection {
-            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-                val delta = available.y
-
-                if (delta >= 0) {
-                    return Offset.Zero
-                }
-
-                val newOffset = horizontalPagerOffset + delta
-                val previousOffset = horizontalPagerOffset
-
-                horizontalPagerOffset = newOffset.coerceIn(0f, horizontalPagerMaxHeight)
-
-                val consumed = horizontalPagerOffset - previousOffset
-
-                return Offset(0f, consumed)
-            }
-
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource,
-            ): Offset {
-                val delta = available.y
-
-                val newOffset = horizontalPagerOffset + delta
-                val previousOffset = horizontalPagerOffset
-
-                horizontalPagerOffset = newOffset.coerceIn(0f, horizontalPagerMaxHeight)
-
-                val consumed = horizontalPagerOffset - previousOffset
-
-                return Offset(0f, consumed)
-            }
-
-        }
+        CollapsingTopBarButAppearWhenTopReached(horizontalPagerMaxHeight)
     }
 
 
@@ -336,11 +296,10 @@ fun NewsDetailScreen(
                             with(density) {
                                 Modifier
                                     .height(
-                                        (horizontalPagerOffset.toInt()).toDp()
+                                        (horizontalPagerScrollConnection.topBarOffsetFloat.toInt()).toDp()
                                     )
                             }
                         )
-//                        .offset { IntOffset(0, horizontalPagerOffset) }
                 ) {
 
                     HorizontalPager(
