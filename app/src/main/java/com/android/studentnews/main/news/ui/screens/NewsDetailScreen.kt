@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
@@ -55,7 +54,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,8 +72,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -96,7 +92,7 @@ import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
-import com.android.studentnews.main.news.domain.destination.NewsDestination
+import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.ui.theme.Black
@@ -107,7 +103,6 @@ import com.android.studentnews.ui.theme.ItemBackgroundColor
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.google.firebase.Timestamp
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @UnstableApi
@@ -685,7 +680,7 @@ fun NewsDetailScreen(
                                     FilledTonalButton(
                                         onClick = {
                                             navHostController.navigate(
-                                                NewsDestination.NEWS_LINK_SCREEN(
+                                                NewsDestinations.NEWS_LINK_SCREEN(
                                                     link = newsById?.link ?: ""
                                                 )
                                             )

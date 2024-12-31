@@ -9,7 +9,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -39,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,7 +71,7 @@ import com.android.studentnews.core.data.paginator.LENGTH_ERROR
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.common.formatDateOrTimeToAgo
 import com.android.studentnews.core.domain.constants.FontSize
-import com.android.studentnews.main.news.domain.destination.NewsDestination
+import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
 import com.android.studentnews.news.domain.model.NewsModel
@@ -144,7 +142,7 @@ fun SavedNewsScreen(
                         context = context,
                         density = density,
                         onItemClick = { newsId ->
-                            navHostController.navigate(NewsDestination.NEWS_DETAIL_SCREEN(newsId))
+                            navHostController.navigate(NewsDestinations.NEWS_DETAIL_SCREEN(newsId))
                         },
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope,

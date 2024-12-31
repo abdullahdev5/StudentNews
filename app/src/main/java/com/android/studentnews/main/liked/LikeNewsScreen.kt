@@ -37,7 +37,7 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.android.studentnews.core.data.paginator.LENGTH_ERROR
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
-import com.android.studentnews.main.news.domain.destination.NewsDestination
+import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.news.ui.NewsItem
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -116,9 +116,16 @@ fun LikedNewsScreen(
                         onItemClick = { thisNewsId ->
                             navHostController
                                 .navigate(
-                                    NewsDestination.NEWS_DETAIL_SCREEN(thisNewsId)
+                                    NewsDestinations.NEWS_DETAIL_SCREEN(thisNewsId)
                                 )
                         },
+                        onMoreOptionsClick = { thisNewsId ->
+                            navHostController.navigate(
+                                NewsDestinations.NEWS_LIST_ITEM_MORE_BOTTOM_SHEET(
+                                    newsId = thisNewsId
+                                )
+                            )
+                        }
                     )
                 }
             }

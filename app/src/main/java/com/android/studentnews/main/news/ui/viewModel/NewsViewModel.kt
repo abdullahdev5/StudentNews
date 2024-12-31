@@ -48,9 +48,6 @@ class NewsViewModel(
 
     var isRefreshing by mutableStateOf(false)
 
-    var newsIdWhenMoreOptionClick by mutableStateOf<String?>(null)
-
-
     init {
         isRefreshing = true
         setupPeriodicNewsWorkRequest()
@@ -75,7 +72,7 @@ class NewsViewModel(
     fun cancelPeriodicNewsWorkRequest() = newsRepository.cancelPeriodicNewsWorkRequest()
 
     override fun onCleared() {
-        newsIdWhenMoreOptionClick = null
+        super.onCleared()
     }
 
 }
