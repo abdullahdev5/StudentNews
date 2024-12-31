@@ -81,6 +81,7 @@ import androidx.media3.ui.PlayerView
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import com.android.studentnews.core.domain.common.CollapsingTopBarButAppearWhenTopReached
 import com.android.studentnews.core.domain.common.formatDateToDay
 import com.android.studentnews.core.domain.common.formatDateToMonthName
 import com.android.studentnews.core.domain.common.formatDateToYear
@@ -88,7 +89,7 @@ import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
-import com.android.studentnews.main.news.domain.destination.NewsDestination
+import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.ui.theme.Black
@@ -297,7 +298,6 @@ fun NewsDetailScreen(
                                     )
                             }
                         )
-//                        .offset { IntOffset(0, horizontalPagerOffset) }
                 ) {
 
                     HorizontalPager(
@@ -639,7 +639,7 @@ fun NewsDetailScreen(
                                     FilledTonalButton(
                                         onClick = {
                                             navHostController.navigate(
-                                                NewsDestination.NEWS_LINK_SCREEN(
+                                                NewsDestinations.NEWS_LINK_SCREEN(
                                                     link = newsById?.link ?: ""
                                                 )
                                             )

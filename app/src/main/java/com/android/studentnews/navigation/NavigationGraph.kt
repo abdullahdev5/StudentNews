@@ -2,18 +2,16 @@
 
 package com.android.studentnews.navigation
 
-import com.android.studentnews.R
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -25,21 +23,20 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
+import com.android.studentnews.R
 import com.android.studentnews.auth.domain.RegistrationDataNavType
 import com.android.studentnews.auth.domain.destination.AuthDestination
 import com.android.studentnews.auth.domain.models.RegistrationData
 import com.android.studentnews.auth.ui.AuthenticationScreen
 import com.android.studentnews.auth.ui.RegistrationFormScreen
 import com.android.studentnews.auth.ui.viewModel.AuthViewModel
-import com.android.studentnews.main.referral_bonus.ui.screens.ReferralBonusScreen
+import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.EVENTS_REGISTRATION_URI
 import com.android.studentnews.main.events.EVENTS_URI
 import com.android.studentnews.main.events.domain.destination.EventsDestination
-import com.android.studentnews.main.settings.registered_events.RegisteredEventsScreen
 import com.android.studentnews.main.events.ui.screens.EventsDetailScreen
-import com.android.studentnews.main.settings.saved.ui.screens.SavedEventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.NEWS_URI
 import com.android.studentnews.main.news.domain.destination.NewsDestinations
@@ -50,10 +47,10 @@ import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.main.referral_bonus.domain.EarnedPointsModelNavType
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
 import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
-import com.android.studentnews.main.referral_bonus.ui.composables.PointsClaimDialog
 import com.android.studentnews.main.referral_bonus.ui.composables.CongratulationDialpg
+import com.android.studentnews.main.referral_bonus.ui.composables.PointsClaimDialog
+import com.android.studentnews.main.referral_bonus.ui.screens.ReferralBonusScreen
 import com.android.studentnews.main.referral_bonus.ui.viewModel.ReferralBonusViewModel
-import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
 import com.android.studentnews.main.search.SearchScreen
 import com.android.studentnews.main.search.SearchViewModel
 import com.android.studentnews.main.settings.SettingsDestination

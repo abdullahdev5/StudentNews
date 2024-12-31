@@ -138,13 +138,14 @@ import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
 import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
+import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
 import com.android.studentnews.main.referral_bonus.ui.composables.PointsClaimListItem
 import com.android.studentnews.navigation.SubGraph
-import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
+import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
