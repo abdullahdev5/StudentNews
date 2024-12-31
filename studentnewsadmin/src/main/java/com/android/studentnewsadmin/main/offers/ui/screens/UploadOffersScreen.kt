@@ -95,7 +95,7 @@ fun UploadOffersScreen(
     var selectedOfferType by rememberSaveable { mutableStateOf(OfferTypes.ACTIVE) }
     var isOfferTypesDropDownMenuVisible by rememberSaveable { mutableStateOf(false) }
 
-    var discountAmountString by rememberSaveable { mutableStateOf("10") }
+    var discountAmountString by rememberSaveable { mutableStateOf("0.0") }
 
     var offerTermsAndCondition by rememberSaveable { mutableStateOf("This offer is valid for first-time customers only.") }
 
@@ -160,7 +160,7 @@ fun UploadOffersScreen(
                             offerDescription = offerDescription,
                             pointsRequired = pointsRequiredString.toDouble(),
                             offerType = selectedOfferType,
-                            discountAmount = discountAmountString.ifEmpty { null }?.toDouble(),
+                            discountAmount = discountAmountString.toDouble(),
                             offerTermsAndCondition = offerTermsAndCondition,
                             context = context,
                         )

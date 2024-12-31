@@ -2,18 +2,15 @@ package com.android.studentnews.main.referral_bonus.ui.screens
 
 import com.android.studentnews.R
 import android.content.Context
+import android.util.Size
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.OverscrollEffect
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
@@ -29,8 +26,8 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.overscroll
@@ -51,7 +48,6 @@ import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
@@ -65,11 +61,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -81,20 +77,24 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.Velocity
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.toIntSize
+import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.android.studentnews.auth.domain.models.UserModel
-import com.android.studentnews.core.domain.common.CollapsingTopBarButAppearWhenTopReached
 import com.android.studentnews.core.domain.common.MyOverScrollEffect
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.common.ButtonColors
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.referral_bonus.domain.common.calculatePercentage
+import com.android.studentnews.main.referral_bonus.domain.constants.OfferTypes
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
 import com.android.studentnews.main.referral_bonus.domain.model.OffersModel
 import com.android.studentnews.main.referral_bonus.ui.viewModel.ReferralBonusViewModel
@@ -106,11 +106,7 @@ import com.android.studentnews.ui.theme.ReferralLinearColor2
 import com.android.studentnews.ui.theme.ReferralScreenBgColorDark
 import com.android.studentnews.ui.theme.ReferralScreenBgColorLight
 import com.android.studentnews.ui.theme.White
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import kotlin.math.abs
-import kotlin.math.roundToInt
-import kotlin.math.sign
 import kotlin.ranges.coerceIn
 
 @OptIn(
@@ -120,7 +116,6 @@ import kotlin.ranges.coerceIn
 @Composable
 fun ReferralBonusScreen(
     navHostController: NavHostController,
-    accountViewModel: AccountViewModel,
     referralBonusViewModel: ReferralBonusViewModel,
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
@@ -135,15 +130,31 @@ fun ReferralBonusScreen(
     val density = LocalDensity.current
     val configuration = LocalConfiguration.current
 
-    val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
-
+    val currentUser by referralBonusViewModel.currentUser.collectAsStateWithLifecycle()
     val offersList by referralBonusViewModel.offersList.collectAsStateWithLifecycle()
+
+
+    val totalPoints by remember(currentUser) {
+        derivedStateOf {
+            currentUser?.referralBonus?.totalPoints ?: 0.0
+        }
+    }
+
+    val usedPoints by remember(currentUser) {
+        derivedStateOf {
+            currentUser?.referralBonus?.usedPoints ?: 0.0
+        }
+    }
 
 
     val overScroll = remember() { MyOverScrollEffect(scope) }
     var offset by remember { mutableFloatStateOf(0f) }
     val scrollStateRange = (-512f).rangeTo(512f)
 
+
+    LaunchedEffect(currentUser) {
+        println("Current User: In UI: $currentUser")
+    }
 
     val annotatedTotalAndUsedPointsString = buildAnnotatedString {
 
@@ -170,10 +181,7 @@ fun ReferralBonusScreen(
                     color = White,
                 )
             ) {
-                appendLine(
-                    (currentUser?.referralBonus?.totalPoints
-                        ?: 0.0).toString()
-                )
+                appendLine((totalPoints).toString())
             }
         }
 
@@ -198,18 +206,10 @@ fun ReferralBonusScreen(
                     color = White,
                 )
             ) {
-                appendLine(
-                    (currentUser?.referralBonus?.usedPoints
-                        ?: 0.0).toString()
-                )
+                appendLine((usedPoints).toString())
             }
         }
     }
-
-//    val topTextMaxHeight = with(density) { (90).dp.toPx() }
-//    val topTextNestedScroll = remember(topTextMaxHeight) {
-//        CollapsingTopBarButAppearWhenTopReached(topTextMaxHeight)
-//    }
 
     val topBarScrollConnection =
         TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
@@ -386,7 +386,7 @@ fun ReferralBonusScreen(
 
                                 OffersListItem(
                                     item = item,
-                                    currentUser = currentUser,
+                                    totalPoints = { totalPoints },
                                     density = density,
                                     context = context,
                                     onRedeem = { thisOfferId ->
@@ -439,15 +439,16 @@ fun ReferralBonusScreen(
 @Composable
 fun OffersListItem(
     item: OffersModel,
-    currentUser: UserModel?,
+    totalPoints: () -> Double,
     density: Density,
     context: Context,
     onRedeem: (offerId: String) -> Unit,
 ) {
 
     var itemWidthWithPadding by remember { mutableStateOf(50.dp) }
+    var itemWidthWithoutPadding by remember { mutableStateOf(50.dp) }
 
-    val totalPoints = currentUser?.referralBonus?.totalPoints ?: 0.0
+    val totalPoints = totalPoints()
 
     val offersPoints = item.pointsRequired
 
@@ -502,87 +503,154 @@ fun OffersListItem(
         ),
         modifier = Modifier
             .padding(all = 10.dp)
+            .onSizeChanged { size ->
+                itemWidthWithoutPadding = with(density) { size.width.toDp() }
+            }
     ) {
-        Column(
-            modifier = Modifier
-                .padding(all = 10.dp)
-                .onSizeChanged { size ->
-                    itemWidthWithPadding = with(density) { size.width.toDp() }
-                }
-        ) {
 
-            Text(
-                text = annotatedTitleAndDescription,
-                modifier = Modifier
-                    .padding(all = 5.dp)
-            )
+            Column {
 
-            Column(
-                modifier = Modifier
-                    .width(itemWidthWithPadding)
-                    .padding(all = 5.dp)
-            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(item.offerImageUrl)
+                        .crossfade(true)
+                        .build(),
+                    contentScale = ContentScale.FillWidth,
+                    contentDescription = "Offer Image",
+                    modifier = Modifier
+                        .width(itemWidthWithoutPadding)
+                        .height(100.dp)
+                )
 
-                Text(
-                    text = buildAnnotatedString {
-                        // Progress
-                        withStyle(
-                            SpanStyle(
-                                fontSize = FontSize.LARGE.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        ) {
-                            append("${animatedProgress.value.toInt()}%")
+                Column(
+                    modifier = Modifier
+                        .padding(all = 10.dp)
+                        .onSizeChanged { size ->
+                            itemWidthWithPadding = with(density) { size.width.toDp() }
+                        }
+                ) {
+
+                    Text(
+                        text = annotatedTitleAndDescription,
+                        modifier = Modifier
+                            .padding(all = 5.dp)
+                    )
+//                Column(
+//                    modifier = Modifier
+//                        .width(itemWidthWithPadding)
+//                        .padding(all = 5.dp)
+//                ) {
+//
+//                    Text(
+//                        text = buildAnnotatedString {
+//                            // Progress
+//                            withStyle(
+//                                SpanStyle(
+//                                    fontSize = FontSize.LARGE.sp,
+//                                    fontWeight = FontWeight.Bold
+//                                )
+//                            ) {
+//                                append("${animatedProgress.value.toInt()}%")
+//                            }
+//                        }
+//                    )
+//
+//                    LinearProgressIndicator(
+//                        progress = {
+//                            animatedProgress.value / 100f
+//                        },
+//                        color = when (item.offerType) {
+//                            OfferTypes.INACTIVE -> {
+//                                Gray
+//                            }
+//
+//                            OfferTypes.EXPIRED -> {
+//                                Gray
+//                            }
+//
+//                            else -> {
+//                                Green
+//                            }
+//                        },
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                    )
+//
+//                    Text(
+//                        text = buildAnnotatedString {
+//                            withStyle(
+//                                SpanStyle(
+//                                    fontSize = FontSize.SMALL.sp,
+//                                    color = Gray
+//                                )
+//                            ) {
+//                                when (item.offerType) {
+//                                    OfferTypes.INACTIVE -> {
+//                                        append("This Offer is not Active Yet")
+//                                    }
+//
+//                                    OfferTypes.EXPIRED -> {
+//                                        append("This Offer is Expired")
+//                                    }
+//
+//                                    else -> {
+//                                        if (isTotalLessThanOfferPoints) {
+//                                            append("Reach $offersPoints Points to Redeemed This")
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                        },
+//                        modifier = Modifier
+//                            .padding(top = 5.dp)
+//                    )
+//
+//                }
+
+                    val buttonEnableForDifferentOfferTypes = when (item.offerType) {
+                        OfferTypes.INACTIVE -> {
+                            false
+                        }
+
+                        OfferTypes.EXPIRED -> {
+                            false
+                        }
+
+                        else -> {
+                            !isTotalLessThanOfferPoints
                         }
                     }
-                )
 
-                LinearProgressIndicator(
-                    progress = {
-                        animatedProgress.value / 100f
-                    },
-                    color = Green,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                )
-
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(
-                            SpanStyle(
-                                fontSize = FontSize.SMALL.sp,
-                                color = if (
-                                    isTotalLessThanOfferPoints
-                                ) Gray else Green
-                            )
-                        ) {
-                            append(
-                                if (isTotalLessThanOfferPoints)
-                                    "Reach $offersPoints Points to Redeemed This"
-                                else
-                                    "You Reached $offersPoints Points, Redeem This"
-                            )
+                    val buttonTextForDifferentOfferTypes = when (item.offerType) {
+                        OfferTypes.INACTIVE -> {
+                            item.offerType
                         }
-                    },
-                    modifier = Modifier
-                        .padding(top = 5.dp)
-                )
 
+                        OfferTypes.EXPIRED -> {
+                            item.offerType
+                        }
+
+                        else -> {
+                            "Redeem"
+                        }
+                    }
+
+                    Button(
+                        onClick = {
+                            onRedeem(item.offerId)
+                        },
+                        shape = RoundedCornerShape(5.dp),
+                        colors = ButtonColors(),
+                        enabled = buttonEnableForDifferentOfferTypes,
+                        modifier = Modifier
+//                        .width(itemWidthWithPadding)
+                            .padding(all = 5.dp)
+                    ) {
+                        Text(text = buttonTextForDifferentOfferTypes)
+                    }
+                }
             }
 
-            Button(
-                onClick = {
-                    onRedeem(item.offerId)
-                },
-                shape = RoundedCornerShape(5.dp),
-                colors = ButtonColors(),
-                enabled = totalPoints >= offersPoints,
-                modifier = Modifier
-                    .width(itemWidthWithPadding)
-                    .padding(all = 5.dp)
-            ) {
-                Text(text = "Redeem")
-            }
-        }
+
     }
 }

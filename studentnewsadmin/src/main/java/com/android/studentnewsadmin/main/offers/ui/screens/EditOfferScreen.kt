@@ -171,7 +171,7 @@ fun EditOfferScreen(
                                 offerDescription = offerDescription,
                                 pointsRequired = pointsRequiredString.toDouble(),
                                 offerType = selectedOfferType,
-                                discountAmount = discountAmountString.ifEmpty { null }?.toDouble(),
+                                discountAmount = discountAmountString.toDouble(),
                                 offerTermsAndCondition = offerTermsAndCondition,
                                 context = context,
                             )

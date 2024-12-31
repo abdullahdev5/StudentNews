@@ -19,7 +19,7 @@ interface OffersRepository {
         offerImageUri: Uri,
         pointsRequired: Double,
         offerType: String,
-        discountAmount: Double?,
+        discountAmount: Double,
         offerTermsAndCondition: String,
 
     ): Flow<OffersState<String>>
@@ -37,7 +37,7 @@ interface OffersRepository {
         newOfferImageUri: Uri,
         pointsRequired: Double,
         offerType: String,
-        discountAmount: Double?,
+        discountAmount: Double,
         offerTermsAndCondition: String,
     ): Flow<OffersState<String>>
 

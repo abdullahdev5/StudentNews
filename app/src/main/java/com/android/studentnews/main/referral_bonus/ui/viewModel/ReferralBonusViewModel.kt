@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
@@ -26,12 +27,20 @@ class ReferralBonusViewModel(
     private val referralBonusRepository: ReferralBonusRepository,
 ) : ViewModel() {
 
+    private val _currentUser = MutableStateFlow<UserModel?>(null)
+    val currentUser = _currentUser.asStateFlow()
 
     private val _offersList = MutableStateFlow<List<OffersModel>>(emptyList())
     val offersList = _offersList.asStateFlow()
 
     var offersListStatus by mutableStateOf("")
         private set
+
+
+    init {
+        getCurrentUserWithAwait()
+    }
+
 
 
     fun getOffers() {
@@ -97,6 +106,22 @@ class ReferralBonusViewModel(
                                 )
                         }
 
+                        else -> {}
+                    }
+                }
+        }
+    }
+
+    fun getCurrentUserWithAwait() {
+        viewModelScope.launch {
+            referralBonusRepository
+                .getCurrentUserWithAwait()
+                .collectLatest { result ->
+                    when (result) {
+                        is ReferralBonusState.Success -> {
+                            _currentUser.value = result.data
+                            println("Current User: In ViewModel: ${_currentUser.value}")
+                        }
                         else -> {}
                     }
                 }

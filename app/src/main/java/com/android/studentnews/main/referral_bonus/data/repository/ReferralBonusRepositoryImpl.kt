@@ -1,5 +1,6 @@
 package com.android.studentnews.main.referral_bonus.data.repository
 
+import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.constants.FirestoreNodes
 import com.android.studentnews.main.referral_bonus.domain.model.RedeemedOffersModel
 import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
@@ -12,6 +13,8 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -48,21 +51,33 @@ class ReferralBonusRepositoryImpl(
                         document.getString("offerId")
                     } ?: emptyList()
 
-                val query = if (collectedOfferIds.isEmpty())
+                val query = if (collectedOfferIds.isEmpty()) {
                     offersColRef
-                else offersColRef?.whereNotIn("offerId", collectedOfferIds)
+                } else {
+                    offersColRef
+                        ?.whereNotIn("offerId", collectedOfferIds)
+                }
 
-                query
-                    ?.addSnapshotListener { value, error ->
-                        if (error != null) {
-                            trySend(ReferralBonusState.Failed(error))
+                val data = query?.get()?.await()
+
+//                query
+//                    ?.addSnapshotListener { value, error ->
+//                        if (error != null) {
+//                            trySend(ReferralBonusState.Failed(error))
+//                        }
+
+                        val offersList = data?.sortedByDescending {
+                            val discountAmount = it.getDouble("discountAmount")?.toDouble()
+                            if (discountAmount != null && discountAmount != 0.0) {
+                                discountAmount >= 50.0
+                                return@sortedByDescending true
+                            } else return@sortedByDescending false
                         }
-
-                        val offersList = value?.mapNotNull {
-                            it.toObject(OffersModel::class.java)
-                        } ?: emptyList()
+                            ?.mapNotNull {
+                                it.toObject(OffersModel::class.java)
+                            } ?: emptyList()
                         trySend(ReferralBonusState.Success(offersList))
-                    }
+//                    }
 
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -118,6 +133,24 @@ class ReferralBonusRepositoryImpl(
                     }
                 }
 
+
+            awaitClose {
+                close()
+            }
+        }
+    }
+
+    override suspend fun getCurrentUserWithAwait(): Flow<ReferralBonusState<UserModel?>> {
+        return callbackFlow {
+
+            val user = userDocRef
+                ?.get()
+                ?.await()
+                ?.toObject(UserModel::class.java)
+
+            println("Current User: In RepoImpl: $user")
+
+            trySend(ReferralBonusState.Success(user))
 
             awaitClose {
                 close()

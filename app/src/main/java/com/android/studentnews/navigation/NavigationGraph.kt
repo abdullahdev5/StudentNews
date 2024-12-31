@@ -554,12 +554,10 @@ fun NavigationGraph(
                             )
                         }
                     ) {
-                        val accountViewModel = koinViewModel<AccountViewModel>()
                         val referralBonusViewModel = koinViewModel<ReferralBonusViewModel>()
 
                         ReferralBonusScreen(
                             navHostController = navHostController,
-                            accountViewModel = accountViewModel,
                             referralBonusViewModel = referralBonusViewModel,
                             sharedTransitionScope = this@SharedTransitionLayout,
                             animatedVisibilityScope = this@composable

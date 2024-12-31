@@ -10,7 +10,7 @@ data class OffersModel(
     val offerDescription: String = "", // Offer Description
     val pointsRequired: Double = 0.0, // Points Required
     val offerType: String = OfferTypes.ACTIVE, // Offer Type Like Active, In Active, or Expired
-    val discountAmount: Double? = null, // Discount Amount
+    val discountAmount: Double? = 0.0, // Discount Amount
     val offerTermsAndCondition: String? = "", // Offer Terms & Condition
     val createdAt: Timestamp = Timestamp.now(), // Created At
     val updatedAt: Timestamp? = null, // Updated At
@@ -23,7 +23,7 @@ data class OffersModel(
         offerDescription = "",
         pointsRequired = 0.0,
         offerType = OfferTypes.ACTIVE,
-        discountAmount = null,
+        discountAmount = 0.0,
         offerTermsAndCondition = "",
         createdAt = Timestamp.now(),
         updatedAt = null,

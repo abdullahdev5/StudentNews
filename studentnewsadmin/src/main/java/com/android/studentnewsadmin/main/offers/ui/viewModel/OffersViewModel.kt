@@ -54,7 +54,7 @@ class OffersViewModel(
         offerDescription: String,
         pointsRequired: Double,
         offerType: String,
-        discountAmount: Double?,
+        discountAmount: Double,
         offerTermsAndCondition: String,
         context: Context,
     ) {
@@ -148,7 +148,7 @@ class OffersViewModel(
         offerDescription: String,
         pointsRequired: Double,
         offerType: String,
-        discountAmount: Double?,
+        discountAmount: Double,
         offerTermsAndCondition: String,
         context: Context,
     ) {

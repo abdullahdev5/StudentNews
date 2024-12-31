@@ -36,7 +36,7 @@ class OffersRepositoryImpl(
         offerImageUri: Uri,
         pointsRequired: Double,
         offerType: String,
-        discountAmount: Double?,
+        discountAmount: Double,
         offerTermsAndCondition: String,
     ): Flow<OffersState<String>> {
         return callbackFlow {
@@ -165,7 +165,7 @@ class OffersRepositoryImpl(
         newOfferImageUri: Uri,
         pointsRequired: Double,
         offerType: String,
-        discountAmount: Double?,
+        discountAmount: Double,
         offerTermsAndCondition: String,
     ): Flow<OffersState<String>> {
         return callbackFlow {

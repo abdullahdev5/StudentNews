@@ -47,7 +47,14 @@ inline fun formatDateToYear(dateMillis: Long): Int {
 }
 
 
-//  TIme Related
+//  Time Related
+
+inline fun formatTimeToStringFromTimeMillis(timeMillis: Long): String {
+    val calendar = Calendar.getInstance()
+    calendar.timeInMillis = timeMillis
+    val timeFormat = SimpleDateFormat("hh:mm a", Locale.getDefault())
+    return timeFormat.format(calendar.time)
+}
 
 inline fun formatTimeToString(hour: Int, minutes: Int): String {
     val calendar = Calendar.getInstance()
