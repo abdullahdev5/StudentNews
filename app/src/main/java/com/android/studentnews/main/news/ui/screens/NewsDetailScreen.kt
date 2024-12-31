@@ -2,7 +2,6 @@
 
 package com.android.studentnews.main.news.ui.screens
 
-import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -82,7 +81,6 @@ import androidx.media3.ui.PlayerView
 import androidx.navigation.NavHostController
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import com.android.studentnews.core.domain.common.CollapsingTopBarButAppearWhenTopReached
 import com.android.studentnews.core.domain.common.formatDateToDay
 import com.android.studentnews.core.domain.common.formatDateToMonthName
 import com.android.studentnews.core.domain.common.formatDateToYear
@@ -102,7 +100,6 @@ import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.google.firebase.Timestamp
 
-@SuppressLint("UnspecifiedRegisterReceiverFlag")
 @OptIn(ExperimentalSharedTransitionApi::class)
 @UnstableApi
 @Composable
@@ -300,6 +297,7 @@ fun NewsDetailScreen(
                                     )
                             }
                         )
+//                        .offset { IntOffset(0, horizontalPagerOffset) }
                 ) {
 
                     HorizontalPager(

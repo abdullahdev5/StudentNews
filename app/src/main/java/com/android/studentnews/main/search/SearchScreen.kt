@@ -71,7 +71,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
-import com.android.studentnews.main.news.domain.destination.NewsDestination
+import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.news.ui.NewsItem
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkGray
@@ -79,7 +79,6 @@ import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
-import java.util.Calendar
 
 @SuppressLint("FrequentlyChangedStateReadInComposition")
 @Composable
@@ -285,8 +284,15 @@ fun SearchScreen(
                                     context = context,
                                     onItemClick = { newsId ->
                                         navHostController.navigate(
-                                            NewsDestination.NEWS_DETAIL_SCREEN(
+                                            NewsDestinations.NEWS_DETAIL_SCREEN(
                                                 newsId = newsId
+                                            )
+                                        )
+                                    },
+                                    onMoreOptionsClick = { thisNewsId ->
+                                        navHostController.navigate(
+                                            NewsDestinations.NEWS_LIST_ITEM_MORE_BOTTOM_SHEET(
+                                                newsId = thisNewsId
                                             )
                                         )
                                     },

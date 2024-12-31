@@ -8,8 +8,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.paging.PagingData
 import androidx.paging.cachedIn
 import com.android.studentnews.auth.domain.repository.AuthRepository
-import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
-import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
 import com.android.studentnews.news.data.repository.NEWS_CATEGORY_LIST_PAGE_SIZE
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
@@ -23,7 +21,6 @@ import kotlinx.coroutines.launch
 class NewsViewModel(
     private val newsRepository: NewsRepository,
     private val authRepository: AuthRepository,
-    private val newsDetailRepository: NewsDetailRepository,
 ) : ViewModel() {
 
     private val _newsList = MutableStateFlow<PagingData<NewsModel>>(PagingData.empty())
@@ -33,8 +30,6 @@ class NewsViewModel(
         .cachedIn(viewModelScope)
 
     var isRefreshing by mutableStateOf(false)
-
-    var newsIdWhenMoreOptionClick by mutableStateOf<String?>(null) // When More Options Click
 
     init {
         isRefreshing = true
@@ -61,7 +56,7 @@ class NewsViewModel(
     fun cancelPeriodicNewsWorkRequest() = newsRepository.cancelPeriodicNewsWorkRequest()
 
     override fun onCleared() {
-        newsIdWhenMoreOptionClick = null
+        super.onCleared()
     }
 
 }

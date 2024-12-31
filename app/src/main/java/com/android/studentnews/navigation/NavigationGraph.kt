@@ -10,6 +10,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -18,7 +25,6 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
-import com.android.studentnews.main.news.NEWS_URI
 import com.android.studentnews.auth.domain.RegistrationDataNavType
 import com.android.studentnews.auth.domain.destination.AuthDestination
 import com.android.studentnews.auth.domain.models.RegistrationData
@@ -35,11 +41,11 @@ import com.android.studentnews.main.settings.registered_events.RegisteredEventsS
 import com.android.studentnews.main.events.ui.screens.EventsDetailScreen
 import com.android.studentnews.main.settings.saved.ui.screens.SavedEventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
-import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
-import com.android.studentnews.main.news.domain.destination.NewsDestination
+import com.android.studentnews.main.news.NEWS_URI
+import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.main.news.ui.screens.NewsDetailScreen
 import com.android.studentnews.main.news.ui.screens.NewsLinkScreen
-import com.android.studentnews.main.settings.saved.ui.screens.SavedNewsScreen
+import com.android.studentnews.main.news.ui.screens.NewsListItemMoreBottomSheet
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.main.referral_bonus.domain.EarnedPointsModelNavType
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
@@ -54,12 +60,19 @@ import com.android.studentnews.main.settings.SettingsDestination
 import com.android.studentnews.main.settings.SettingsScreen
 import com.android.studentnews.main.settings.liked.LikedNewsScreen
 import com.android.studentnews.main.settings.liked.LikedNewsViewModel
+import com.android.studentnews.main.settings.registered_events.RegisteredEventsScreen
 import com.android.studentnews.main.settings.registered_events.RegisteredEventsViewModel
 import com.android.studentnews.main.settings.saved.domain.destination.SavedDestination
+import com.android.studentnews.main.settings.saved.ui.screens.SavedEventsScreen
+import com.android.studentnews.main.settings.saved.ui.screens.SavedNewsScreen
 import com.android.studentnews.main.settings.saved.ui.screens.SavedScreen
+import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
+import com.android.studentnews.main.settings.saved.ui.viewModels.SavedNewsViewModel
 import com.android.studentnews.news.domain.destination.MainDestination
+import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.NewsScreen
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
+import com.google.firebase.Timestamp
 import org.koin.androidx.compose.koinViewModel
 import kotlin.reflect.typeOf
 import kotlin.to
@@ -133,9 +146,9 @@ fun NavigationGraph(
                 startDestination = SubGraph.NEWS,
             ) {
                 navigation<SubGraph.NEWS>(
-                    startDestination = NewsDestination.NEWS_SCREEN
+                    startDestination = NewsDestinations.NEWS_SCREEN
                 ) {
-                    composable<NewsDestination.NEWS_SCREEN>() {
+                    composable<NewsDestinations.NEWS_SCREEN>() {
                         val newsViewModel = koinViewModel<NewsViewModel>()
                         val accountViewModel = koinViewModel<AccountViewModel>()
                         val eventsViewModel = koinViewModel<EventsViewModel>()
@@ -150,7 +163,7 @@ fun NavigationGraph(
                         )
                     }
 
-                    composable<NewsDestination.NEWS_DETAIL_SCREEN>(
+                    composable<NewsDestinations.NEWS_DETAIL_SCREEN>(
                         deepLinks = listOf(
                             navDeepLink {
                                 uriPattern = "$NEWS_URI/newsId={newsId}"
@@ -161,7 +174,7 @@ fun NavigationGraph(
                         popEnterTransition = { fadeIn() },
                         popExitTransition = { fadeOut() },
                     ) {
-                        val arguments = it.toRoute<NewsDestination.NEWS_DETAIL_SCREEN>()
+                        val arguments = it.toRoute<NewsDestinations.NEWS_DETAIL_SCREEN>()
                         val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
                         val accountViewModel = koinViewModel<AccountViewModel>()
 
@@ -175,8 +188,75 @@ fun NavigationGraph(
                         )
                     }
 
+                    dialog<NewsDestinations.NEWS_LIST_ITEM_MORE_BOTTOM_SHEET>() {
+                        val arguments = it.toRoute<NewsDestinations.NEWS_LIST_ITEM_MORE_BOTTOM_SHEET>()
+                        val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
 
-                    composable<NewsDestination.NEWS_LINK_SCREEN>(
+                        LaunchedEffect(Unit) {
+                            newsDetailViewModel.getNewsById(arguments.newsId)
+                            newsDetailViewModel.getIsNewsSaved(arguments.newsId)
+                        }
+                        val context = LocalContext.current
+
+                        val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
+
+                        val isNewsSaved = remember(newsDetailViewModel.isNewsSaved) {
+                            derivedStateOf {
+                                newsDetailViewModel.isNewsSaved
+                            }
+                        }.value
+
+                        NewsListItemMoreBottomSheet(
+                            isNewsSaved = isNewsSaved,
+                            onSave = {
+                                val newsForSave = NewsModel(
+                                    title = newsById?.title ?: "",
+                                    description = newsById?.description ?: "",
+                                    newsId = arguments.newsId,
+                                    category = newsById?.category ?: "",
+                                    timestamp = Timestamp.now(),
+                                    link = newsById?.link ?: "",
+                                    linkTitle = newsById?.linkTitle ?: "",
+                                    urlList = newsById?.urlList ?: emptyList(),
+                                    shareCount = newsById?.shareCount ?: 0,
+                                    likes = newsById?.likes ?: emptyList(),
+                                )
+
+                                if (isNewsSaved == true) {
+                                    newsDetailViewModel.onNewsRemoveFromSave(
+                                        news = newsForSave,
+                                        wantToShowSuccessMessage = true
+                                    )
+                                } else {
+                                    newsDetailViewModel.onNewsSave(
+                                        news = newsForSave,
+                                        wantToShowSuccessMessage = true
+                                    )
+                                }
+                            },
+                            onShare = {
+                                val title = newsById?.title ?: ""
+                                val imageUrl = getUrlOfImageNotVideo(
+                                    urlList = newsById?.urlList ?: emptyList()
+                                )
+
+                                newsDetailViewModel
+                                    .onNewsShare(
+                                        title = title,
+                                        imageUrl = imageUrl,
+                                        context = context,
+                                        newsId = arguments.newsId
+                                    )
+                            },
+                            onDismiss = {
+                                navHostController.navigateUp()
+                            }
+                        )
+
+                    }
+
+
+                    composable<NewsDestinations.NEWS_LINK_SCREEN>(
                         enterTransition = {
                             slideIntoContainer(
                                 towards = AnimatedContentTransitionScope.SlideDirection.Left,
@@ -203,7 +283,7 @@ fun NavigationGraph(
                             )
                         }
                     ) {
-                        val arguments = it.toRoute<NewsDestination.NEWS_LINK_SCREEN>()
+                        val arguments = it.toRoute<NewsDestinations.NEWS_LINK_SCREEN>()
 
                         NewsLinkScreen(
                             link = arguments.link,
@@ -358,7 +438,7 @@ fun NavigationGraph(
                 }
 
                 // Liked News Screen
-                composable<NewsDestination.LIKED_NEWS_SCREEN>(
+                composable<NewsDestinations.LIKED_NEWS_SCREEN>(
                     enterTransition = {
                         slideIntoContainer(
                             towards = AnimatedContentTransitionScope.SlideDirection.Left,

@@ -49,12 +49,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.outlined.BookmarkRemove
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -69,7 +66,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBarItem
@@ -78,7 +74,6 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
@@ -90,7 +85,6 @@ import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -144,9 +138,7 @@ import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
 import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
-import com.android.studentnews.main.news.domain.destination.NewsDestination
 import com.android.studentnews.main.news.domain.model.CategoryModel
-import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
 import com.android.studentnews.main.referral_bonus.ui.composables.PointsClaimListItem
 import com.android.studentnews.navigation.SubGraph
@@ -161,10 +153,8 @@ import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.ItemBackgroundColor
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.White
-import com.google.firebase.Timestamp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.koinViewModel
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -228,7 +218,6 @@ fun NewsScreen(
 
     var newsCategoryStatus by rememberSaveable { mutableStateOf("") }
     var isMoreDropDownMenuItemOpen by rememberSaveable { mutableStateOf(false) }
-    var isMoreOptionsInNewsItemsSheetStateOpen by rememberSaveable { mutableStateOf(false) }
     var eventsListGettingCount by rememberSaveable { mutableIntStateOf(0) }
 
     val newsList = newsViewModel.newsList.collectAsLazyPagingItems()
@@ -368,7 +357,7 @@ fun NewsScreen(
                                 }
 
                                 MainNavigationDrawerList.Liked.name -> {
-                                    navHostController.navigate(NewsDestination.LIKED_NEWS_SCREEN)
+                                    navHostController.navigate(NewsDestinations.LIKED_NEWS_SCREEN)
                                 }
 
                                 MainNavigationDrawerList.Registered_Events.name -> {
@@ -440,7 +429,7 @@ fun NewsScreen(
                                         },
                                         onLikedClick = {
                                             navHostController
-                                                .navigate(NewsDestination.LIKED_NEWS_SCREEN)
+                                                .navigate(NewsDestinations.LIKED_NEWS_SCREEN)
                                         },
                                         onRegisteredEventsClick = {
                                             navHostController
@@ -774,22 +763,17 @@ fun NewsScreen(
                                                         item = item,
                                                         onItemClick = { newsId ->
                                                             navHostController.navigate(
-                                                                NewsDestination.NEWS_DETAIL_SCREEN(
+                                                                NewsDestinations.NEWS_DETAIL_SCREEN(
                                                                     newsId
                                                                 )
                                                             )
                                                         },
                                                         onMoreOptionsClick = { thisNewsId ->
-                                                            newsViewModel.newsIdWhenMoreOptionClick =
-                                                                thisNewsId
-                                                            scope.launch {
-                                                                moreOptionsInNewsItemsSheetState.show()
-                                                            }.invokeOnCompletion {
-                                                                if (moreOptionsInNewsItemsSheetState.isVisible) {
-                                                                    isMoreOptionsInNewsItemsSheetStateOpen =
-                                                                        true
-                                                                }
-                                                            }
+                                                            navHostController.navigate(
+                                                                NewsDestinations.NEWS_LIST_ITEM_MORE_BOTTOM_SHEET(
+                                                                    newsId = thisNewsId
+                                                                )
+                                                            )
                                                         },
                                                         context = context,
                                                         animatedVisibilityScope = animatedVisibilityScope,
@@ -949,28 +933,6 @@ fun NewsScreen(
 
                 }
 
-                if (isMoreOptionsInNewsItemsSheetStateOpen) {
-
-                    newsViewModel.newsIdWhenMoreOptionClick?.let { thisNewsId ->
-                        MoreOptionSheetOfNewsItems(
-                            newsId = thisNewsId,
-                            sheetState = moreOptionsInNewsItemsSheetState,
-                            context = context,
-                            onDismiss = {
-                                scope.launch {
-                                    moreOptionsInNewsItemsSheetState.hide()
-                                }.invokeOnCompletion {
-                                    if (!moreOptionsInNewsItemsSheetState.isVisible) {
-                                        newsViewModel.newsIdWhenMoreOptionClick = null
-                                        isMoreOptionsInNewsItemsSheetStateOpen =
-                                            false
-                                    }
-                                }
-                            }
-                        )
-                    }
-                }
-
             }
 
         }
@@ -984,7 +946,7 @@ fun NewsItem(
     item: NewsModel?,
     context: Context,
     onItemClick: (String) -> Unit,
-    onMoreOptionsClick: (String) -> Unit = {},
+    onMoreOptionsClick: (String) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
 ) {
@@ -1240,7 +1202,6 @@ fun MainDrawerContent(
         MainNavigationDrawerList.Saved,
         MainNavigationDrawerList.Liked,
         MainNavigationDrawerList.Registered_Events,
-        MainNavigationDrawerList.REFERRAL_BONUS,
         MainNavigationDrawerList.Settings,
         MainNavigationDrawerList.Log_out,
     )
@@ -1480,136 +1441,6 @@ inline fun MainTabRow(
                 unselectedContentColor = if (isSystemInDarkTheme()) White else Black
             )
         }
-    }
-}
-
-@Composable
-fun MoreOptionSheetOfNewsItems(
-    newsId: String,
-    sheetState: SheetState,
-    context: Context,
-    onDismiss: () -> Unit,
-) {
-
-    val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
-
-    LaunchedEffect(Unit) {
-        newsDetailViewModel.getNewsById(newsId)
-        newsDetailViewModel.getIsNewsSaved(newsId)
-    }
-
-    val newsById by newsDetailViewModel.newsById.collectAsState()
-
-    val isNewsSaved = remember(newsDetailViewModel.isNewsSaved) {
-        derivedStateOf {
-            newsDetailViewModel.isNewsSaved ?: false
-        }
-    }.value
-
-
-    ModalBottomSheet(
-        sheetState = sheetState,
-        onDismissRequest = onDismiss
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(bottom = 100.dp)
-        ) {
-            newsById?.let { news ->
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            val newsForSave = NewsModel(
-                                title = news.title ?: "",
-                                description = news.description ?: "",
-                                newsId = news.newsId ?: "",
-                                category = news.category ?: "",
-                                timestamp = Timestamp.now(),
-                                link = news.link ?: "",
-                                linkTitle = news.linkTitle ?: "",
-                                urlList = news.urlList,
-                                shareCount = news.shareCount ?: 0,
-                                likes = news.likes ?: emptyList(),
-                            )
-
-                            if (isNewsSaved) {
-                                newsDetailViewModel.onNewsRemoveFromSave(
-                                    news = newsForSave,
-                                    wantToShowSuccessMessage = true
-                                )
-                            } else {
-                                newsDetailViewModel.onNewsSave(
-                                    news = newsForSave,
-                                    wantToShowSuccessMessage = true
-                                )
-                            }
-                            onDismiss()
-                        }
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(20.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 20.dp)
-                    ) {
-
-                        Icon(
-                            imageVector = if (isNewsSaved)
-                                Icons.Outlined.BookmarkRemove
-                            else Icons.Default.BookmarkBorder,
-                            contentDescription = "Icon for Save or UnSave the News"
-                        )
-
-                        Text(text = if (isNewsSaved) "UnSave" else "Save")
-
-                    }
-                }
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-
-                            val title = newsById?.title ?: ""
-                            val imageUrl = getUrlOfImageNotVideo(
-                                urlList = newsById?.urlList ?: emptyList()
-                            )
-
-                            newsDetailViewModel
-                                .onNewsShare(
-                                    title = title,
-                                    imageUrl = imageUrl,
-                                    context = context,
-                                    newsId = newsId
-                                )
-
-                            onDismiss()
-                        }
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(20.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 20.dp)
-                    ) {
-
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Icon for Share the News"
-                        )
-
-                        Text(text = "Share")
-
-                    }
-                }
-
-            } ?: CircularProgressIndicator()
-        }
-
     }
 }
 
