@@ -1203,6 +1203,7 @@ fun MainDrawerContent(
         MainNavigationDrawerList.Saved,
         MainNavigationDrawerList.Liked,
         MainNavigationDrawerList.Registered_Events,
+        MainNavigationDrawerList.REFERRAL_BONUS,
         MainNavigationDrawerList.Settings,
         MainNavigationDrawerList.Log_out,
     )
