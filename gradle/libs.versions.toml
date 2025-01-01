@@ -29,6 +29,9 @@ work = "2.9.0"
 paging = "3.3.4"
 # Lottie Animation
 lottie-animation = "4.0.0"
+### paging-compose= "1.0.1-alpha18"
+# google-accompanist-navigation-material
+google-accompanist-navigation-material = "0.36.0"
 
 
 
@@ -82,6 +85,8 @@ androidx-paging-runtime-ktx = { group = "androidx.paging", name = "paging-runtim
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
 # Lottie Animations
 airbnb-android-lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version.ref = "lottie-animation" }
+# ggoogle-accompanist-navigation-material
+google-accompanist-navigation-material = { group = "com.google.accompanist", name = "accompanist-navigation-material", version.ref = "google-accompanist-navigation-material" }
 
 
 [plugins]

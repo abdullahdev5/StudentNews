@@ -108,4 +108,7 @@ dependencies {
 
     // Lottie Animation
     implementation(libs.airbnb.android.lottie.compose)
+
+    // Google Accompanist Navigation Material
+    implementation(libs.google.accompanist.navigation.material)
 }

@@ -12,14 +12,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.dialog
+import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
@@ -38,6 +41,7 @@ import com.android.studentnews.main.events.EVENTS_URI
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.EventsDetailScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
+import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.NEWS_URI
 import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.main.news.ui.screens.NewsDetailScreen
@@ -69,6 +73,12 @@ import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.NewsScreen
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
+import com.android.studentnews.ui.theme.DarkColor
+import com.android.studentnews.ui.theme.White
+import com.google.accompanist.navigation.material.BottomSheetNavigator
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.google.accompanist.navigation.material.ModalBottomSheetLayout
+import com.google.accompanist.navigation.material.bottomSheet
 import com.google.firebase.Timestamp
 import org.koin.androidx.compose.koinViewModel
 import kotlin.reflect.typeOf
@@ -76,18 +86,23 @@ import kotlin.to
 
 private const val NAVIGATION_TIME = 500
 
+@OptIn(ExperimentalMaterialNavigationApi::class)
 @UnstableApi
 @Composable
 fun NavigationGraph(
     navHostController: NavHostController,
+    bottomSheetNavigator: BottomSheetNavigator,
     authViewModel: AuthViewModel,
 ) {
-    SharedTransitionLayout {
-        NavHost(
-            navController = navHostController,
-            startDestination = if (authViewModel.currentUser != null)
-                SubGraph.Main else SubGraph.AUTH,
-        ) {
+    ModalBottomSheetLayout(
+        bottomSheetNavigator,
+    ) {
+        SharedTransitionLayout {
+            NavHost(
+                navController = navHostController,
+                startDestination = if (authViewModel.currentUser != null)
+                    SubGraph.Main else SubGraph.AUTH,
+            ) {
 
             // Auth Graph
             navigation<SubGraph.AUTH>(
@@ -139,118 +154,128 @@ fun NavigationGraph(
                 }
             }
 
-            navigation<SubGraph.Main>(
-                startDestination = SubGraph.NEWS,
-            ) {
-                navigation<SubGraph.NEWS>(
-                    startDestination = NewsDestinations.NEWS_SCREEN
+                navigation<SubGraph.Main>(
+                    startDestination = SubGraph.NEWS,
                 ) {
-                    composable<NewsDestinations.NEWS_SCREEN>() {
-                        val newsViewModel = koinViewModel<NewsViewModel>()
-                        val accountViewModel = koinViewModel<AccountViewModel>()
-                        val eventsViewModel = koinViewModel<EventsViewModel>()
-
-                        NewsScreen(
-                            navHostController = navHostController,
-                            newsViewModel = newsViewModel,
-                            eventsViewModel = eventsViewModel,
-                            accountViewModel = accountViewModel,
-                            animatedVisibilityScope = this,
-                            sharedTransitionScope = this@SharedTransitionLayout
-                        )
-                    }
-
-                    composable<NewsDestinations.NEWS_DETAIL_SCREEN>(
-                        deepLinks = listOf(
-                            navDeepLink {
-                                uriPattern = "$NEWS_URI/newsId={newsId}"
-                            }
-                        ),
-                        enterTransition = { fadeIn() },
-                        exitTransition = { fadeOut() },
-                        popEnterTransition = { fadeIn() },
-                        popExitTransition = { fadeOut() },
+                    navigation<SubGraph.NEWS>(
+                        startDestination = NewsDestinations.NEWS_SCREEN
                     ) {
-                        val arguments = it.toRoute<NewsDestinations.NEWS_DETAIL_SCREEN>()
-                        val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
-                        val accountViewModel = koinViewModel<AccountViewModel>()
+                        composable<NewsDestinations.NEWS_SCREEN>() {
+                            val newsViewModel = koinViewModel<NewsViewModel>()
+                            val accountViewModel = koinViewModel<AccountViewModel>()
+                            val eventsViewModel = koinViewModel<EventsViewModel>()
 
-                        NewsDetailScreen(
-                            newsId = arguments.newsId,
-                            navHostController = navHostController,
-                            newsDetailViewModel = newsDetailViewModel,
-                            accountViewModel = accountViewModel,
-                            animatedVisibilityScope = this,
-                            sharedTransitionScope = this@SharedTransitionLayout
-                        )
-                    }
-
-                    dialog<NewsDestinations.NEWS_LIST_ITEM_MORE_BOTTOM_SHEET>() {
-                        val arguments = it.toRoute<NewsDestinations.NEWS_LIST_ITEM_MORE_BOTTOM_SHEET>()
-                        val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
-
-                        LaunchedEffect(Unit) {
-                            newsDetailViewModel.getNewsById(arguments.newsId)
-                            newsDetailViewModel.getIsNewsSaved(arguments.newsId)
+                            NewsScreen(
+                                navHostController = navHostController,
+                                newsViewModel = newsViewModel,
+                                eventsViewModel = eventsViewModel,
+                                accountViewModel = accountViewModel,
+                                animatedVisibilityScope = this,
+                                sharedTransitionScope = this@SharedTransitionLayout
+                            )
                         }
-                        val context = LocalContext.current
 
-                        val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
-
-                        val isNewsSaved = remember(newsDetailViewModel.isNewsSaved) {
-                            derivedStateOf {
-                                newsDetailViewModel.isNewsSaved
-                            }
-                        }.value
-
-                        NewsListItemMoreBottomSheet(
-                            isNewsSaved = isNewsSaved,
-                            onSave = {
-                                val newsForSave = NewsModel(
-                                    title = newsById?.title ?: "",
-                                    description = newsById?.description ?: "",
-                                    newsId = arguments.newsId,
-                                    category = newsById?.category ?: "",
-                                    timestamp = Timestamp.now(),
-                                    link = newsById?.link ?: "",
-                                    linkTitle = newsById?.linkTitle ?: "",
-                                    urlList = newsById?.urlList ?: emptyList(),
-                                    shareCount = newsById?.shareCount ?: 0,
-                                    likes = newsById?.likes ?: emptyList(),
-                                )
-
-                                if (isNewsSaved == true) {
-                                    newsDetailViewModel.onNewsRemoveFromSave(
-                                        news = newsForSave,
-                                        wantToShowSuccessMessage = true
-                                    )
-                                } else {
-                                    newsDetailViewModel.onNewsSave(
-                                        news = newsForSave,
-                                        wantToShowSuccessMessage = true
-                                    )
+                        composable<NewsDestinations.NEWS_DETAIL_SCREEN>(
+                            deepLinks = listOf(
+                                navDeepLink {
+                                    uriPattern = "$NEWS_URI/$NEWS_ID={$NEWS_ID}"
                                 }
-                            },
-                            onShare = {
-                                val title = newsById?.title ?: ""
-                                val imageUrl = getUrlOfImageNotVideo(
-                                    urlList = newsById?.urlList ?: emptyList()
-                                )
+                            ),
+                            enterTransition = { fadeIn() },
+                            exitTransition = { fadeOut() },
+                            popEnterTransition = { fadeIn() },
+                            popExitTransition = { fadeOut() },
+                        ) {
+                            val arguments = it.toRoute<NewsDestinations.NEWS_DETAIL_SCREEN>()
+                            val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
+                            val accountViewModel = koinViewModel<AccountViewModel>()
 
-                                newsDetailViewModel
-                                    .onNewsShare(
-                                        title = title,
-                                        imageUrl = imageUrl,
-                                        context = context,
-                                        newsId = arguments.newsId
-                                    )
-                            },
-                            onDismiss = {
-                                navHostController.navigateUp()
+                            NewsDetailScreen(
+                                newsId = arguments.newsId,
+                                navHostController = navHostController,
+                                newsDetailViewModel = newsDetailViewModel,
+                                accountViewModel = accountViewModel,
+                                animatedVisibilityScope = this,
+                                sharedTransitionScope = this@SharedTransitionLayout
+                            )
+                        }
+
+                        bottomSheet(
+                            route = NewsDestinations
+                                .BottomSheetDestinations
+                                .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
+                                    "/$NEWS_ID={$NEWS_ID}",
+                            arguments = listOf(
+                                navArgument(NEWS_ID) {
+                                    type = NavType.StringType
+                                }
+                            )
+                        ) {
+                            val newsId = it.arguments?.getString(NEWS_ID) ?: ""
+                            val newsDetailViewModel = koinViewModel<NewsDetailViewModel>()
+
+                            LaunchedEffect(Unit) {
+                                newsDetailViewModel.getNewsById(newsId)
+                                newsDetailViewModel.getIsNewsSaved(newsId)
                             }
-                        )
+                            val context = LocalContext.current
 
-                    }
+                            val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
+
+                            val isNewsSaved = remember(newsDetailViewModel.isNewsSaved) {
+                                derivedStateOf {
+                                    newsDetailViewModel.isNewsSaved
+                                }
+                            }.value
+
+                            NewsListItemMoreBottomSheet(
+                                isNewsSaved = isNewsSaved,
+                                onSave = {
+                                    val newsForSave = NewsModel(
+                                        title = newsById?.title ?: "",
+                                        description = newsById?.description ?: "",
+                                        newsId = newsId,
+                                        category = newsById?.category ?: "",
+                                        timestamp = Timestamp.now(),
+                                        link = newsById?.link ?: "",
+                                        linkTitle = newsById?.linkTitle ?: "",
+                                        urlList = newsById?.urlList ?: emptyList(),
+                                        shareCount = newsById?.shareCount ?: 0,
+                                        likes = newsById?.likes ?: emptyList(),
+                                    )
+
+                                    if (isNewsSaved == true) {
+                                        newsDetailViewModel.onNewsRemoveFromSave(
+                                            news = newsForSave,
+                                            wantToShowSuccessMessage = true
+                                        )
+                                    } else {
+                                        newsDetailViewModel.onNewsSave(
+                                            news = newsForSave,
+                                            wantToShowSuccessMessage = true
+                                        )
+                                    }
+                                },
+                                onShare = {
+                                    val title = newsById?.title ?: ""
+                                    val imageUrl = getUrlOfImageNotVideo(
+                                        urlList = newsById?.urlList ?: emptyList()
+                                    )
+
+                                    newsDetailViewModel
+                                        .onNewsShare(
+                                            title = title,
+                                            imageUrl = imageUrl,
+                                            context = context,
+                                            newsId = newsId
+                                        )
+                                },
+                                onDismiss = {
+                                    navHostController.navigateUp()
+                                },
+                            )
+
+                        }
 
 
                     composable<NewsDestinations.NEWS_LINK_SCREEN>(
@@ -599,6 +624,7 @@ fun NavigationGraph(
                     )
                 }
 
+                }
                 // Referral Bonus Graph
                 navigation<SubGraph.REFERRAL_BONUS>(
                     startDestination = ReferralBonusDestinations.REFERRAL_BONUS_SCREEN

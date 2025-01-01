@@ -49,9 +49,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.outlined.BookmarkRemove
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -66,6 +69,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBarItem
@@ -144,6 +148,8 @@ import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBo
 import com.android.studentnews.main.referral_bonus.ui.composables.PointsClaimListItem
 import com.android.studentnews.navigation.SubGraph
 import com.android.studentnews.news.domain.model.NewsModel
+import com.android.studentnews.main.news.NEWS_ID
+import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.ui.theme.Black
@@ -771,9 +777,10 @@ fun NewsScreen(
                                                         },
                                                         onMoreOptionsClick = { thisNewsId ->
                                                             navHostController.navigate(
-                                                                NewsDestinations.NEWS_LIST_ITEM_MORE_BOTTOM_SHEET(
-                                                                    newsId = thisNewsId
-                                                                )
+                                                                NewsDestinations
+                                                                    .BottomSheetDestinations
+                                                                    .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
+                                                                        "/$NEWS_ID={$thisNewsId}"
                                                             )
                                                         },
                                                         context = context,

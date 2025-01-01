@@ -71,6 +71,7 @@ import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
+import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.news.ui.NewsItem
 import com.android.studentnews.ui.theme.Black
@@ -291,9 +292,10 @@ fun SearchScreen(
                                     },
                                     onMoreOptionsClick = { thisNewsId ->
                                         navHostController.navigate(
-                                            NewsDestinations.NEWS_LIST_ITEM_MORE_BOTTOM_SHEET(
-                                                newsId = thisNewsId
-                                            )
+                                            NewsDestinations
+                                                .BottomSheetDestinations
+                                                .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
+                                            "/$NEWS_ID={$thisNewsId}"
                                         )
                                     },
                                     animatedVisibilityScope = animatedVisibilityScope,
