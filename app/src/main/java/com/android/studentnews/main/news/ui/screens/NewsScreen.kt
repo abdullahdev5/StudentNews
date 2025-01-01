@@ -149,6 +149,7 @@ import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.main.MainNavigationDrawerList
 import com.android.studentnews.main.MainTabRowList
+import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
@@ -741,9 +742,10 @@ fun NewsScreen(
                                                         },
                                                         onMoreOptionsClick = { thisNewsId ->
                                                             navHostController.navigate(
-                                                                NewsDestinations.NEWS_LIST_ITEM_MORE_BOTTOM_SHEET(
-                                                                    newsId = thisNewsId
-                                                                )
+                                                                NewsDestinations
+                                                                    .BottomSheetDestinations
+                                                                    .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
+                                                                        "/$NEWS_ID={$thisNewsId}"
                                                             )
                                                         },
                                                         context = context,

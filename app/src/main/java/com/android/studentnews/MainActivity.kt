@@ -33,6 +33,8 @@ import com.android.studentnews.main.events.EVENT_ID
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.navigation.NavigationGraph
 import com.android.studentnews.ui.theme.StudentNewsTheme
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.google.accompanist.navigation.material.rememberBottomSheetNavigator
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.koin.androidx.viewmodel.ext.android.getViewModel
@@ -42,6 +44,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class MainActivity : ComponentActivity() {
 
 
+    @OptIn(ExperimentalMaterialNavigationApi::class)
     @UnstableApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +53,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             StudentNewsTheme {
-                val navHostController = rememberNavController()
+                val bottomSheetNavigator = rememberBottomSheetNavigator()
+                val navHostController = rememberNavController(bottomSheetNavigator)
                 val authViewModel = getViewModel<AuthViewModel>()
 
                 val snackBarHostState = remember { SnackbarHostState() }
@@ -86,6 +90,7 @@ class MainActivity : ComponentActivity() {
 
                     NavigationGraph(
                         navHostController = navHostController,
+                        bottomSheetNavigator = bottomSheetNavigator,
                         authViewModel = authViewModel,
                     )
                 }

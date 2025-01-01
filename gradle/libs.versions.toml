@@ -27,7 +27,9 @@ media3-exoplayer = "1.4.1"
 work = "2.9.0"
 # Pagging 3
 paging = "3.3.4"
-# paging-compose= "1.0.1-alpha18"
+### paging-compose= "1.0.1-alpha18"
+# google-accompanist-navigation-material
+google-accompanist-navigation-material = "0.36.0"
 
 
 
@@ -79,6 +81,8 @@ androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lif
 # Pagging 3
 androidx-paging-runtime-ktx = { group = "androidx.paging", name = "paging-runtime-ktx", version.ref = "paging" }
 androidx-paging-compose = { group = "androidx.paging", name = "paging-compose", version.ref = "paging" }
+# ggoogle-accompanist-navigation-material
+google-accompanist-navigation-material = { group = "com.google.accompanist", name = "accompanist-navigation-material", version.ref = "google-accompanist-navigation-material" }
 
 
 [plugins]
