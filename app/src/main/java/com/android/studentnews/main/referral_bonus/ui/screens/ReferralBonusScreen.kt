@@ -507,149 +507,133 @@ fun OffersListItem(
                 itemWidthWithoutPadding = with(density) { size.width.toDp() }
             }
     ) {
+        Column(
+            modifier = Modifier
+                .padding(all = 10.dp)
+                .onSizeChanged { size ->
+                    itemWidthWithPadding = with(density) { size.width.toDp() }
+                }
+        ) {
 
-            Column {
+            Text(
+                text = annotatedTitleAndDescription,
+                modifier = Modifier
+                    .padding(all = 5.dp)
+            )
+            Column(
+                modifier = Modifier
+                    .width(itemWidthWithPadding)
+                    .padding(all = 5.dp)
+            ) {
 
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(item.offerImageUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentScale = ContentScale.FillWidth,
-                    contentDescription = "Offer Image",
-                    modifier = Modifier
-                        .width(itemWidthWithoutPadding)
-                        .height(100.dp)
+                Text(
+                    text = buildAnnotatedString {
+                        // Progress
+                        withStyle(
+                            SpanStyle(
+                                fontSize = FontSize.LARGE.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        ) {
+                            append("${animatedProgress.value.toInt()}%")
+                        }
+                    }
                 )
 
-                Column(
+                LinearProgressIndicator(
+                    progress = {
+                        animatedProgress.value / 100f
+                    },
+                    color = when (item.offerType) {
+                        OfferTypes.INACTIVE -> {
+                            Gray
+                        }
+
+                        OfferTypes.EXPIRED -> {
+                            Gray
+                        }
+
+                        else -> {
+                            Green
+                        }
+                    },
                     modifier = Modifier
-                        .padding(all = 10.dp)
-                        .onSizeChanged { size ->
-                            itemWidthWithPadding = with(density) { size.width.toDp() }
+                        .fillMaxWidth()
+                )
+
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(
+                            SpanStyle(
+                                fontSize = FontSize.SMALL.sp,
+                                color = Gray
+                            )
+                        ) {
+                            when (item.offerType) {
+                                OfferTypes.INACTIVE -> {
+                                    append("This Offer is not Active Yet")
+                                }
+
+                                OfferTypes.EXPIRED -> {
+                                    append("This Offer is Expired")
+                                }
+
+                                else -> {
+                                    if (isTotalLessThanOfferPoints) {
+                                        append("Reach $offersPoints Points to Redeemed This")
+                                    }
+                                }
+                            }
                         }
-                ) {
+                    },
+                    modifier = Modifier
+                        .padding(top = 5.dp)
+                )
 
-                    Text(
-                        text = annotatedTitleAndDescription,
-                        modifier = Modifier
-                            .padding(all = 5.dp)
-                    )
-//                Column(
-//                    modifier = Modifier
-//                        .width(itemWidthWithPadding)
-//                        .padding(all = 5.dp)
-//                ) {
-//
-//                    Text(
-//                        text = buildAnnotatedString {
-//                            // Progress
-//                            withStyle(
-//                                SpanStyle(
-//                                    fontSize = FontSize.LARGE.sp,
-//                                    fontWeight = FontWeight.Bold
-//                                )
-//                            ) {
-//                                append("${animatedProgress.value.toInt()}%")
-//                            }
-//                        }
-//                    )
-//
-//                    LinearProgressIndicator(
-//                        progress = {
-//                            animatedProgress.value / 100f
-//                        },
-//                        color = when (item.offerType) {
-//                            OfferTypes.INACTIVE -> {
-//                                Gray
-//                            }
-//
-//                            OfferTypes.EXPIRED -> {
-//                                Gray
-//                            }
-//
-//                            else -> {
-//                                Green
-//                            }
-//                        },
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                    )
-//
-//                    Text(
-//                        text = buildAnnotatedString {
-//                            withStyle(
-//                                SpanStyle(
-//                                    fontSize = FontSize.SMALL.sp,
-//                                    color = Gray
-//                                )
-//                            ) {
-//                                when (item.offerType) {
-//                                    OfferTypes.INACTIVE -> {
-//                                        append("This Offer is not Active Yet")
-//                                    }
-//
-//                                    OfferTypes.EXPIRED -> {
-//                                        append("This Offer is Expired")
-//                                    }
-//
-//                                    else -> {
-//                                        if (isTotalLessThanOfferPoints) {
-//                                            append("Reach $offersPoints Points to Redeemed This")
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                        },
-//                        modifier = Modifier
-//                            .padding(top = 5.dp)
-//                    )
-//
-//                }
+            }
 
-                    val buttonEnableForDifferentOfferTypes = when (item.offerType) {
-                        OfferTypes.INACTIVE -> {
-                            false
-                        }
+            val buttonEnableForDifferentOfferTypes = when (item.offerType) {
+                OfferTypes.INACTIVE -> {
+                    false
+                }
 
-                        OfferTypes.EXPIRED -> {
-                            false
-                        }
+                OfferTypes.EXPIRED -> {
+                    false
+                }
 
-                        else -> {
-                            !isTotalLessThanOfferPoints
-                        }
-                    }
-
-                    val buttonTextForDifferentOfferTypes = when (item.offerType) {
-                        OfferTypes.INACTIVE -> {
-                            item.offerType
-                        }
-
-                        OfferTypes.EXPIRED -> {
-                            item.offerType
-                        }
-
-                        else -> {
-                            "Redeem"
-                        }
-                    }
-
-                    Button(
-                        onClick = {
-                            onRedeem(item.offerId)
-                        },
-                        shape = RoundedCornerShape(5.dp),
-                        colors = ButtonColors(),
-                        enabled = buttonEnableForDifferentOfferTypes,
-                        modifier = Modifier
-//                        .width(itemWidthWithPadding)
-                            .padding(all = 5.dp)
-                    ) {
-                        Text(text = buttonTextForDifferentOfferTypes)
-                    }
+                else -> {
+                    !isTotalLessThanOfferPoints
                 }
             }
+
+            val buttonTextForDifferentOfferTypes = when (item.offerType) {
+                OfferTypes.INACTIVE -> {
+                    item.offerType
+                }
+
+                OfferTypes.EXPIRED -> {
+                    item.offerType
+                }
+
+                else -> {
+                    "Redeem"
+                }
+            }
+
+            Button(
+                onClick = {
+                    onRedeem(item.offerId)
+                },
+                shape = RoundedCornerShape(5.dp),
+                colors = ButtonColors(),
+                enabled = buttonEnableForDifferentOfferTypes,
+                modifier = Modifier
+                    .width(itemWidthWithPadding)
+                    .padding(all = 5.dp)
+            ) {
+                Text(text = buttonTextForDifferentOfferTypes)
+            }
+        }
 
 
     }
