@@ -280,27 +280,40 @@ fun SearchScreen(
                             ) { index ->
                                 val item = searchNewsList[index]
 
-                                NewsItem(
-                                    item = item,
-                                    context = context,
-                                    onItemClick = { newsId ->
-                                        navHostController.navigate(
-                                            NewsDestinations.NEWS_DETAIL_SCREEN(
-                                                newsId = newsId
+                                with(sharedTransitionScope) {
+                                    NewsItem(
+                                        item = item,
+                                        context = context,
+                                        onItemClick = { newsId ->
+                                            navHostController.navigate(
+                                                NewsDestinations.NEWS_DETAIL_SCREEN(
+                                                    newsId = newsId
+                                                )
                                             )
-                                        )
-                                    },
-                                    onMoreOptionsClick = { thisNewsId ->
-                                        navHostController.navigate(
-                                            NewsDestinations
-                                                .BottomSheetDestinations
-                                                .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
-                                            "/$NEWS_ID=$thisNewsId"
-                                        )
-                                    },
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                    sharedTransitionScope = sharedTransitionScope,
-                                )
+                                        },
+                                        onMoreOptionsClick = { thisNewsId ->
+                                            navHostController.navigate(
+                                                NewsDestinations
+                                                    .BottomSheetDestinations
+                                                    .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
+                                                        "/$NEWS_ID=$thisNewsId"
+                                            )
+                                        },
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(
+                                                start = 20.dp,
+                                                end = 20.dp,
+                                                top = 10.dp,
+                                                bottom = 10.dp,
+                                            )
+                                            .sharedElement(
+                                                state = rememberSharedContentState(key = "container/${item?.newsId}"),
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                renderInOverlayDuringTransition = true
+                                            )
+                                    )
+                                }
                             }
                         }
 

@@ -109,26 +109,39 @@ fun LikedNewsScreen(
                 ) { index ->
                     val item = likedNewsList[index]
 
-                    NewsItem(
-                        item = item,
-                        context = context,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        sharedTransitionScope = sharedTransitionScope,
-                        onItemClick = { thisNewsId ->
-                            navHostController
-                                .navigate(
-                                    NewsDestinations.NEWS_DETAIL_SCREEN(thisNewsId)
+                    with(sharedTransitionScope) {
+                        NewsItem(
+                            item = item,
+                            context = context,
+                            onItemClick = { thisNewsId ->
+                                navHostController
+                                    .navigate(
+                                        NewsDestinations.NEWS_DETAIL_SCREEN(thisNewsId)
+                                    )
+                            },
+                            onMoreOptionsClick = { thisNewsId ->
+                                navHostController.navigate(
+                                    NewsDestinations
+                                        .BottomSheetDestinations
+                                        .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
+                                            "/$NEWS_ID=$thisNewsId"
                                 )
-                        },
-                        onMoreOptionsClick = { thisNewsId ->
-                            navHostController.navigate(
-                                NewsDestinations
-                                    .BottomSheetDestinations
-                                    .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
-                                "/$NEWS_ID=$thisNewsId"
-                            )
-                        }
-                    )
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(
+                                    start = 20.dp,
+                                    end = 20.dp,
+                                    top = 10.dp,
+                                    bottom = 10.dp,
+                                )
+                                .sharedElement(
+                                    state = rememberSharedContentState(key = "container/${item?.newsId}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    renderInOverlayDuringTransition = true
+                                )
+                        )
+                    }
                 }
             }
 
