@@ -745,7 +745,7 @@ fun NewsScreen(
                                                                 NewsDestinations
                                                                     .BottomSheetDestinations
                                                                     .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
-                                                                        "/$NEWS_ID={$thisNewsId}"
+                                                                        "/$NEWS_ID=$thisNewsId"
                                                             )
                                                         },
                                                         context = context,
