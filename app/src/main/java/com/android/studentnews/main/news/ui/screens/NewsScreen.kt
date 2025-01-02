@@ -10,13 +10,16 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -122,6 +125,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
@@ -347,7 +351,6 @@ fun NewsScreen(
                 ) {
                     MainDrawerContent(
                         currentUser = currentUser,
-                        scrollState = drawerScrollState,
                         context = context,
                         animatedVisibilityScope = animatedVisibilityScope,
                         sharedTransitionScope = sharedTransitionScope,
@@ -521,52 +524,81 @@ fun NewsScreen(
                     }
                 },
                 bottomBar = {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .navigationBarsPadding()
-                            .then(
-                                with(density) {
-                                    Modifier
-                                        .height(
-                                            (bottomBarMaxHeight + bottomBarScrollConnection.appBarOffset).toDp()
-                                        )
-                                }
-                            ),
-                    ) {
-                        HorizontalDivider()
+                    with(sharedTransitionScope) {
+                        with(animatedVisibilityScope) {
 
-                        BottomAppBar(
-                            containerColor = Color.Transparent,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .offset { IntOffset(0, -bottomBarScrollConnection.appBarOffset) },
-                        ) {
-                            navBarList.forEachIndexed { index, item ->
-                                NavigationBarItem(
-                                    icon = {
-                                        Icon(
-                                            imageVector = if (selectedNavBarIndex == index) item.selectedIcon else item.unselectedIcon,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    selected = index == selectedNavBarIndex,
-                                    onClick = {
-                                        selectedNavBarIndex = index
-                                        if (selectedNavBarIndex == 1) {
-                                            navHostController.navigate(MainDestination.SEARCH_SCREEN)
-                                        }
-                                        if (selectedNavBarIndex == 2) {
-                                            navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
-                                        }
-                                    },
-                                    colors = NavigationBarItemDefaults.colors(
-                                        indicatorColor = Color.Transparent,
-                                        selectedIconColor = if (isSystemInDarkTheme()) White else Black,
-                                        unselectedIconColor = if (isSystemInDarkTheme()) White else Black
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .renderInSharedTransitionScopeOverlay(
+                                        zIndexInOverlay = 1f
                                     )
-                                )
+                                    .animateEnterExit(
+                                        enter = slideInVertically(
+                                            animationSpec = tween(1000)
+                                        ) {
+                                            it
+                                        },
+                                        exit = slideOutVertically(
+                                            animationSpec = tween(1000)
+                                        ) {
+                                            it
+                                        }
+                                    )
+                                    .navigationBarsPadding()
+                                    .then(
+                                        with(density) {
+                                            Modifier
+                                                .height(
+                                                    (bottomBarMaxHeight + bottomBarScrollConnection.appBarOffset).toDp()
+                                                )
+                                        }
+                                    )
+                                    .background(color = MaterialTheme.colorScheme.surface),
+                            ) {
+                                HorizontalDivider()
+
+                                BottomAppBar(
+                                    containerColor = Color.Transparent,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .offset {
+                                            IntOffset(
+                                                0,
+                                                -bottomBarScrollConnection.appBarOffset
+                                            )
+                                        },
+                                ) {
+                                    navBarList.forEachIndexed { index, item ->
+                                        NavigationBarItem(
+                                            icon = {
+                                                Icon(
+                                                    imageVector = if (selectedNavBarIndex == index) item.selectedIcon else item.unselectedIcon,
+                                                    contentDescription = null
+                                                )
+                                            },
+                                            selected = index == selectedNavBarIndex,
+                                            onClick = {
+                                                selectedNavBarIndex = index
+                                                if (selectedNavBarIndex == 1) {
+                                                    navHostController.navigate(MainDestination.SEARCH_SCREEN)
+                                                }
+                                                if (selectedNavBarIndex == 2) {
+                                                    navHostController.navigate(MainDestination.ACCOUNT_SCREEN)
+                                                }
+                                            },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = Color.Transparent,
+                                                selectedIconColor = if (isSystemInDarkTheme()) White else Black,
+                                                unselectedIconColor = if (isSystemInDarkTheme()) White else Black
+                                            )
+                                        )
+                                    }
+                                }
+
                             }
+
+
                         }
                     }
                 },
@@ -792,17 +824,19 @@ fun NewsScreen(
                                                             context = context,
                                                             modifier = Modifier
                                                                 .fillMaxWidth()
-                                                                .padding(
-                                                                    start = 20.dp,
-                                                                    end = 20.dp,
-                                                                    top = 10.dp,
-                                                                    bottom = 10.dp,
-                                                                )
                                                                 .sharedElement(
                                                                     state = rememberSharedContentState(
                                                                         key = "container/${item?.newsId}"
                                                                     ),
                                                                     animatedVisibilityScope = animatedVisibilityScope,
+                                                                    placeHolderSize = SharedTransitionScope.PlaceHolderSize.animatedSize,
+                                                                    zIndexInOverlay = 1f
+                                                                )
+                                                                .padding(
+                                                                    start = 20.dp,
+                                                                    end = 20.dp,
+                                                                    top = 10.dp,
+                                                                    bottom = 10.dp,
                                                                 ),
                                                         )
                                                     }
@@ -1187,7 +1221,6 @@ fun PagerIndicator(
 @Composable
 fun MainDrawerContent(
     currentUser: UserModel?,
-    scrollState: ScrollState,
     context: Context,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
@@ -1210,7 +1243,7 @@ fun MainDrawerContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(scrollState)
+            .verticalScroll(rememberScrollState())
     ) {
         Row(
             modifier = Modifier
@@ -1287,20 +1320,14 @@ fun MainDrawerContent(
                     }
                 }
                 Spacer(modifier = Modifier.height(10.dp))
-                with(sharedTransitionScope) {
-                    Text(
-                        text = currentUser?.registrationData?.name ?: "",
-                        style = TextStyle(
-                            fontSize = FontSize.MEDIUM.sp,
-                            fontWeight = FontWeight.Bold
-                        ),
-                        modifier = Modifier
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "user_name/${currentUser?.uid}"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            )
-                    )
-                }
+                Text(
+                    text = currentUser?.registrationData?.name ?: "",
+                    style = TextStyle(
+                        fontSize = FontSize.MEDIUM.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+
+                )
             }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = {

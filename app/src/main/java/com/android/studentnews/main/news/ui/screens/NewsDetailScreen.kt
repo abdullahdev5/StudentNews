@@ -2,6 +2,7 @@
 
 package com.android.studentnews.main.news.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -53,12 +54,16 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
@@ -151,6 +156,9 @@ fun NewsDetailScreen(
         CollapsingTopBarButAppearWhenTopReached(horizontalPagerMaxHeight)
     }
 
+    BackHandler(
+        enabled = sharedTransitionScope.isTransitionActive
+    ) {}
 
     Scaffold(
         bottomBar = {
@@ -171,7 +179,9 @@ fun NewsDetailScreen(
                 ) {
                     TextButton(
                         onClick = {
-                            navHostController.navigateUp()
+                            if (!sharedTransitionScope.isTransitionActive) {
+                                navHostController.navigateUp()
+                            }
                         },
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = if (isSystemInDarkTheme()) White else Black
@@ -219,7 +229,9 @@ fun NewsDetailScreen(
                                         if (isNewsSaved) {
                                             newsDetailViewModel.onNewsSave(news)
                                         } else {
-                                            newsDetailViewModel.onNewsRemoveFromSave(news)
+                                            newsDetailViewModel.onNewsRemoveFromSave(
+                                                news
+                                            )
                                         }
                                     }
                                 },
@@ -266,7 +278,7 @@ fun NewsDetailScreen(
                                     contentColor = if (isLiked) Red else {
                                         if (isSystemInDarkTheme()) White else Black
                                     }
-                                )
+                                ),
                             )
                         }
                     }
@@ -278,11 +290,12 @@ fun NewsDetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(innerPadding)
                     .sharedElement(
                         state = rememberSharedContentState(key = "container/$newsId"),
                         animatedVisibilityScope = animatedVisibilityScope,
+                        zIndexInOverlay = 1f
                     )
-                    .padding(innerPadding)
                     .nestedScroll(horizontalPagerScrollConnection)
                     .verticalScroll(scrollState)
 
@@ -435,7 +448,7 @@ fun NewsDetailScreen(
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .padding(bottom = 20.dp, end = 10.dp)
+                            .padding(bottom = 20.dp, end = 10.dp),
                     ) {
                         IconsForLikeAndMore(
                             // on Share
@@ -680,7 +693,6 @@ fun NewsDetailScreen(
 
             }
         }
-
     }
 }
 
