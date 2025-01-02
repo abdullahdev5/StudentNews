@@ -46,6 +46,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
@@ -1155,7 +1156,6 @@ fun MainDrawerContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
     ) {
         Row(
             modifier = Modifier
@@ -1254,45 +1254,41 @@ fun MainDrawerContent(
         Spacer(modifier = Modifier.height(10.dp))
         HorizontalDivider(color = Gray)
         Spacer(modifier = Modifier.height(16.dp))
-        MainDrawerItems(
-            drawerList = drawerList,
-            onClick = { name ->
-                if (name != MainNavigationDrawerList.Account.name) {
-                    onDismiss()
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            items(
+                count = drawerList.size,
+                key = { index ->
+                    drawerList[index].text
                 }
-                onClick(name)
+            ) { index ->
+                val item = drawerList[index]
+                NavigationDrawerItem(
+                    label = {
+                        Text(text = item.text)
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = "Icon"
+                        )
+                    },
+                    selected = false,
+                    onClick = {
+                        onClick(item.name)
+                    },
+                    colors = NavigationDrawerItemDefaults.colors(
+                        unselectedContainerColor = Color.Transparent,
+                    ),
+                    shape = RectangleShape,
+                    modifier = Modifier
+                        .animateItem()
+                )
             }
-        )
-    }
-}
-
-@Composable
-fun MainDrawerItems(
-    drawerList: List<MainNavigationDrawerList>,
-    onClick: (name: String) -> Unit,
-) {
-    drawerList
-        .forEachIndexed { index, item ->
-            NavigationDrawerItem(
-                label = {
-                    Text(text = item.text)
-                },
-                icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = "Icon"
-                    )
-                },
-                selected = false,
-                onClick = {
-                    onClick(item.name)
-                },
-                colors = NavigationDrawerItemDefaults.colors(
-                    unselectedContainerColor = Color.Transparent,
-                ),
-                shape = RectangleShape,
-            )
         }
+    }
 }
 
 @Composable
