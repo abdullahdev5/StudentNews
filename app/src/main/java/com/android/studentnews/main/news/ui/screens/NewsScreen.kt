@@ -10,8 +10,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
@@ -766,27 +771,41 @@ fun NewsScreen(
                                                 ) { index ->
                                                     val item = newsList[index]
 
-                                                    NewsItem(
-                                                        item = item,
-                                                        onItemClick = { newsId ->
-                                                            navHostController.navigate(
-                                                                NewsDestinations.NEWS_DETAIL_SCREEN(
-                                                                    newsId
+                                                    with(sharedTransitionScope) {
+                                                        NewsItem(
+                                                            item = item,
+                                                            onItemClick = { newsId ->
+                                                                navHostController.navigate(
+                                                                    NewsDestinations.NEWS_DETAIL_SCREEN(
+                                                                        newsId
+                                                                    )
                                                                 )
-                                                            )
-                                                        },
-                                                        onMoreOptionsClick = { thisNewsId ->
-                                                            navHostController.navigate(
-                                                                NewsDestinations
-                                                                    .BottomSheetDestinations
-                                                                    .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
-                                                                        "/$NEWS_ID=$thisNewsId"
-                                                            )
-                                                        },
-                                                        context = context,
-                                                        animatedVisibilityScope = animatedVisibilityScope,
-                                                        sharedTransitionScope = sharedTransitionScope,
-                                                    )
+                                                            },
+                                                            onMoreOptionsClick = { thisNewsId ->
+                                                                navHostController.navigate(
+                                                                    NewsDestinations
+                                                                        .BottomSheetDestinations
+                                                                        .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
+                                                                            "/$NEWS_ID=$thisNewsId"
+                                                                )
+                                                            },
+                                                            context = context,
+                                                            modifier = Modifier
+                                                                .fillMaxWidth()
+                                                                .padding(
+                                                                    start = 20.dp,
+                                                                    end = 20.dp,
+                                                                    top = 10.dp,
+                                                                    bottom = 10.dp,
+                                                                )
+                                                                .sharedElement(
+                                                                    state = rememberSharedContentState(
+                                                                        key = "container/${item?.newsId}"
+                                                                    ),
+                                                                    animatedVisibilityScope = animatedVisibilityScope,
+                                                                ),
+                                                        )
+                                                    }
 
                                                     val itemIndex =
                                                         newsList.itemSnapshotList.indexOf(item)
@@ -948,154 +967,127 @@ fun NewsScreen(
 
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun NewsItem(
     item: NewsModel?,
+    modifier: Modifier = Modifier,
     context: Context,
     onItemClick: (String) -> Unit,
     onMoreOptionsClick: (String) -> Unit,
-    animatedVisibilityScope: AnimatedVisibilityScope,
-    sharedTransitionScope: SharedTransitionScope,
 ) {
-    with(sharedTransitionScope) {
-        Card(
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = ItemBackgroundColor
+        )
+    ) {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(
-                    start = 20.dp,
-                    end = 20.dp,
-                    top = 10.dp,
-                    bottom = 10.dp,
-                )
-                .sharedBounds(
-                    sharedContentState = rememberSharedContentState(key = "container/${item?.newsId}"),
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    renderInOverlayDuringTransition = true
-                ),
-            colors = CardDefaults.cardColors(
-                containerColor = ItemBackgroundColor
-            )
+                .clickable {
+                    onItemClick.invoke(item?.newsId ?: "")
+                },
         ) {
-            Column(
+            Row(
                 modifier = Modifier
-                    .clickable {
-                        onItemClick.invoke(item?.newsId ?: "")
-                    },
+                    .fillMaxWidth()
+                    .padding(all = 10.dp)
             ) {
-                Row(
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(all = 10.dp)
+                        .padding(end = 5.dp)
+                        .weight(1f)
                 ) {
                     Column(
                         modifier = Modifier
-                            .padding(end = 5.dp)
-                            .weight(1f)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .background(
-                                    color = Black.copy(0.1f),
-                                    shape = RoundedCornerShape(8.dp)
-                                )
-                                .padding(all = 2.dp)
-                        ) {
-                            Text(
-                                text = item?.category ?: "",
-                                style = TextStyle(
-                                    fontSize = FontSize.SMALL.sp
-                                ),
-                                modifier = Modifier
-//                                    .padding(all = 2.dp)
+                            .background(
+                                color = Black.copy(0.1f),
+                                shape = RoundedCornerShape(8.dp)
                             )
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
+                            .padding(all = 2.dp)
+                    ) {
                         Text(
-                            text = item?.title ?: "",
+                            text = item?.category ?: "",
                             style = TextStyle(
-                                fontSize = (FontSize.MEDIUM - 1).sp,
-                                fontWeight = FontWeight.Bold,
+                                fontSize = FontSize.SMALL.sp
                             ),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
                             modifier = Modifier
-                                .sharedBounds(
-                                    sharedContentState = rememberSharedContentState(key = "title/${item?.newsId}"),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                    renderInOverlayDuringTransition = true,
-                                )
-                        )
-                        Text(
-                            text = item?.description ?: "",
-                            style = TextStyle(
-                                fontSize = FontSize.SMALL.sp,
-                                color = Gray,
-                            ),
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier
-                                .padding(top = 5.dp)
+//                                    .padding(all = 2.dp)
                         )
                     }
-
-                    val imageRequest = ImageRequest.Builder(context)
-                        .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))
-                        .crossfade(true)
-                        .build()
-
-                    AsyncImage(
-                        model = imageRequest,
-                        contentDescription = "News Image",
-                        contentScale = ContentScale.Crop,
+                    Spacer(modifier = Modifier.height(3.dp))
+                    Text(
+                        text = item?.title ?: "",
+                        style = TextStyle(
+                            fontSize = (FontSize.MEDIUM - 1).sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = item?.description ?: "",
+                        style = TextStyle(
+                            fontSize = FontSize.SMALL.sp,
+                            color = Gray,
+                        ),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
-                            .width(80.dp)
-                            .heightIn(max = 80.dp)
-                            .clip(shape = RoundedCornerShape(10.dp))
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "image/${item?.newsId ?: ""}"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
-                            )
+                            .padding(top = 5.dp)
                     )
                 }
 
-                Row(
-                    verticalAlignment = Alignment.Bottom,
+                val imageRequest = ImageRequest.Builder(context)
+                    .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))
+                    .crossfade(true)
+                    .build()
+
+                AsyncImage(
+                    model = imageRequest,
+                    contentDescription = "News Image",
+                    contentScale = ContentScale.Crop,
                     modifier = Modifier
-                        .padding(all = 10.dp)
-                ) {
-                    item?.timestamp?.let { timestamp ->
-                        val dateChar = formatDateOrTimeToAgo(timestamp.toDate())
+                        .width(80.dp)
+                        .heightIn(max = 80.dp)
+                        .clip(shape = RoundedCornerShape(10.dp))
+                )
+            }
 
-                        Text(
-                            text = dateChar.toString(),
-                            style = TextStyle(
-                                fontSize = FontSize.SMALL.sp,
-                                color = Gray,
-                            )
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier
+                    .padding(all = 10.dp)
+            ) {
+                item?.timestamp?.let { timestamp ->
+                    val dateChar = formatDateOrTimeToAgo(timestamp.toDate())
+
+                    Text(
+                        text = dateChar.toString(),
+                        style = TextStyle(
+                            fontSize = FontSize.SMALL.sp,
+                            color = Gray,
                         )
-                    }
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    IconButton(
-                        onClick = {
-                            item?.newsId?.let { thisNewsId ->
-                                onMoreOptionsClick(thisNewsId)
-                            }
-                        },
-                        modifier = Modifier
-                            .width(20.dp)
-                            .height(20.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Icon for More Options",
-                        )
-                    }
-
+                    )
                 }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                IconButton(
+                    onClick = {
+                        item?.newsId?.let { thisNewsId ->
+                            onMoreOptionsClick(thisNewsId)
+                        }
+                    },
+                    modifier = Modifier
+                        .width(20.dp)
+                        .height(20.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.MoreVert,
+                        contentDescription = "Icon for More Options",
+                    )
+                }
+
             }
         }
     }

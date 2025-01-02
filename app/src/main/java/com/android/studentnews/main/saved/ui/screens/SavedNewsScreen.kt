@@ -82,6 +82,7 @@ import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlin.let
 import kotlin.math.roundToInt
@@ -136,71 +137,95 @@ fun SavedNewsScreen(
                     var isDragging by remember { mutableStateOf(false) }
                     var itemHeight by remember { mutableStateOf(0.dp) }
 
+                    with(sharedTransitionScope) {
 
-                    SavedNewsItem(
-                        item = item,
-                        context = context,
-                        density = density,
-                        onItemClick = { newsId ->
-                            navHostController.navigate(NewsDestinations.NEWS_DETAIL_SCREEN(newsId))
-                        },
-                        animatedVisibilityScope = animatedVisibilityScope,
-                        sharedTransitionScope = sharedTransitionScope,
-                        offsetX = offsetX.value,
-                        onDragStart = {
-                            isDragging = true
-                        },
-                        onDragEnd = {
-                            if (offsetX.value.dp > maxWidth) {
+                        SavedNewsItem(
+                            item = item,
+                            context = context,
+                            density = density,
+                            offsetX = offsetX.value,
+                            itemHeight = itemHeight,
+                            maxWidth = { maxWidth },
+                            isDragging = isDragging,
+                            onRemoveFromSavedListClick = { thisNews ->
                                 scope.launch {
-                                    offsetX.animateTo(maxWidth.value.toFloat())
-                                }
-                            } else {
-                                isDragging = false
-                                scope.launch {
-                                    offsetX.animateTo(0f)
-                                }
-                            }
-                        },
-                        onHorizontalDrag = { change, dragAmount ->
-                            change.consume()
-                            val newOffsetX = dragAmount
-                            val incrementedOffsetX = (offsetX.value) + newOffsetX
-                            scope.launch {
-                                with(density) {
-                                    if (offsetX.value < maxWidth.toPx() - 100.dp.toPx()) {
-                                        offsetX.snapTo(
-                                            incrementedOffsetX.coerceIn(
-                                                minimumValue = 0f,
-                                                maximumValue = maxWidth.toPx()
-                                            )
-                                        )
-                                    } else {
-                                        offsetX.animateTo(
-                                            incrementedOffsetX.coerceIn(
-                                                minimumValue = 0f,
-                                                maximumValue = maxWidth.toPx()
-                                            )
-                                        )
+                                    with(density) {
+                                        offsetX.animateTo(configuration.screenWidthDp.dp.toPx())
                                     }
                                 }
-                            }
-                        },
-                        onGloballyPositioned = { coordinates ->
-                            itemHeight = with(density) { coordinates.size.height.toDp() }
-                        },
-                        itemHeight = itemHeight,
-                        maxWidth = { maxWidth },
-                        isDragging = isDragging,
-                        onRemoveFromSavedListClick = { thisNews ->
-                            scope.launch {
-                                with(density) {
-                                    offsetX.animateTo(configuration.screenWidthDp.dp.toPx())
+                                savedNewsViewModel.onNewsRemoveFromSave(thisNews)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .sharedElement(
+                                    state = rememberSharedContentState(key = "container/${item?.newsId}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                )
+                                .offset {
+                                    androidx.compose.ui.unit.IntOffset(
+                                        offsetX.value.roundToInt(),
+                                        0
+                                    )
                                 }
-                            }
-                            savedNewsViewModel.onNewsRemoveFromSave(thisNews)
-                        },
-                    )
+                                .pointerInput(true) {
+                                    detectHorizontalDragGestures(
+                                        onDragStart = {
+                                            isDragging = true
+                                        },
+                                        onDragEnd = {
+                                            if (offsetX.value.dp > maxWidth) {
+                                                scope.launch {
+                                                    offsetX.animateTo(maxWidth.value.toFloat())
+                                                }
+                                            } else {
+                                                isDragging = false
+                                                scope.launch {
+                                                    offsetX.animateTo(0f)
+                                                }
+                                            }
+                                        },
+                                        onHorizontalDrag = { change, dragAmount ->
+                                            change.consume()
+                                            val newOffsetX = dragAmount
+                                            val incrementedOffsetX = (offsetX.value) + newOffsetX
+
+                                            scope.launch {
+                                                if (offsetX.value < maxWidth.toPx() - 100.dp.toPx()) {
+                                                    offsetX.snapTo(
+                                                        incrementedOffsetX.coerceIn(
+                                                            minimumValue = 0f,
+                                                            maximumValue = maxWidth.toPx()
+                                                        )
+                                                    )
+                                                } else {
+                                                    offsetX.animateTo(
+                                                        incrementedOffsetX.coerceIn(
+                                                            minimumValue = 0f,
+                                                            maximumValue = maxWidth.toPx()
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    )
+                                }
+                                .background(
+                                    color = if (isSystemInDarkTheme()) DarkColor else White
+                                )
+                                .clickable {
+                                    navHostController.navigate(
+                                        NewsDestinations.NEWS_DETAIL_SCREEN(
+                                            item?.newsId ?: ""
+                                        )
+                                    )
+                                }
+                                .onGloballyPositioned { coordinates ->
+                                    itemHeight = with(density) { coordinates.size.height.toDp() }
+                                }
+                        )
+                    }
+
+
                 }
             }
 
@@ -272,20 +297,13 @@ fun SavedNewsScreen(
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SavedNewsItem(
     item: NewsModel?,
+    modifier: Modifier = Modifier,
     context: Context,
     density: Density,
-    onItemClick: (String) -> Unit,
-    animatedVisibilityScope: AnimatedVisibilityScope,
-    sharedTransitionScope: SharedTransitionScope,
     offsetX: Float,
-    onDragStart: () -> Unit,
-    onDragEnd: () -> Unit,
-    onHorizontalDrag: (change: PointerInputChange, dragAmount: Float) -> Unit,
-    onGloballyPositioned: (coordinates: LayoutCoordinates) -> Unit,
     itemHeight: Dp,
     maxWidth: () -> Dp,
     isDragging: Boolean,
@@ -338,137 +356,87 @@ fun SavedNewsItem(
                 }
             }
 
-            with(sharedTransitionScope) {
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .sharedElement(
-                            state = rememberSharedContentState(key = "container/${item?.newsId}"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                        )
-                        .offset {
-                            androidx.compose.ui.unit.IntOffset(
-                                offsetX.roundToInt(),
-                                0
-                            )
-                        }
-                        .pointerInput(true) {
-                            detectHorizontalDragGestures(
-                                onDragStart = {
-                                    onDragStart()
-                                },
-                                onDragEnd = onDragEnd,
-                                onHorizontalDrag = { change, dragAmount ->
-                                    onHorizontalDrag(change, dragAmount)
-                                }
-                            )
-                        }
-                        .background(
-                            color = if (isSystemInDarkTheme()) DarkColor else White
-                        )
-                        .clickable {
-                            onItemClick.invoke(item?.newsId ?: "")
-                        }
-                        .onGloballyPositioned { coordinates ->
-                            onGloballyPositioned(coordinates)
-                        },
-                ) {
-                    Row {
-                        Row(
+            Column(
+                modifier = modifier,
+            ) {
+                Row {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp)
+                    ) {
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(all = 20.dp)
+                                .padding(end = 5.dp)
+                                .weight(1f)
                         ) {
                             Column(
                                 modifier = Modifier
-                                    .padding(end = 5.dp)
-                                    .weight(1f)
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .background(
-                                            color = Black.copy(0.1f),
-                                            shape = RoundedCornerShape(8.dp)
-                                        )
-                                ) {
-                                    Text(
-                                        text = item?.category ?: "",
-                                        modifier = Modifier
-                                            .padding(all = 2.dp)
+                                    .background(
+                                        color = Black.copy(0.1f),
+                                        shape = RoundedCornerShape(8.dp)
                                     )
-                                }
-                                Spacer(modifier = Modifier.height(3.dp))
+                            ) {
                                 Text(
-                                    text = item?.title ?: "",
-                                    style = TextStyle(
-                                        fontSize = (FontSize.MEDIUM - 1).sp,
-                                        fontWeight = FontWeight.Bold,
-                                    ),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
+                                    text = item?.category ?: "",
                                     modifier = Modifier
-                                        .sharedElement(
-                                            state = rememberSharedContentState(key = "title/${item?.newsId}"),
-                                            animatedVisibilityScope = animatedVisibilityScope,
-                                        )
-                                )
-
-                                Text(
-                                    text = item?.description ?: "",
-                                    style = TextStyle(
-                                        fontSize = FontSize.SMALL.sp,
-                                        color = Gray,
-                                    ),
-                                    maxLines = 3,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier
-                                        .padding(top = 10.dp)
+                                        .padding(all = 2.dp)
                                 )
                             }
+                            Spacer(modifier = Modifier.height(3.dp))
+                            Text(
+                                text = item?.title ?: "",
+                                style = TextStyle(
+                                    fontSize = (FontSize.MEDIUM - 1).sp,
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
 
-                            val imageRequest = ImageRequest.Builder(context)
-                                .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))
-                                .crossfade(true)
-                                .build()
-
-                            AsyncImage(
-                                model = imageRequest,
-                                contentDescription = "News Image",
-                                contentScale = ContentScale.Crop,
+                            Text(
+                                text = item?.description ?: "",
+                                style = TextStyle(
+                                    fontSize = FontSize.SMALL.sp,
+                                    color = Gray,
+                                ),
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier
-                                    .width(80.dp)
-                                    .heightIn(max = 80.dp)
-                                    .clip(shape = RoundedCornerShape(10.dp))
-                                    .sharedElement(
-                                        state = rememberSharedContentState(key = "image/${item?.newsId}"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                        renderInOverlayDuringTransition = true,
-                                        clipInOverlayDuringTransition = OverlayClip(
-                                            RoundedCornerShape(
-                                                10.dp
-                                            )
-                                        )
-                                    )
+                                    .padding(top = 10.dp)
                             )
                         }
-                    }
 
-                    item?.timestamp?.let { timestamp ->
+                        val imageRequest = ImageRequest.Builder(context)
+                            .data(getUrlOfImageNotVideo(item?.urlList ?: emptyList()))
+                            .crossfade(true)
+                            .build()
 
-                        val dateChar = formatDateOrTimeToAgo(timestamp.toDate())
-
-                        Text(
-                            text = "$dateChar when save",
-                            style = TextStyle(
-                                fontSize = FontSize.SMALL.sp,
-                                color = Gray
-                            ),
+                        AsyncImage(
+                            model = imageRequest,
+                            contentDescription = "News Image",
+                            contentScale = ContentScale.Crop,
                             modifier = Modifier
-                                .padding(all = 10.dp)
+                                .width(80.dp)
+                                .heightIn(max = 80.dp)
+                                .clip(shape = RoundedCornerShape(10.dp))
                         )
                     }
+                }
 
+                item?.timestamp?.let { timestamp ->
+
+                    val dateChar = formatDateOrTimeToAgo(timestamp.toDate())
+
+                    Text(
+                        text = "$dateChar when save",
+                        style = TextStyle(
+                            fontSize = FontSize.SMALL.sp,
+                            color = Gray
+                        ),
+                        modifier = Modifier
+                            .padding(all = 10.dp)
+                    )
                 }
 
             }

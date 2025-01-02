@@ -278,13 +278,13 @@ fun NewsDetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .sharedElement(
+                        state = rememberSharedContentState(key = "container/$newsId"),
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    )
                     .padding(innerPadding)
                     .nestedScroll(horizontalPagerScrollConnection)
                     .verticalScroll(scrollState)
-                    .sharedBounds(
-                        sharedContentState = rememberSharedContentState(key = "container/$newsId"),
-                        animatedVisibilityScope = animatedVisibilityScope,
-                    )
 
             ) {
 
@@ -303,11 +303,7 @@ fun NewsDetailScreen(
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "image/$newsId"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            ),
+                            .fillMaxWidth(),
                     ) { page ->
 
                         val item = newsById?.urlList?.get(page)
@@ -609,10 +605,6 @@ fun NewsDetailScreen(
                                     end = 20.dp,
                                     top = 20.dp,
                                     bottom = 10.dp
-                                )
-                                .sharedBounds(
-                                    sharedContentState = rememberSharedContentState(key = "title/$newsId"),
-                                    animatedVisibilityScope = animatedVisibilityScope,
                                 )
                         )
 
