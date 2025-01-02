@@ -2,10 +2,18 @@
 
 package com.android.studentnews.main.news.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +42,7 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.outlined.BookmarkBorder
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -54,13 +63,18 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -75,6 +89,7 @@ import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
@@ -103,6 +118,8 @@ import com.android.studentnews.ui.theme.ItemBackgroundColor
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @UnstableApi
@@ -174,7 +191,7 @@ fun NewsDetailScreen(
             override fun onPostScroll(
                 consumed: Offset,
                 available: Offset,
-                source: NestedScrollSource
+                source: NestedScrollSource,
             ): Offset {
                 val delta = available.y
 
@@ -191,6 +208,9 @@ fun NewsDetailScreen(
         }
     }
 
+    BackHandler(
+        enabled = sharedTransitionScope.isTransitionActive
+    ) {}
 
     Scaffold(
         bottomBar = {
@@ -200,6 +220,7 @@ fun NewsDetailScreen(
                     .navigationBarsPadding()
             ) {
                 HorizontalDivider(color = Gray)
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -211,7 +232,9 @@ fun NewsDetailScreen(
                 ) {
                     TextButton(
                         onClick = {
-                            navHostController.navigateUp()
+                            if (!sharedTransitionScope.isTransitionActive) {
+                                navHostController.navigateUp()
+                            }
                         },
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = if (isSystemInDarkTheme()) White else Black
@@ -259,7 +282,9 @@ fun NewsDetailScreen(
                                         if (isNewsSaved) {
                                             newsDetailViewModel.onNewsSave(news)
                                         } else {
-                                            newsDetailViewModel.onNewsRemoveFromSave(news)
+                                            newsDetailViewModel.onNewsRemoveFromSave(
+                                                news
+                                            )
                                         }
                                     }
                                 },
@@ -306,7 +331,7 @@ fun NewsDetailScreen(
                                     contentColor = if (isLiked) Red else {
                                         if (isSystemInDarkTheme()) White else Black
                                     }
-                                )
+                                ),
                             )
                         }
                     }
@@ -318,11 +343,12 @@ fun NewsDetailScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(innerPadding)
                     .sharedElement(
                         state = rememberSharedContentState(key = "container/$newsId"),
                         animatedVisibilityScope = animatedVisibilityScope,
+                        zIndexInOverlay = 1f
                     )
-                    .padding(innerPadding)
                     .nestedScroll(horizontalPagerScrollConnection)
                     .verticalScroll(scrollState)
 
@@ -476,7 +502,7 @@ fun NewsDetailScreen(
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
-                            .padding(bottom = 20.dp, end = 10.dp)
+                            .padding(bottom = 20.dp, end = 10.dp),
                     ) {
                         IconsForLikeAndMore(
                             // on Share

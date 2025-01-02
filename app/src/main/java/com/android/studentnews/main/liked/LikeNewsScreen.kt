@@ -138,7 +138,6 @@ fun LikedNewsScreen(
                                 .sharedElement(
                                     state = rememberSharedContentState(key = "container/${item?.newsId}"),
                                     animatedVisibilityScope = animatedVisibilityScope,
-                                    renderInOverlayDuringTransition = true
                                 )
                         )
                     }

@@ -4,13 +4,22 @@ package com.android.studentnews.main.account.ui
 
 import android.graphics.Bitmap
 import android.net.Uri
+import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -78,6 +87,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.app.SharedElementCallback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -274,7 +284,12 @@ fun AccountScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues = innerPadding)
-                .verticalScroll(scrollState)
+                .then(
+                    if (!sharedTransitionScope.isTransitionActive) {
+                        Modifier
+                            .verticalScroll(scrollState)
+                    } else Modifier
+                )
         ) {
 
             if (accountViewModel.saveStatus == Status.Loading) {
@@ -308,7 +323,8 @@ fun AccountScreen(
                                 .sharedElement(
                                     state = rememberSharedContentState(key = "user_image/${currentUser?.uid}"),
                                     animatedVisibilityScope = animatedVisibilityScope,
-                                    clipInOverlayDuringTransition = OverlayClip(CircleShape)
+                                    clipInOverlayDuringTransition = OverlayClip(CircleShape),
+
                                 ),
                             colors = CardDefaults.cardColors(
                                 containerColor = if (currentUser?.profilePic.isNullOrEmpty())
@@ -369,25 +385,37 @@ fun AccountScreen(
                             }
                         }
                     }
+
                     // Image Picker Card
-                    SmallFloatingActionButton(
-                        onClick = {
-                            if (accountViewModel.saveStatus != Status.Loading) {
-                                isImagePickerDialogOpen = true
-                            }
-                        },
-                        containerColor = Green,
-                        contentColor = White,
-                        elevation = FloatingActionButtonDefaults.elevation(0.dp),
-                        shape = CircleShape,
+                    this@Column.AnimatedVisibility(
+                        visible = sharedTransitionScope.isTransitionActive == false
+                                && currentUser != null,
                         modifier = Modifier
                             .align(alignment = Alignment.BottomEnd)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.PhotoCamera,
-                            contentDescription = "Icon for Image Picker"
-                        )
+                        SmallFloatingActionButton(
+                            onClick = {
+                                if (accountViewModel.saveStatus != Status.Loading) {
+                                    isImagePickerDialogOpen = true
+                                }
+                            },
+                            containerColor = Green,
+                            contentColor = White,
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp),
+                            shape = CircleShape,
+                            modifier = Modifier
+                                .animateEnterExit(
+                                    enter = scaleIn(),
+                                    exit = scaleOut(),
+                                )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PhotoCamera,
+                                contentDescription = "Icon for Image Picker"
+                            )
+                        }
                     }
+
                 } // End of Use Image Box
 
 
@@ -395,20 +423,13 @@ fun AccountScreen(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    with(sharedTransitionScope) {
-                        Text(
-                            text = username,
-                            style = TextStyle(
-                                fontSize = FontSize.LARGE.sp,
-                                fontWeight = FontWeight.Bold
-                            ),
-                            modifier = Modifier
-                                .sharedElement(
-                                    state = rememberSharedContentState(key = "user_name/${currentUser?.uid}"),
-                                    animatedVisibilityScope = animatedVisibilityScope,
-                                )
-                        )
-                    }
+                    Text(
+                        text = username,
+                        style = TextStyle(
+                            fontSize = FontSize.LARGE.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                    )
 
                     IconButton(onClick = {
                         if (accountViewModel.saveStatus != Status.Loading) {
