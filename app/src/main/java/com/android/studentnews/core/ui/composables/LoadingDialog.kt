@@ -1,4 +1,4 @@
-package com.android.studentnews.core.ui.common
+package com.android.studentnews.core.ui.composables
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CircularProgressIndicator

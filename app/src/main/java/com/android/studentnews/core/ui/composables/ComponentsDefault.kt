@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.android.studentnews.core.ui.common
+package com.android.studentnews.core.ui.composables
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ButtonDefaults
@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
-import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.Red

@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationManagerCompat
 import com.android.studentnews.main.events.ADDRESS
-import com.android.studentnews.main.events.BOOKINGS
 import com.android.studentnews.main.events.DESCRIPTION
 import com.android.studentnews.main.events.ENDING_DATE
 import com.android.studentnews.main.events.ENDING_TIME_HOUR
@@ -20,7 +19,6 @@ import com.android.studentnews.main.events.STARTING_TIME_MINUTES
 import com.android.studentnews.main.events.STARTING_TIME_STATUS
 import com.android.studentnews.main.events.TITLE
 import com.android.studentnews.main.events.URL_LIST
-import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnews.main.news.CATEGORY
 import com.android.studentnews.main.news.LIKES
@@ -145,7 +143,6 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
             val endingTimeMinutes = intent.getIntExtra(ENDING_TIME_MINUTES, 0)
             val endingTimeStatus = intent.getStringExtra(ENDING_TIME_STATUS) ?: ""
             val serializedUrlList = intent.getStringExtra(URL_LIST)
-            val serializedBookingsList = intent.getStringExtra(BOOKINGS) ?: null
             val isAvailable = intent.getBooleanExtra(IS_AVAILABLE, true)
 
             val urlList = serializedUrlList
@@ -153,24 +150,6 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
                 ?.mapNotNull {
                     val parts = it.split(";")
                     UrlList(parts[0], parts[1], parts[2].toLong(), parts[3])
-                } ?: emptyList()
-
-            val bookings = serializedBookingsList
-                ?.split(",")
-                ?.mapNotNull {
-                    val parts = it.split(";")
-                    if (parts.size == 8) {
-                        EventsBookingModel(
-                            parts[0],
-                            parts[1],
-                            parts[2],
-                            parts[3],
-                            parts[4],
-                            parts[5],
-                            parts[6],
-                            parts[7].toIntOrNull() ?: 0
-                        )
-                    } else null
                 } ?: emptyList()
 
             try {
@@ -190,7 +169,6 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
                     endingTimeStatus = endingTimeStatus,
                     timestamp = Timestamp.now(),
                     urlList = urlList,
-                    bookings = bookings,
                     isAvailable = isAvailable
                 )
 

@@ -7,20 +7,21 @@ import androidx.work.BackoffPolicy
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
+import com.android.studentnews.auth.domain.models.RegistrationData
 import com.android.studentnews.auth.domain.models.UserModel
 import com.android.studentnews.core.domain.constants.FirestoreNodes
+import com.android.studentnews.main.events.EVENT_ID
 import com.android.studentnews.main.events.EventsWorker
 import com.android.studentnews.main.events.IS_AVAILABLE
 import com.android.studentnews.main.events.data.paging_sources.EventsListPagingSource
-import com.android.studentnews.main.events.domain.models.EventsBookingModel
+import com.android.studentnews.main.events.domain.models.RegisteredEventsModel
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.channels.awaitClose
@@ -51,6 +52,9 @@ class EventsRepositoryImpl(
 
     override val savedEventsColRef: CollectionReference?
         get() = userDocRef?.collection(FirestoreNodes.SAVED_EVENTS)
+
+    override val registeredEventsCol: CollectionReference?
+        get() = userDocRef?.collection(FirestoreNodes.REGISTERED_EVENTS_COL)
 
 
     override fun getEventsList(
@@ -106,14 +110,24 @@ class EventsRepositoryImpl(
 
     override fun onEventRegister(
         eventId: String,
-        eventsBookingModel: EventsBookingModel,
+        registrationData: RegistrationData,
     ): Flow<EventsState<String>> {
         return callbackFlow {
             trySend(EventsState.Loading)
 
-            eventsColRef
-                ?.document(eventId)
-                ?.update("bookings", FieldValue.arrayUnion(eventsBookingModel))
+            val registeredEventsModel = RegisteredEventsModel(
+                eventId = eventId,
+                registrationData = registrationData,
+                registrationCode = "registration Code",
+                registeredAt = Timestamp.now()
+            )
+
+            val id = registeredEventsCol
+                ?.document()?.id
+
+            registeredEventsCol
+                ?.document(id.toString())
+                ?.set(registeredEventsModel)
                 ?.addOnSuccessListener {
                     trySend(EventsState.Success("Event Registered Successfully"))
                 }
@@ -121,6 +135,30 @@ class EventsRepositoryImpl(
                     trySend(EventsState.Failed(error))
                 }
 
+
+
+            awaitClose {
+                close()
+            }
+        }
+    }
+
+    override suspend fun getIsEventRegistered(eventId: String): Flow<EventsState<Boolean>> {
+        return callbackFlow {
+            try {
+
+                val data = registeredEventsCol
+                    ?.whereEqualTo(EVENT_ID, eventId)
+                    ?.get()
+                    ?.await()
+                    ?.firstOrNull()
+
+                trySend(EventsState.Success(data != null == true))
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                trySend(EventsState.Failed(e))
+            }
 
             awaitClose {
                 close()
@@ -171,17 +209,16 @@ class EventsRepositoryImpl(
         }
     }
 
-    override fun getSavedEventById(eventId: String): Flow<EventsState<EventsModel?>> {
+    override fun getIsEventSaved(eventId: String): Flow<EventsState<Boolean>> {
         return callbackFlow {
 
             savedEventsColRef
                 ?.document(eventId)
                 ?.addSnapshotListener { value, error ->
 
-                    if (value != null) {
-                        val savedEvent = value.toObject(EventsModel::class.java)
-                        trySend(EventsState.Success(savedEvent))
-                    }
+                    val eventIdFromSavedList = value?.getString(EVENT_ID)
+
+                    trySend(EventsState.Success(eventIdFromSavedList != null == true))
                 }
 
             awaitClose {
@@ -210,10 +247,18 @@ class EventsRepositoryImpl(
     }
 
 
-    override fun getRegisteredEventsList(limit: Int): Flow<PagingData<EventsModel>> {
+    override suspend fun getRegisteredEventsList(limit: Int): Flow<PagingData<EventsModel>> {
+
+        val registeredEventsIds = registeredEventsCol
+            ?.orderBy("registeredAt", Query.Direction.DESCENDING)
+            ?.get()
+            ?.await()
+            ?.mapNotNull {
+                it.getString(EVENT_ID)
+            } ?: emptyList()
 
         val query = eventsColRef
-            ?.orderBy("timestamp", Query.Direction.DESCENDING)
+            ?.whereIn(EVENT_ID, registeredEventsIds)
             ?.limit(limit.toLong())
 
         return Pager(
@@ -223,8 +268,6 @@ class EventsRepositoryImpl(
             pagingSourceFactory = {
                 EventsListPagingSource(
                     query = query!!,
-                    isForRegisteredEvents = true,
-                    currentUid = auth.currentUser?.uid.toString()
                 )
             }
         ).flow

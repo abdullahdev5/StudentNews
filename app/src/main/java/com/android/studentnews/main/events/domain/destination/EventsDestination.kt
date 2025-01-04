@@ -15,4 +15,11 @@ sealed class EventsDestination {
 
     @Serializable
     data object REGISTERED_EVENTS_SCREEN: EventsDestination()
+
+    class BottomSheetDestinations {
+        companion object {
+            const val REGISTRATION_EVENTS_BOTTOM_SHEET_DESTINATION =
+                "registration_events_bottom_sheet"
+        }
+    }
 }

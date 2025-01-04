@@ -1,10 +1,8 @@
 package com.android.studentnewsadmin.main.events.domain.models
 
 import androidx.compose.runtime.Immutable
-import com.android.studentnews.main.events.domain.models.EventsBookingModel
 import com.android.studentnews.news.domain.model.UrlList
 import com.google.firebase.Timestamp
-import kotlinx.serialization.SerialName
 
 @Immutable
 data class EventsModel(
@@ -22,7 +20,6 @@ data class EventsModel(
     val endingTimeStatus: String? = "", // ending time status
     val timestamp: Timestamp? = null, // timestamp
     val urlList: List<UrlList>? = emptyList(), // url List
-    val bookings: List<EventsBookingModel>? = emptyList(), // Bookings
     @field:JvmField
     val isAvailable: Boolean? = true // Available
 ) {
@@ -41,7 +38,6 @@ data class EventsModel(
         endingTimeStatus = "",
         timestamp = null,
         urlList = emptyList(),
-        bookings = emptyList(),
         isAvailable = true
     )
 }
