@@ -1,8 +1,6 @@
 package com.android.studentnews.main.referral_bonus.ui.screens
 
-import com.android.studentnews.R
 import android.content.Context
-import android.util.Size
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -27,7 +25,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.overscroll
@@ -64,8 +61,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -77,22 +72,15 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.toIntSize
-import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
-import com.android.studentnews.auth.domain.models.UserModel
+import com.android.studentnews.R
 import com.android.studentnews.core.domain.common.MyOverScrollEffect
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.core.ui.common.ButtonColors
-import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
+import com.android.studentnews.core.ui.composables.ButtonColors
 import com.android.studentnews.main.referral_bonus.domain.common.calculatePercentage
 import com.android.studentnews.main.referral_bonus.domain.constants.OfferTypes
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations

@@ -1,6 +1,5 @@
 package com.android.studentnews.main.referral_bonus.ui.composables
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,20 +15,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.android.studentnews.core.domain.constants.FontSize
-import com.android.studentnews.core.ui.common.ButtonColors
+import com.android.studentnews.core.ui.composables.ButtonColors
 import com.android.studentnews.main.referral_bonus.domain.model.EarnedPointsModel
-import com.android.studentnews.ui.theme.Black
-import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Green
-import com.android.studentnews.ui.theme.LightGray
-import com.android.studentnews.ui.theme.ReferralLinearColor1
-import com.android.studentnews.ui.theme.ReferralLinearColor2
 import com.android.studentnews.ui.theme.White
 
 @Composable

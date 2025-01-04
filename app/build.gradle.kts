@@ -111,4 +111,5 @@ dependencies {
 
     // Google Accompanist Navigation Material
     implementation(libs.google.accompanist.navigation.material)
+
 }

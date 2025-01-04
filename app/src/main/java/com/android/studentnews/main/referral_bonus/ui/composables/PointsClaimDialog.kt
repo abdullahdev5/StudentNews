@@ -1,6 +1,5 @@
 package com.android.studentnews.main.referral_bonus.ui.composables
 
-import com.android.studentnews.R
 import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -34,8 +33,9 @@ import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
+import com.android.studentnews.R
 import com.android.studentnews.core.domain.constants.FontSize
-import com.android.studentnews.core.ui.common.ButtonColors
+import com.android.studentnews.core.ui.composables.ButtonColors
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
 import com.android.studentnews.ui.theme.Gray
