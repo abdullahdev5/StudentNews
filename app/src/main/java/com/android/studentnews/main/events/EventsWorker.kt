@@ -1,7 +1,6 @@
 package com.android.studentnews.main.events
 
 import android.Manifest
-import com.android.studentnews.R
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -20,14 +19,15 @@ import coil.imageLoader
 import coil.request.ImageRequest
 import com.android.studentnews.MainActivity
 import com.android.studentnews.NotificationRelated
+import com.android.studentnews.R
 import com.android.studentnews.core.domain.common.formatDateToDay
 import com.android.studentnews.core.domain.common.formatDateToMonthName
 import com.android.studentnews.core.domain.common.formatDateToYear
 import com.android.studentnews.core.domain.common.formatTimeToString
+import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.main.MyBroadcastReceiver
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnews.main.news.NOTIFICATION_ID
-import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import kotlin.random.Random
 
@@ -45,7 +45,6 @@ const val ENDING_TIME_HOUR = "endingTimeHour"
 const val ENDING_TIME_MINUTES = "endingTimeMinutes"
 const val ENDING_TIME_STATUS = "endingTimeStatus"
 const val URL_LIST = "urlList"
-const val BOOKINGS = "bookings"
 const val IS_AVAILABLE = "isAvailable"
 
 
@@ -99,10 +98,6 @@ class EventsWorker(
                     "${it.url};${it.contentType};${it.sizeBytes};${it.lastPathSegment}"
                 } ?: ""
 
-                val serializedBookingList = event?.bookings?.fastJoinToString(",") {
-                    "${it.userId};${it.userName};${it.userDegree};${it.userPhoneNumber};${it.userCity};${it.userAddress};${it.userProfilePic};${it.userProfilePicBgColor}"
-                } ?: ""
-
 
                 val clickedIntent = Intent(
                     Intent.ACTION_VIEW,
@@ -129,7 +124,6 @@ class EventsWorker(
                     putExtra(ENDING_TIME_MINUTES, event?.endingTimeMinutes ?: 0)
                     putExtra(ENDING_TIME_STATUS, event?.endingTimeStatus ?: "")
                     putExtra(URL_LIST, serializedUrlList)
-                    putExtra(BOOKINGS, serializedBookingList)
                     putExtra(IS_AVAILABLE, event?.isAvailable ?: true)
                     putExtra(NOTIFICATION_ID, notificationId)
                 }

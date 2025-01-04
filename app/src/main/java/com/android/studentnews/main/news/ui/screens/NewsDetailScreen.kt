@@ -92,7 +92,7 @@ import com.android.studentnews.core.domain.common.formatDateToMonthName
 import com.android.studentnews.core.domain.common.formatDateToYear
 import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.core.domain.constants.FontSize
-import com.android.studentnews.core.ui.common.ButtonColors
+import com.android.studentnews.core.ui.composables.ButtonColors
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel

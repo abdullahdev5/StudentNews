@@ -4,22 +4,16 @@ package com.android.studentnews.main.account.ui
 
 import android.graphics.Bitmap
 import android.net.Uri
-import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.result.launch
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -46,10 +40,8 @@ import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.MyLocation
 import androidx.compose.material.icons.outlined.Person
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
@@ -66,13 +58,12 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -86,8 +77,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.core.app.SharedElementCallback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -95,10 +84,10 @@ import coil.request.ImageRequest
 import com.android.studentnews.core.domain.common.ConvertUriToBitmap
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.core.domain.constants.Status
-import com.android.studentnews.core.ui.common.ImagePickerDialog
-import com.android.studentnews.core.ui.common.LoadingDialog
-import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
+import com.android.studentnews.core.ui.composables.CustomAlertDialog
+import com.android.studentnews.core.ui.composables.ImagePickerDialog
+import com.android.studentnews.core.ui.composables.OutlinedTextFieldColors
 import com.android.studentnews.main.account.domain.AccountDataLabel
 import com.android.studentnews.main.account.domain.AccountList
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
@@ -560,63 +549,30 @@ fun AccountScreen(
         }
 
         if (isSaveChangesAlertDialogOpen) {
-            Dialog(
-                onDismissRequest = {
+            CustomAlertDialog(
+                title = {
+                    "Changes are not saved. Are you sure you want to discard the changes?"
+                },
+                confirmText = { "Save" },
+                dismissText = { "Discard" },
+                onConfirm = {
+                    accountViewModel.onSave(
+                        username = if (username == (currentUser?.registrationData?.name
+                                ?: "")
+                        ) "" else username,
+                        imageBitmap = galleryImageBitmap ?: cameraImageBitmap
+                    )
+                    isSaveChangesAlertDialogOpen = false
+                },
+                onDismiss = {
+                    username = currentUser?.registrationData?.name ?: ""
+                    galleryImageUri = null
+                    galleryImageBitmap = null
+                    cameraImageBitmap = null
+                    isSaveChangesAlertDialogOpen = false
                     isSaveChangesAlertDialogOpen = false
                 }
-            ) {
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isSystemInDarkTheme()) DarkGray else White
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 10.dp)
-                    ) {
-                        Text(
-                            text = "Changes are Not Saved. Are you sure you want to discard the changes?",
-                        )
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(20.dp),
-                            modifier = Modifier
-                                .padding(top = 20.dp)
-                                .align(Alignment.End)
-                        ) {
-                            TextButton(
-                                onClick = {
-                                    username = currentUser?.registrationData?.name ?: ""
-                                    galleryImageUri = null
-                                    galleryImageBitmap = null
-                                    cameraImageBitmap = null
-                                    isSaveChangesAlertDialogOpen = false
-                                }
-                            ) {
-                                Text(text = "Discard")
-                            }
-
-                            TextButton(
-                                onClick = {
-                                    accountViewModel.onSave(
-                                        username = if (username == (currentUser?.registrationData?.name
-                                                ?: "")
-                                        ) "" else username,
-                                        imageBitmap = galleryImageBitmap ?: cameraImageBitmap
-                                    )
-                                    isSaveChangesAlertDialogOpen = false
-                                }
-                            ) {
-                                Text(text = "Save")
-                            }
-                        }
-                    }
-                }
-            }
+            )
         }
 
     }

@@ -1,12 +1,11 @@
 package com.android.studentnews.main.events.domain.repository
 
 import androidx.paging.PagingData
-import com.android.studentnews.main.events.domain.models.EventsBookingModel
+import com.android.studentnews.auth.domain.models.RegistrationData
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
-import com.google.firebase.firestore.DocumentSnapshot
 import kotlinx.coroutines.flow.Flow
 
 interface EventsRepository {
@@ -14,6 +13,7 @@ interface EventsRepository {
     val userDocRef: DocumentReference?
     val eventsColRef: CollectionReference?
     val savedEventsColRef: CollectionReference?
+    val registeredEventsCol: CollectionReference?
 
 
     fun getEventsList(
@@ -25,16 +25,18 @@ interface EventsRepository {
 
     fun onEventRegister(
         eventId: String,
-        eventsBookingModel: EventsBookingModel
+        registrationData: RegistrationData
     ): Flow<EventsState<String>>
+
+    suspend fun getIsEventRegistered(eventId: String): Flow<EventsState<Boolean>>
 
     fun onEventSave(event: EventsModel): Flow<EventsState<String>>
 
     fun onEventRemoveFromSave(event: EventsModel): Flow<EventsState<String>>
 
-    fun getSavedEventById(eventId: String): Flow<EventsState<EventsModel?>>
+    fun getIsEventSaved(eventId: String): Flow<EventsState<Boolean>>
 
-    fun getRegisteredEventsList(limit: Int): Flow<PagingData<EventsModel>> // Booked Events of Current User
+    suspend fun getRegisteredEventsList(limit: Int): Flow<PagingData<EventsModel>> // Booked Events of Current User
 
     fun getSavedEventsList(limit: Int): Flow<PagingData<EventsModel>>
 

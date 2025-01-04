@@ -1,4 +1,4 @@
-package com.android.studentnews.core.ui.common
+package com.android.studentnews.core.ui.composables
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.icons.Icons

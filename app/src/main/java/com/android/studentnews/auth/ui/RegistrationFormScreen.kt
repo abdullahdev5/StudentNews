@@ -63,7 +63,7 @@ import com.android.studentnews.auth.domain.models.RegistrationData
 import com.android.studentnews.auth.domain.resource.AuthenticationStatus
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
-import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
+import com.android.studentnews.core.ui.composables.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor

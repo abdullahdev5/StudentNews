@@ -10,18 +10,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.FiniteAnimationSpec
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -46,7 +40,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
@@ -56,14 +49,10 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.outlined.BookmarkRemove
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -78,7 +67,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBarItem
@@ -126,7 +114,6 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.PopupProperties
-import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.paging.LoadState
@@ -152,16 +139,15 @@ import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
 import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
+import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
 import com.android.studentnews.main.referral_bonus.ui.composables.PointsClaimListItem
 import com.android.studentnews.navigation.SubGraph
-import com.android.studentnews.news.domain.model.NewsModel
-import com.android.studentnews.main.news.NEWS_ID
-import com.android.studentnews.main.news.ui.viewModel.NewsDetailViewModel
-import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.news.domain.destination.MainDestination
+import com.android.studentnews.news.domain.model.NewsModel
+import com.android.studentnews.news.ui.viewModel.NewsViewModel
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
@@ -532,7 +518,7 @@ fun NewsScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .renderInSharedTransitionScopeOverlay(
-                                        zIndexInOverlay = 1f
+                                        zIndexInOverlay = 1f,
                                     )
                                     .animateEnterExit(
                                         enter = slideInVertically(
@@ -1238,143 +1224,153 @@ fun MainDrawerContent(
         MainNavigationDrawerList.Registered_Events,
         MainNavigationDrawerList.REFERRAL_BONUS,
         MainNavigationDrawerList.Settings,
-        MainNavigationDrawerList.Log_out,
+        MainNavigationDrawerList.Log_out
     )
 
-    Column(
+    LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            Column(
+        // Top User Image Item
+        item {
+            Row(
                 modifier = Modifier
-                    .padding(all = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxWidth()
             ) {
+                Column(
+                    modifier = Modifier
+                        .padding(all = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
 
-                val color = currentUser?.profilePicBgColor ?: 0
+                    val color = currentUser?.profilePicBgColor ?: 0
 
-                with(sharedTransitionScope) {
-                    Card(
-                        modifier = Modifier
-                            .width(100.dp)
-                            .height(100.dp)
-                            .clip(shape = CircleShape)
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "user_image/${currentUser?.uid}"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                clipInOverlayDuringTransition = OverlayClip(CircleShape),
-                            ),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (currentUser?.profilePic.isNullOrEmpty())
-                                Color(color)
-                            else
-                                Color.LightGray
-                        )
-                    ) {
-                        Box(
+                    with(sharedTransitionScope) {
+                        Card(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .pointerInput(true) {
-                                    detectTapGestures(
-                                        onTap = {
-                                            onUserImageClick.invoke()
-                                        }
-                                    )
-                                },
+                                .width(100.dp)
+                                .height(100.dp)
+                                .clip(shape = CircleShape)
+                                .sharedElement(
+                                    state = rememberSharedContentState(key = "user_image/${currentUser?.uid}"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    clipInOverlayDuringTransition = OverlayClip(CircleShape),
+                                ),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (currentUser?.profilePic.isNullOrEmpty())
+                                    Color(color)
+                                else
+                                    Color.LightGray
+                            )
                         ) {
-                            if (currentUser?.profilePic.isNullOrEmpty()) {
-                                Text(
-                                    text = currentUser?.registrationData?.name?.first().toString()
-                                        ?: "",
-                                    color = White,
-                                    fontSize = FontSize.LARGE.sp,
-                                    modifier = Modifier
-                                        .align(alignment = Alignment.Center)
-                                        .shadow(
-                                            elevation = 20.dp,
-                                            shape = CircleShape,
-                                            ambientColor = if (isSystemInDarkTheme()) White else Black,
-                                            spotColor = if (isSystemInDarkTheme()) White else Black
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .pointerInput(true) {
+                                        detectTapGestures(
+                                            onTap = {
+                                                onUserImageClick.invoke()
+                                            }
                                         )
-                                )
-                            } else {
+                                    },
+                            ) {
+                                if (currentUser?.profilePic.isNullOrEmpty()) {
+                                    Text(
+                                        text = currentUser?.registrationData?.name?.first()
+                                            .toString()
+                                            ?: "",
+                                        color = White,
+                                        fontSize = FontSize.LARGE.sp,
+                                        modifier = Modifier
+                                            .align(alignment = Alignment.Center)
+                                            .shadow(
+                                                elevation = 20.dp,
+                                                shape = CircleShape,
+                                                ambientColor = if (isSystemInDarkTheme()) White else Black,
+                                                spotColor = if (isSystemInDarkTheme()) White else Black
+                                            )
+                                    )
+                                } else {
 
-                                val imageRequest = ImageRequest.Builder(context)
-                                    .data(currentUser?.profilePic ?: "")
-                                    .crossfade(true)
-                                    .build()
+                                    val imageRequest = ImageRequest.Builder(context)
+                                        .data(currentUser?.profilePic ?: "")
+                                        .crossfade(true)
+                                        .build()
 
-                                AsyncImage(
-                                    model = imageRequest,
-                                    contentDescription = "User Image",
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                )
+                                    AsyncImage(
+                                        model = imageRequest,
+                                        contentDescription = "User Image",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                    )
+                                }
                             }
                         }
                     }
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-                Text(
-                    text = currentUser?.registrationData?.name ?: "",
-                    style = TextStyle(
-                        fontSize = FontSize.MEDIUM.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = currentUser?.registrationData?.name ?: "",
+                        style = TextStyle(
+                            fontSize = FontSize.MEDIUM.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
 
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = {
-                onDismiss.invoke()
-            }) {
-                Icon(
-                    imageVector = Icons.Default.Cancel,
-                    contentDescription = "Icon for closing the drawer"
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(10.dp))
-        HorizontalDivider(color = Gray)
-        Spacer(modifier = Modifier.height(16.dp))
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-        ) {
-            items(
-                count = drawerList.size,
-                key = { index ->
-                    drawerList[index].text
-                }
-            ) { index ->
-                val item = drawerList[index]
-                NavigationDrawerItem(
-                    label = {
-                        Text(text = item.text)
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = item.icon,
-                            contentDescription = "Icon"
                         )
-                    },
-                    selected = false,
-                    onClick = {
-                        onClick(item.name)
-                    },
-                    colors = NavigationDrawerItemDefaults.colors(
-                        unselectedContainerColor = Color.Transparent,
-                    ),
-                    shape = RectangleShape,
-                    modifier = Modifier
-                        .animateItem()
-                )
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                IconButton(onClick = {
+                    onDismiss.invoke()
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Cancel,
+                        contentDescription = "Icon for closing the drawer"
+                    )
+                }
             }
+            Spacer(modifier = Modifier.height(10.dp))
+            HorizontalDivider(color = Gray)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        items(
+            count = drawerList.size,
+            key = { index ->
+                drawerList[index].text
+            }
+        ) { index ->
+            val item = drawerList[index]
+            NavigationDrawerItem(
+                label = {
+                    Text(text = item.text)
+                },
+                icon = {
+                    Icon(
+                        imageVector = item.icon,
+                        contentDescription = "Icon"
+                    )
+                },
+                selected = false,
+                onClick = {
+                    onClick(item.name)
+                    if (item.name != MainNavigationDrawerList.Account.name) {
+                        onDismiss()
+                    }
+                },
+                colors = NavigationDrawerItemDefaults.colors(
+                    unselectedContainerColor = Color.Transparent,
+                ),
+                shape = RectangleShape,
+                modifier = Modifier
+                    .animateItem(
+                        fadeInSpec = tween(250),
+                        fadeOutSpec = tween(100),
+                        placementSpec = spring(
+                            stiffness = Spring.StiffnessLow,
+                            dampingRatio = Spring.DampingRatioMediumBouncy
+                        )
+                    )
+            )
         }
     }
 }

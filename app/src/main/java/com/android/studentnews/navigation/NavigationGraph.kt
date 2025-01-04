@@ -2,12 +2,15 @@
 
 package com.android.studentnews.navigation
 
+import android.os.Build
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -39,8 +42,11 @@ import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.EVENTS_REGISTRATION_URI
 import com.android.studentnews.main.events.EVENTS_URI
+import com.android.studentnews.main.events.EVENT_ID
 import com.android.studentnews.main.events.domain.destination.EventsDestination
+import com.android.studentnews.main.events.ui.screens.EventRegistrationBottomSheet
 import com.android.studentnews.main.events.ui.screens.EventsDetailScreen
+import com.android.studentnews.main.events.ui.viewModels.EventsDetailViewModel
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
 import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.NEWS_URI
@@ -74,8 +80,6 @@ import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.ui.NewsScreen
 import com.android.studentnews.news.ui.viewModel.NewsViewModel
-import com.android.studentnews.ui.theme.DarkColor
-import com.android.studentnews.ui.theme.White
 import com.google.accompanist.navigation.material.BottomSheetNavigator
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.navigation.material.ModalBottomSheetLayout
@@ -333,23 +337,67 @@ fun NavigationGraph(
                         popExitTransition = { fadeOut() },
                     ) {
 
-                        val arguments = it.toRoute<EventsDestination.EVENTS_DETAIL_SCREEN>()
-                        val eventsViewModel = koinViewModel<EventsViewModel>()
-                        val accountViewModel = koinViewModel<AccountViewModel>()
+                            val arguments = it.toRoute<EventsDestination.EVENTS_DETAIL_SCREEN>()
+                            val eventsDetailViewModel = koinViewModel<EventsDetailViewModel>()
+                            val accountViewModel = koinViewModel<AccountViewModel>()
 
-                        EventsDetailScreen(
-                            eventId = arguments.eventId,
-                            isComeForRegistration = arguments.isComeForRegistration,
-                            notificationId = arguments.notificationId,
-                            navHostController = navHostController,
-                            eventsViewModel = eventsViewModel,
-                            accountViewModel = accountViewModel,
-                            animatedVisibilityScope = this,
-                            sharedTransitionScope = this@SharedTransitionLayout
-                        )
+                            EventsDetailScreen(
+                                eventId = arguments.eventId,
+                                isComeForRegistration = arguments.isComeForRegistration,
+                                notificationId = arguments.notificationId,
+                                navHostController = navHostController,
+                                eventsDetailViewModel = eventsDetailViewModel,
+                                accountViewModel = accountViewModel,
+                                animatedVisibilityScope = this,
+                                sharedTransitionScope = this@SharedTransitionLayout
+                            )
+                        }
+
+                        bottomSheet(
+                            route = EventsDestination
+                                .BottomSheetDestinations
+                                .REGISTRATION_EVENTS_BOTTOM_SHEET_DESTINATION +
+                            "/$EVENT_ID={$EVENT_ID}",
+                            arguments = listOf(
+                                navArgument(
+                                    name = EVENT_ID,
+                                    builder = {
+                                        type = NavType.StringType
+                                    }
+                                )
+                            )
+                        ) { navBackStackEntry ->
+
+                            val eventsDetailViewModel = koinViewModel<EventsDetailViewModel>()
+                            val accountViewModel = koinViewModel<AccountViewModel>()
+
+                            val eventId = navBackStackEntry.arguments?.getString(EVENT_ID) ?: ""
+
+                            LaunchedEffect(Unit) {
+                                accountViewModel.getCurrentUser()
+                                eventsDetailViewModel.getIsEventRegistered(eventId)
+                            }
+
+                            val context = LocalContext.current
+
+                            val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
+
+                            EventRegistrationBottomSheet(
+                                eventId = eventId,
+                                currentUser = currentUser,
+                                eventsDetailViewModel = eventsDetailViewModel,
+                                isEventAlreadyRegistered = eventsDetailViewModel.isEventRegistered ?: false,
+                                context = context,
+                                onDismiss = {
+                                    navHostController.navigateUp()
+                                }
+                            )
+
+
+
+                        }
+
                     }
-
-                }
 
                 // EVents Graph
 //                navigation<SubGraph.EVENTS>(

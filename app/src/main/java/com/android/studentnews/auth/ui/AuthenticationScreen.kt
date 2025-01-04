@@ -69,11 +69,10 @@ import com.android.studentnews.auth.ui.viewModel.AuthViewModel
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.AuthenticationImages
-import com.android.studentnews.core.ui.common.ButtonColors
-import com.android.studentnews.core.ui.common.LoadingDialog
-import com.android.studentnews.core.ui.common.OutlinedTextFieldColors
+import com.android.studentnews.core.ui.composables.ButtonColors
+import com.android.studentnews.core.ui.composables.LoadingDialog
+import com.android.studentnews.core.ui.composables.OutlinedTextFieldColors
 import com.android.studentnews.core.ui.components.TextFieldComponent
-import com.android.studentnews.news.domain.destination.MainDestination
 import com.android.studentnews.ui.theme.Green
 import com.android.studentnews.ui.theme.White
 import kotlinx.coroutines.Dispatchers
