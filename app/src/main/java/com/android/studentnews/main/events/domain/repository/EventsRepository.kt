@@ -28,7 +28,7 @@ interface EventsRepository {
         registrationData: RegistrationData
     ): Flow<EventsState<String>>
 
-    suspend fun getIsEventRegistered(eventId: String): Flow<EventsState<Boolean>>
+    fun getIsEventRegistered(eventId: String): Flow<EventsState<Boolean>>
 
     fun onEventSave(event: EventsModel): Flow<EventsState<String>>
 

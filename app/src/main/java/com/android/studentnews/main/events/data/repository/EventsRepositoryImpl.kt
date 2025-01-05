@@ -14,7 +14,8 @@ import com.android.studentnews.main.events.EVENT_ID
 import com.android.studentnews.main.events.EventsWorker
 import com.android.studentnews.main.events.IS_AVAILABLE
 import com.android.studentnews.main.events.data.paging_sources.EventsListPagingSource
-import com.android.studentnews.main.events.domain.models.RegisteredEventsModel
+import com.android.studentnews.main.events.domain.models.RegisteredEventsModelForUser
+import com.android.studentnews.main.events.domain.models.RegistrationsOfEventsModel
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
@@ -24,12 +25,14 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.util.nextAlphanumericString
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 
 const val EVENTS_LIST_PAGE_SIZE = 4
 const val SAVED_EVENTS_LIST_PAGE_SIZE = 4
@@ -115,27 +118,53 @@ class EventsRepositoryImpl(
         return callbackFlow {
             trySend(EventsState.Loading)
 
-            val registeredEventsModel = RegisteredEventsModel(
-                eventId = eventId,
-                registrationData = registrationData,
-                registrationCode = "registration Code",
-                registeredAt = Timestamp.now()
-            )
+            try {
 
-            val id = registeredEventsCol
-                ?.document()?.id
+                val registrationCode = Random.nextAlphanumericString(10)
 
-            registeredEventsCol
-                ?.document(id.toString())
-                ?.set(registeredEventsModel)
-                ?.addOnSuccessListener {
-                    trySend(EventsState.Success("Event Registered Successfully"))
-                }
-                ?.addOnFailureListener { error ->
-                    trySend(EventsState.Failed(error))
-                }
+                val registrationsSubCol = eventsColRef
+                    ?.document(eventId)
+                    ?.collection(FirestoreNodes.REGISTRATIONS_OF_EVENT)
 
+                val registrationOfEventsModel = RegistrationsOfEventsModel(
+                    eventId = eventId,
+                    userId = auth.currentUser?.uid.toString(),
+                    registrationCode = registrationCode,
+                    registeredAt = Timestamp.now()
+                )
 
+                registrationsSubCol
+                    ?.document(auth.currentUser?.uid.toString())
+                    ?.set(registrationOfEventsModel)
+                    ?.addOnSuccessListener {
+
+                        val registeredEventsModelForUser = RegisteredEventsModelForUser(
+                            eventId = eventId,
+                            userId = auth.currentUser?.uid.toString(),
+                            registrationData = registrationData,
+                            registrationCode = registrationCode,
+                            registeredAt = Timestamp.now(),
+                        )
+
+                        registeredEventsCol
+                            ?.document(eventId)
+                            ?.set(registeredEventsModelForUser)
+                            ?.addOnSuccessListener {
+                                trySend(EventsState.Success("Event Registered Successfully"))
+                            }
+                            ?.addOnFailureListener { error ->
+                                trySend(EventsState.Failed(error))
+                            }
+
+                    }
+                    ?.addOnFailureListener { error ->
+                        trySend(EventsState.Failed(error))
+                    }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+                trySend(EventsState.Failed(e))
+            }
 
             awaitClose {
                 close()
@@ -143,17 +172,23 @@ class EventsRepositoryImpl(
         }
     }
 
-    override suspend fun getIsEventRegistered(eventId: String): Flow<EventsState<Boolean>> {
+    override fun getIsEventRegistered(eventId: String): Flow<EventsState<Boolean>> {
         return callbackFlow {
             try {
 
-                val data = registeredEventsCol
-                    ?.whereEqualTo(EVENT_ID, eventId)
-                    ?.get()
-                    ?.await()
-                    ?.firstOrNull()
+                registeredEventsCol
+                    ?.document(eventId)
+                    ?.addSnapshotListener { value, error ->
+                        if (error != null) {
+                            trySend(EventsState.Failed(error))
+                        }
 
-                trySend(EventsState.Success(data != null == true))
+                        val eventIdFromRegisteredEvents = value?.getString(EVENT_ID)
+
+                        trySend(EventsState.Success(
+                            data = eventIdFromRegisteredEvents != null == true)
+                        )
+                    }
 
             } catch (e: Exception) {
                 e.printStackTrace()
