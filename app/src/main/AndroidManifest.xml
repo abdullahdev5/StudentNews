@@ -68,11 +68,34 @@
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.App.Starting">
+            <!-- Default Intent Filter !-->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- News Detail & Events Detail Deeplink Intent Filter !-->
+            <intent-filter>
+
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Data !-->
+                <data android:scheme="https"/>
+                <data android:host="studentnews.com"/>
+                <data android:host="www.studentnews.com"/>
+
+                <!-- News !-->
+                <data android:pathPrefix="/news"/>
+                <!-- Events !-->
+                <data android:pathPrefix="/events"/>
+
+            </intent-filter>
+
+
         </activity>
     </application>
 

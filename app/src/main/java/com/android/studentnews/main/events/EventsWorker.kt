@@ -49,8 +49,8 @@ const val IS_AVAILABLE = "isAvailable"
 
 
 const val SAVED_EVENT_ACTION = "com.android.studentnews.SAVED_EVENT_ACTION"
-const val EVENTS_URI = "https://www.events.com/"
-const val EVENTS_REGISTRATION_URI = "https://www.events_registration.com/"
+const val EVENTS_DETAIL_DEEPLINK_URI = "https://www.studentnews.com/events"
+const val EVENTS_DETAIL_FOR_REGISTRATION_DEEPLINK_URI = "https://www.studentnews.com/events/registration"
 
 
 class EventsWorker(
@@ -101,7 +101,7 @@ class EventsWorker(
 
                 val clickedIntent = Intent(
                     Intent.ACTION_VIEW,
-                    "$EVENTS_URI/eventId=${event?.eventId ?: ""}".toUri(),
+                    "$EVENTS_DETAIL_DEEPLINK_URI/${event?.eventId ?: ""}".toUri(),
                     context,
                     MainActivity::class.java,
                 )
@@ -131,7 +131,7 @@ class EventsWorker(
 
                 val registrationIntent = Intent(
                     Intent.ACTION_VIEW,
-                    ("$EVENTS_REGISTRATION_URI/eventId=${event?.eventId ?: ""}" +
+                    ("$EVENTS_DETAIL_FOR_REGISTRATION_DEEPLINK_URI/eventId=${event?.eventId ?: ""}" +
                             "/isComeForRegistration=${true}" + "/notificationId=$notificationId"
                             ).toUri(),
                     context,
