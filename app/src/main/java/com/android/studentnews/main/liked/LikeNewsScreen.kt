@@ -37,7 +37,6 @@ import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.android.studentnews.core.data.paginator.LENGTH_ERROR
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
-import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.news.ui.NewsItem
 
@@ -124,7 +123,7 @@ fun LikedNewsScreen(
                                     NewsDestinations
                                         .BottomSheetDestinations
                                         .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
-                                            "/$NEWS_ID=$thisNewsId"
+                                            "/$thisNewsId"
                                 )
                             },
                             modifier = Modifier

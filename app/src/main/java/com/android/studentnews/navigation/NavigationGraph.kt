@@ -2,7 +2,6 @@
 
 package com.android.studentnews.navigation
 
-import android.os.Build
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -40,16 +39,16 @@ import com.android.studentnews.auth.ui.viewModel.AuthViewModel
 import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.main.account.ui.AccountScreen
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
-import com.android.studentnews.main.events.EVENTS_REGISTRATION_URI
-import com.android.studentnews.main.events.EVENTS_URI
+import com.android.studentnews.main.events.EVENTS_DETAIL_DEEPLINK_URI
+import com.android.studentnews.main.events.EVENTS_DETAIL_FOR_REGISTRATION_DEEPLINK_URI
 import com.android.studentnews.main.events.EVENT_ID
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.EventRegistrationBottomSheet
 import com.android.studentnews.main.events.ui.screens.EventsDetailScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsDetailViewModel
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
+import com.android.studentnews.main.news.NEWS_DETAIL_DEEPLINK_URI
 import com.android.studentnews.main.news.NEWS_ID
-import com.android.studentnews.main.news.NEWS_URI
 import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.main.news.ui.screens.NewsDetailScreen
 import com.android.studentnews.main.news.ui.screens.NewsLinkScreen
@@ -183,7 +182,7 @@ fun NavigationGraph(
                         composable<NewsDestinations.NEWS_DETAIL_SCREEN>(
                             deepLinks = listOf(
                                 navDeepLink {
-                                    uriPattern = "$NEWS_URI/$NEWS_ID={$NEWS_ID}"
+                                    uriPattern = "$NEWS_DETAIL_DEEPLINK_URI/{$NEWS_ID}"
                                 }
                             ),
                             enterTransition = { fadeIn() },
@@ -209,7 +208,7 @@ fun NavigationGraph(
                             route = NewsDestinations
                                 .BottomSheetDestinations
                                 .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
-                                    "/$NEWS_ID={$NEWS_ID}",
+                                    "/{$NEWS_ID}",
                             arguments = listOf(
                                 navArgument(NEWS_ID) {
                                     type = NavType.StringType
@@ -319,23 +318,23 @@ fun NavigationGraph(
                     }
 
 
-                    // Events Detail Screen
-                    composable<EventsDestination.EVENTS_DETAIL_SCREEN>(
-                        deepLinks = listOf(
-                            navDeepLink {
-                                uriPattern = "$EVENTS_URI/eventId={eventId}"
-                            },
-                            navDeepLink {
-                                uriPattern = "$EVENTS_REGISTRATION_URI/eventId={eventId}" +
-                                        "/isComeForRegistration={isComeForRegistration}" +
-                                        "/notificationId={notificationId}"
-                            }
-                        ),
-                        enterTransition = { fadeIn() },
-                        exitTransition = { fadeOut() },
-                        popEnterTransition = { fadeIn() },
-                        popExitTransition = { fadeOut() },
-                    ) {
+                        // Events Detail Screen
+                        composable<EventsDestination.EVENTS_DETAIL_SCREEN>(
+                            deepLinks = listOf(
+                                navDeepLink {
+                                    uriPattern = "$EVENTS_DETAIL_DEEPLINK_URI/{eventId}"
+                                },
+                                navDeepLink {
+                                    uriPattern = "$EVENTS_DETAIL_FOR_REGISTRATION_DEEPLINK_URI/eventId={eventId}" +
+                                            "/isComeForRegistration={isComeForRegistration}" +
+                                            "/notificationId={notificationId}"
+                                }
+                            ),
+                            enterTransition = { fadeIn() },
+                            exitTransition = { fadeOut() },
+                            popEnterTransition = { fadeIn() },
+                            popExitTransition = { fadeOut() },
+                        ) {
 
                             val arguments = it.toRoute<EventsDestination.EVENTS_DETAIL_SCREEN>()
                             val eventsDetailViewModel = koinViewModel<EventsDetailViewModel>()

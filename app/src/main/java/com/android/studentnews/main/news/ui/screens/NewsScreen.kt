@@ -139,7 +139,6 @@ import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.events.ui.screens.CategoryListItem
 import com.android.studentnews.main.events.ui.screens.EventsScreen
 import com.android.studentnews.main.events.ui.viewModels.EventsViewModel
-import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.domain.destination.NewsDestinations
 import com.android.studentnews.main.news.domain.model.CategoryModel
 import com.android.studentnews.main.referral_bonus.domain.destination.ReferralBonusDestinations
@@ -805,7 +804,7 @@ fun NewsScreen(
                                                                     NewsDestinations
                                                                         .BottomSheetDestinations
                                                                         .NEWS_LIST_ITEM_MORE_OPTIONS_BOTTOM_SHEET_DESTINATION +
-                                                                            "/$NEWS_ID=$thisNewsId"
+                                                                            "/$thisNewsId"
                                                                 )
                                                             },
                                                             context = context,

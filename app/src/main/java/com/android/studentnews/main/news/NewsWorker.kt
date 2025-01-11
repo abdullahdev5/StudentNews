@@ -2,7 +2,6 @@ package com.android.studentnews.main.news
 
 import android.Manifest
 import android.app.PendingIntent
-import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -21,19 +20,18 @@ import coil.request.ImageRequest
 import com.android.studentnews.MainActivity
 import com.android.studentnews.NotificationRelated
 import com.android.studentnews.R
+import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.main.MyBroadcastReceiver
 import com.android.studentnews.main.events.DESCRIPTION
 import com.android.studentnews.main.events.TITLE
 import com.android.studentnews.main.events.URL_LIST
-import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
 import kotlin.apply
 import kotlin.jvm.java
 import kotlin.random.Random
-import kotlin.run
 
-const val NEWS_URI = "https://www.news.com"
+const val NEWS_DETAIL_DEEPLINK_URI = "https://www.studentnews.com/news"
 const val SAVE_NEWS_ACTION = "com.android.studentnews.SAVE_NEWS_ACTION"
 const val NEWS_ID = "newsId"
 const val CATEGORY = "category"
@@ -86,7 +84,7 @@ class NewsWorker(
 
         val clickedIntent = Intent(
             Intent.ACTION_VIEW,
-            "$NEWS_URI/newsId=${news?.newsId ?: ""}".toUri(),
+            "$NEWS_DETAIL_DEEPLINK_URI/${news?.newsId ?: ""}".toUri(),
             context,
             MainActivity::class.java
         )
