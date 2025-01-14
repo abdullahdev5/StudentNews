@@ -36,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.DateRange
 import androidx.compose.material.icons.outlined.Timer
@@ -95,6 +96,7 @@ import com.android.studentnews.core.domain.common.formatTimeToMinutes
 import com.android.studentnews.core.domain.common.formatTimeToString
 import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.core.domain.constants.FontSize
+import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.composables.ButtonColors
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.events.EVENT_ID
@@ -104,6 +106,7 @@ import com.android.studentnews.main.news.ui.screens.UrlListPagerIndicator
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.Green
+import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.Timestamp
@@ -137,14 +140,20 @@ fun EventsDetailScreen(
     val pagerState = rememberPagerState(pageCount = { eventById?.urlList?.size ?: 0 })
 
     val isEventRegistered = remember {
-       derivedStateOf {
-           eventsDetailViewModel.isEventRegistered
-       }
+        derivedStateOf {
+            eventsDetailViewModel.isEventRegistered
+        }
     }.value
 
     var isEventSaved = remember(eventsDetailViewModel.isEventSaved) {
         derivedStateOf {
             eventsDetailViewModel.isEventSaved ?: false
+        }
+    }.value
+
+    val isEventFailedToLoad = remember(eventsDetailViewModel.eventByIdStatus) {
+        derivedStateOf {
+            eventsDetailViewModel.eventByIdStatus == Status.FAILED
         }
     }.value
 
@@ -165,7 +174,7 @@ fun EventsDetailScreen(
                         EventsDestination
                             .BottomSheetDestinations
                             .REGISTRATION_EVENTS_BOTTOM_SHEET_DESTINATION +
-                        "/$EVENT_ID=$eventId"
+                                "/$EVENT_ID=$eventId"
                     )
                 }
                 notificationId?.let { thisId ->
@@ -231,46 +240,48 @@ fun EventsDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        isEventSaved = !isEventSaved
+                    if (!isEventFailedToLoad) {
+                        IconButton(onClick = {
+                            isEventSaved = !isEventSaved
 
-                        eventById?.let {
-                            val event = EventsModel(
-                                title = it.title,
-                                description = it.description,
-                                eventId = it.eventId,
-                                address = it.address,
-                                startingDate = it.startingDate,
-                                startingTimeHour = it.startingTimeHour,
-                                startingTimeMinutes = it.startingTimeMinutes,
-                                startingTimeStatus = it.startingTimeStatus,
-                                endingDate = it.endingDate,
-                                endingTimeHour = it.endingTimeHour,
-                                endingTimeMinutes = it.endingTimeMinutes,
-                                endingTimeStatus = it.endingTimeStatus,
-                                timestamp = Timestamp.now(),
-                                urlList = it.urlList,
-                            )
+                            eventById?.let {
+                                val event = EventsModel(
+                                    title = it.title,
+                                    description = it.description,
+                                    eventId = it.eventId,
+                                    address = it.address,
+                                    startingDate = it.startingDate,
+                                    startingTimeHour = it.startingTimeHour,
+                                    startingTimeMinutes = it.startingTimeMinutes,
+                                    startingTimeStatus = it.startingTimeStatus,
+                                    endingDate = it.endingDate,
+                                    endingTimeHour = it.endingTimeHour,
+                                    endingTimeMinutes = it.endingTimeMinutes,
+                                    endingTimeStatus = it.endingTimeStatus,
+                                    timestamp = Timestamp.now(),
+                                    urlList = it.urlList,
+                                )
 
-                            if (isEventSaved) {
-                                eventsDetailViewModel.onEventSave(event = event)
-                            } else {
-                                eventsDetailViewModel.onEventRemoveFromSave(event = event)
+                                if (isEventSaved) {
+                                    eventsDetailViewModel.onEventSave(event = event)
+                                } else {
+                                    eventsDetailViewModel.onEventRemoveFromSave(event = event)
+                                }
                             }
-                        }
 
-                    }) {
-                        AnimatedVisibility(isEventSaved) {
-                            Icon(
-                                imageVector = Icons.Default.Bookmark,
-                                contentDescription = "Icon of Saved Event"
-                            )
-                        }
-                        AnimatedVisibility(!isEventSaved) {
-                            Icon(
-                                imageVector = Icons.Default.BookmarkBorder,
-                                contentDescription = "Icon of UnSaved Event"
-                            )
+                        }) {
+                            AnimatedVisibility(isEventSaved) {
+                                Icon(
+                                    imageVector = Icons.Default.Bookmark,
+                                    contentDescription = "Icon of Saved Event"
+                                )
+                            }
+                            AnimatedVisibility(!isEventSaved) {
+                                Icon(
+                                    imageVector = Icons.Default.BookmarkBorder,
+                                    contentDescription = "Icon of UnSaved Event"
+                                )
+                            }
                         }
                     }
                 }
@@ -356,6 +367,18 @@ fun EventsDetailScreen(
                             clipInOverlayDuringTransition = OverlayClip(RoundedCornerShape(10.dp))
                         ),
                 ) {
+
+                    if (isEventFailedToLoad) {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = "Icon for When Unable to Load the Image",
+                            tint = Red,
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(top = 20.dp)
+                        )
+                    }
+
                     HorizontalPager(
                         state = pagerState,
                         modifier = Modifier
@@ -384,6 +407,19 @@ fun EventsDetailScreen(
                                                 .fillMaxSize()
                                         ) {
                                             CircularProgressIndicator(color = Green)
+                                        }
+                                    },
+                                    error = {
+                                        Box(
+                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Error,
+                                                contentDescription = "Icon for When Unable to Load the Image",
+                                                tint = Red
+                                            )
                                         }
                                     },
                                     modifier = Modifier
@@ -477,175 +513,185 @@ fun EventsDetailScreen(
 
                         }
                     }
+
                 }
             }
 
 
-            // Title, desc Container
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 100.dp)
-            ) {
-
-                val customLineBreak = LineBreak(
-                    strategy = LineBreak.Strategy.HighQuality,
-                    strictness = LineBreak.Strictness.Strict,
-                    wordBreak = LineBreak.WordBreak.Phrase
-                )
-
-                with(sharedTransitionScope) {
-                    // Title
-                    Text(
-                        text = eventById?.title ?: "",
-                        style = TextStyle(
-                            fontSize = FontSize.LARGE.sp,
-                            fontWeight = FontWeight.Bold,
-                            lineBreak = customLineBreak,
-                            hyphens = Hyphens.Auto,
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 20.dp)
-                            .sharedElement(
-                                state = rememberSharedContentState(key = "title/$eventId"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            )
-                    )
-                }
-
-                SelectionContainer {
-                    Text(
-                        text = eventById?.description ?: "",
-                        style = TextStyle(
-                            fontSize = FontSize.MEDIUM.sp,
-                            lineBreak = customLineBreak,
-                            hyphens = Hyphens.Auto,
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(all = 20.dp)
-                    )
-                }
-
+            if (!isEventFailedToLoad) {
+                // Title, desc Container
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(all = 20.dp),
+                        .fillMaxSize()
+                        .padding(bottom = 100.dp)
                 ) {
-                    Text(
-                        text = "Address",
-                        style = TextStyle(
-                            fontSize = FontSize.MEDIUM.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+
+                    val customLineBreak = LineBreak(
+                        strategy = LineBreak.Strategy.HighQuality,
+                        strictness = LineBreak.Strictness.Strict,
+                        wordBreak = LineBreak.WordBreak.Phrase
                     )
 
-                    Text(
-                        text = if (!eventById?.address.isNullOrEmpty()) eventById?.address
-                            ?: "" else "No Address Available",
-                        style = TextStyle(
-                            fontSize = FontSize.SMALL.sp,
-                        )
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .padding(all = 20.dp)
-                ) {
-                    eventById?.isAvailable?.let { isAvailable ->
+                    with(sharedTransitionScope) {
+                        // Title
                         Text(
-                            text = "Status",
+                            text = eventById?.title ?: "",
+                            style = TextStyle(
+                                fontSize = FontSize.LARGE.sp,
+                                fontWeight = FontWeight.Bold,
+                                lineBreak = customLineBreak,
+                                hyphens = Hyphens.Auto,
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 20.dp)
+                                .sharedElement(
+                                    state = rememberSharedContentState(key = "title/$eventId"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                )
+                        )
+                    }
+
+                    SelectionContainer {
+                        Text(
+                            text = eventById?.description ?: "",
+                            style = TextStyle(
+                                fontSize = FontSize.MEDIUM.sp,
+                                lineBreak = customLineBreak,
+                                hyphens = Hyphens.Auto,
+                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(all = 20.dp)
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(all = 20.dp),
+                    ) {
+                        Text(
+                            text = "Address",
                             style = TextStyle(
                                 fontSize = FontSize.MEDIUM.sp,
                                 fontWeight = FontWeight.Bold
                             )
                         )
+
                         Text(
-                            text = buildAnnotatedString {
-                                if (isAvailable) {
-                                    append("Available")
-                                    if (isEventRegistered == true) {
-                                        append(" and You Already Registered this Event")
+                            text = if (!eventById?.address.isNullOrEmpty()) eventById?.address
+                                ?: "" else "No Address Available",
+                            style = TextStyle(
+                                fontSize = FontSize.SMALL.sp,
+                            )
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .padding(all = 20.dp)
+                    ) {
+                        eventById?.isAvailable?.let { isAvailable ->
+                            Text(
+                                text = "Status",
+                                style = TextStyle(
+                                    fontSize = FontSize.MEDIUM.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                            Text(
+                                text = buildAnnotatedString {
+                                    if (isAvailable) {
+                                        append("Available")
+                                        if (isEventRegistered == true) {
+                                            append(" and You Already Registered this Event")
+                                        }
+                                    } else {
+                                        append("UnAvailable")
                                     }
-                                } else {
-                                    append("UnAvailable")
+                                },
+                                fontSize = FontSize.SMALL.sp
+                            )
+                        }
+                    }
+
+                    Column {
+
+                        eventById?.startingDate?.let {
+                            // Starting Date
+                            DateContainer(
+                                title = "Starting Date",
+                                isExpanded = isStartingDateExpanded,
+                                dateMillis = eventById?.startingDate ?: 0L,
+                                onClick = {
+                                    isStartingDateExpanded = !isStartingDateExpanded
                                 }
-                            },
-                            fontSize = FontSize.SMALL.sp
-                        )
-                    }
-                }
+                            )
+                        }
 
-                Column {
+                        if (eventById?.startingTimeHour != null && eventById?.startingTimeMinutes != null) {
+                            // Starting Time
+                            TimeContainer(
+                                title = "Starting Time",
+                                time = "${
+                                    formatTimeToString(
+                                        (eventById?.startingTimeHour ?: 10),
+                                        (eventById?.startingTimeMinutes ?: 0)
+                                    ).dropLast(2)
+                                } ${eventById?.startingTimeStatus}",
+                                timeHour = eventById?.startingTimeHour ?: 10,
+                                timeMinutes = eventById?.startingTimeMinutes ?: 0,
+                                timeStatus = eventById?.startingTimeStatus ?: "",
+                                isExpanded = isStartingTimeExpanded,
+                                onClick = {
+                                    isStartingTimeExpanded = !isStartingTimeExpanded
+                                }
+                            )
+                        }
 
-                    eventById?.startingDate?.let {
-                        // Starting Date
-                        DateContainer(
-                            title = "Starting Date",
-                            isExpanded = isStartingDateExpanded,
-                            dateMillis = eventById?.startingDate ?: 0L,
-                            onClick = {
-                                isStartingDateExpanded = !isStartingDateExpanded
-                            }
-                        )
-                    }
+                        eventById?.endingDate?.let {
+                            // Ending Date
+                            DateContainer(
+                                title = "Ending Date",
+                                dateMillis = eventById?.endingDate ?: 0L,
+                                isExpanded = isEndingDateExpanded,
+                                onClick = {
+                                    isEndingDateExpanded = !isEndingDateExpanded
+                                }
+                            )
+                        }
 
-                    if (eventById?.startingTimeHour != null && eventById?.startingTimeMinutes != null) {
-                        // Starting Time
-                        TimeContainer(
-                            title = "Starting Time",
-                            time = "${
-                                formatTimeToString(
-                                    (eventById?.startingTimeHour ?: 10),
-                                    (eventById?.startingTimeMinutes ?: 0)
-                                ).dropLast(2)
-                            } ${eventById?.startingTimeStatus}",
-                            timeHour = eventById?.startingTimeHour ?: 10,
-                            timeMinutes = eventById?.startingTimeMinutes ?: 0,
-                            timeStatus = eventById?.startingTimeStatus ?: "",
-                            isExpanded = isStartingTimeExpanded,
-                            onClick = {
-                                isStartingTimeExpanded = !isStartingTimeExpanded
-                            }
-                        )
-                    }
+                        if (eventById?.endingTimeHour != null && eventById?.endingTimeMinutes != null) {
+                            // Ending Time
+                            TimeContainer(
+                                title = "Ending Time",
+                                time = "${
+                                    formatTimeToString(
+                                        (eventById?.endingTimeHour ?: 10),
+                                        (eventById?.endingTimeMinutes ?: 0)
+                                    ).dropLast(2)
+                                } ${eventById?.endingTimeStatus}",
+                                timeHour = eventById?.endingTimeHour ?: 10,
+                                timeMinutes = eventById?.endingTimeMinutes ?: 0,
+                                timeStatus = eventById?.endingTimeStatus ?: "",
+                                isExpanded = isEndingTimeExpanded,
+                                onClick = {
+                                    isEndingTimeExpanded = !isEndingTimeExpanded
+                                }
+                            )
+                        }
 
-                    eventById?.endingDate?.let {
-                        // Ending Date
-                        DateContainer(
-                            title = "Ending Date",
-                            dateMillis = eventById?.endingDate ?: 0L,
-                            isExpanded = isEndingDateExpanded,
-                            onClick = {
-                                isEndingDateExpanded = !isEndingDateExpanded
-                            }
-                        )
-                    }
-
-                    if (eventById?.endingTimeHour != null && eventById?.endingTimeMinutes != null) {
-                        // Ending Time
-                        TimeContainer(
-                            title = "Ending Time",
-                            time = "${
-                                formatTimeToString(
-                                    (eventById?.endingTimeHour ?: 10),
-                                    (eventById?.endingTimeMinutes ?: 0)
-                                ).dropLast(2)
-                            } ${eventById?.endingTimeStatus}",
-                            timeHour = eventById?.endingTimeHour ?: 10,
-                            timeMinutes = eventById?.endingTimeMinutes ?: 0,
-                            timeStatus = eventById?.endingTimeStatus ?: "",
-                            isExpanded = isEndingTimeExpanded,
-                            onClick = {
-                                isEndingTimeExpanded = !isEndingTimeExpanded
-                            }
-                        )
                     }
 
                 }
 
+            } else {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .padding(top = 20.dp)
+                )
             }
 
         }

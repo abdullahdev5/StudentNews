@@ -94,11 +94,17 @@ class EventsRepositoryImpl(
             eventsColRef
                 ?.document(eventId)
                 ?.addSnapshotListener { value, error ->
+
+                    val eventIdFromValue = value?.getString(EVENT_ID)
+
                     if (error != null) {
                         trySend(EventsState.Failed(error))
                     }
+                    if (eventIdFromValue == null) {
+                        trySend(EventsState.Failed(Error("No Event Found")))
+                    }
 
-                    if (value != null) {
+                    if (value != null && eventIdFromValue != null) {
                         val event = value.toObject(EventsModel::class.java)
                         trySend(EventsState.Success(event))
                     }

@@ -33,9 +33,9 @@ class EventsDetailViewModel(
     var isEventRegistered by mutableStateOf<Boolean?>(null)
         private set
 
-    var eventsByIdStatus by mutableStateOf("")
+    var eventByIdStatus by mutableStateOf("")
         private set
-    var eventsByIdErrorMsg by mutableStateOf("")
+    var eventByIdErrorMsg by mutableStateOf("")
         private set
 
     var eventRegisteringStatus by mutableStateOf("")
@@ -44,19 +44,18 @@ class EventsDetailViewModel(
 
     fun getEventById(eventId: String) {
         viewModelScope.launch() {
-            eventsByIdStatus = Status.Loading
             eventsRepository
                 .getEventById(eventId)
                 .collectLatest { result ->
                     when (result) {
                         is EventsState.Success -> {
                             _eventById.value = result.data
-                            eventsByIdStatus = Status.SUCCESS
+                            eventByIdStatus = Status.SUCCESS
                         }
 
                         is EventsState.Failed -> {
-                            eventsByIdStatus = Status.FAILED
-                            eventsByIdErrorMsg = result.error.localizedMessage ?: ""
+                            eventByIdStatus = Status.FAILED
+                            eventByIdErrorMsg = result.error.localizedMessage ?: ""
                         }
 
                         else -> {}
