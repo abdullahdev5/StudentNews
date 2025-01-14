@@ -52,13 +52,22 @@ class NewsDetailRepositoryImpl(
             newsColRef
                 ?.document(newsId)
                 ?.addSnapshotListener { value, error ->
+
+                    val newsIdFromValue = value?.getString(NEWS_ID)
+
                     if (error != null) {
                         trySend(NewsState.Failed(error))
+                        println("Error From Error")
+                    }
+                    if (newsIdFromValue == null) {
+                        trySend(NewsState.Failed(Error("No News found!")))
+                        println("Error From NewsIdFromValue")
                     }
 
-                    if (value != null) {
+                    if (value != null && newsIdFromValue != null) {
                         val newsById = value.toObject(NewsModel::class.java)
                         trySend(NewsState.Success(newsById))
+                        println("Error Not Success")
                     }
                 }
 

@@ -30,6 +30,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.BookmarkBorder
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.PlayArrow
@@ -69,10 +70,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -91,6 +95,7 @@ import com.android.studentnews.core.domain.common.formatDateToMonthName
 import com.android.studentnews.core.domain.common.formatDateToYear
 import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.core.domain.constants.FontSize
+import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.core.ui.composables.ButtonColors
 import com.android.studentnews.main.account.ui.viewmodel.AccountViewModel
 import com.android.studentnews.main.news.domain.destination.NewsDestinations
@@ -122,6 +127,7 @@ fun NewsDetailScreen(
         newsDetailViewModel.getIsNewsSaved(newsId)
     }
 
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val configuration = LocalConfiguration.current
@@ -131,7 +137,7 @@ fun NewsDetailScreen(
     val newsById by newsDetailViewModel.newsById.collectAsStateWithLifecycle()
     val currentUser by accountViewModel.currentUser.collectAsStateWithLifecycle()
 
-    var isNewsSaved = remember(newsDetailViewModel.isNewsSaved) {
+    var isNewsSaved = remember(newsById) {
         derivedStateOf {
             newsDetailViewModel.isNewsSaved ?: false
         }
@@ -142,6 +148,12 @@ fun NewsDetailScreen(
             newsById?.likes?.contains(currentUser?.uid ?: "") ?: false
         )
     }
+
+    val isNewsFailedToLoad = remember(newsDetailViewModel.newsByIdStatus.value) {
+        derivedStateOf {
+            newsDetailViewModel.newsByIdStatus.value == Status.FAILED
+        }
+    }.value
 
     val pagerState = rememberPagerState(
         pageCount = {
@@ -384,6 +396,19 @@ fun NewsDetailScreen(
                                             CircularProgressIndicator(color = Green)
                                         }
                                     },
+                                    error = {
+                                        Box(
+                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Error,
+                                                contentDescription = "Icon for When Unable to Load the Image",
+                                                tint = Red
+                                            )
+                                        }
+                                    },
                                     modifier = Modifier
                                         .fillMaxSize()
                                 )
@@ -476,232 +501,263 @@ fun NewsDetailScreen(
                                     .align(Alignment.TopEnd)
                                     .padding(top = 10.dp, end = 10.dp)
                             )
+
+                            if (isNewsFailedToLoad) {
+                                Icon(
+                                    imageVector = Icons.Default.Error,
+                                    contentDescription = "Icon for When Unable to Load the Image",
+                                    tint = Red,
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                )
+                            }
+
                         }
 
                     }
 
                 }
 
-                Box {
-                    Row(
+                if (isNewsFailedToLoad) {
+                    CircularProgressIndicator(
                         modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(bottom = 20.dp, end = 10.dp),
-                    ) {
-                        IconsForLikeAndMore(
-                            // on Share
-                            onShare = {
-                                val title = newsById?.title ?: ""
-                                val imageUrl = getUrlOfImageNotVideo(
-                                    newsById?.urlList ?: emptyList()
-                                )
+                            .align(Alignment.CenterHorizontally)
+                            .padding(top = 20.dp)
+                    )
+                } else {
 
-                                newsDetailViewModel.onNewsShare(
-                                    imageUrl = imageUrl,
-                                    title = title,
-                                    context = context,
-                                    newsId = newsId
-                                )
-                            },
-                            // on Save
-                            onSave = {
-                                isNewsSaved = !isNewsSaved
-
-                                newsById?.let {
-                                    val news = NewsModel(
-                                        newsId = it.newsId,
-                                        title = it.title,
-                                        description = it.description,
-                                        category = it.category,
-                                        timestamp = Timestamp.now(),
-                                        link = it.link,
-                                        linkTitle = it.linkTitle,
-                                        urlList = it.urlList,
-                                        shareCount = it.shareCount ?: 0,
-                                        likes = it.likes
-                                    )
-
-                                    if (isNewsSaved) {
-                                        newsDetailViewModel.onNewsSave(news)
-                                    } else {
-                                        newsDetailViewModel.onNewsRemoveFromSave(news)
-                                    }
-                                }
-                            },
-                            // on Like
-                            onLike = {
-                                isLiked = !isLiked
-
-                                if (isLiked) {
-                                    newsDetailViewModel.onNewsLike(newsId)
-                                } else {
-                                    newsDetailViewModel.onNewsUnLike(newsId)
-                                }
-                            },
-                            // Save Icon
-                            saveIconBtnContent = {
-                                this@Column.AnimatedVisibility(isNewsSaved) {
-                                    Icon(
-                                        imageVector = Icons.Default.Bookmark,
-                                        contentDescription = "Icon of Liked News",
-                                    )
-                                }
-
-                                this@Column.AnimatedVisibility(!isNewsSaved) {
-                                    Icon(
-                                        imageVector = Icons.Default.BookmarkBorder,
-                                        contentDescription = "Icon of unliked News",
-                                    )
-                                }
-                            },
-                            // Like Icon
-                            likedIconBtnContent = {
-                                this@Column.AnimatedVisibility(isLiked) {
-                                    Icon(
-                                        imageVector = Icons.Default.Favorite,
-                                        contentDescription = "Icon of Liked News",
-                                    )
-                                }
-
-                                this@Column.AnimatedVisibility(!isLiked) {
-                                    Icon(
-                                        imageVector = Icons.Default.FavoriteBorder,
-                                        contentDescription = "Icon of unliked News",
-                                    )
-                                }
-                            },
-                            // Share Count
-                            shareCountContent = {
-                                if ((newsById?.shareCount ?: 0) > 0) {
-                                    Text(text = (newsById?.shareCount ?: 0).toString())
-                                }
-                            },
-                            // Like Count
-                            likeCountContent = {
-                                // Like Count
-                                if (
-                                    isLiked && (newsById?.likes?.size ?: 0) > 0
-                                ) {
-                                    Text(text = (newsById?.likes?.size ?: 0).toString())
-                                }
-                            },
-                            // Like Button Colors
-                            likeBtnColors = IconButtonDefaults.iconButtonColors(
-                                contentColor = if (isLiked) Red else {
-                                    if (isSystemInDarkTheme()) White else Black
-                                }
-                            ),
-                        )
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(bottom = 100.dp)
-                            .background(
-                                color = ItemBackgroundColor,
-                                shape = RoundedCornerShape(
-                                    topStart = 20.dp,
-                                    topEnd = 20.dp,
-                                    bottomStart = 0.dp,
-                                    bottomEnd = 0.dp,
-                                )
-                            ),
-                    ) {
-
-                        // Category Container
-                        Box(
+                    Box {
+                        Row(
                             modifier = Modifier
-                                .padding(
-                                    start = 20.dp,
-                                    end = 20.dp,
-                                    top = 20.dp,
-                                    bottom = 5.dp
-                                )
-                                .background(
-                                    color = Black.copy(0.1f),
-                                    shape = RoundedCornerShape(5.dp)
-                                ),
-                            contentAlignment = Alignment.Center
+                                .align(Alignment.TopEnd)
+                                .padding(bottom = 20.dp, end = 10.dp),
                         ) {
-                            Text(
-                                text = newsById?.category ?: "",
-                                style = TextStyle(
-                                    fontSize = FontSize.MEDIUM.sp,
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                                modifier = Modifier
-                                    .padding(all = 5.dp)
-                            )
+                            if (!isNewsFailedToLoad) {
+                                IconsForLikeAndMore(
+                                    // on Share
+                                    onShare = {
+
+                                        try {
+
+                                            val title = newsById?.title ?: ""
+                                            val imageUrl = getUrlOfImageNotVideo(
+                                                newsById?.urlList ?: emptyList()
+                                            )
+
+                                            newsDetailViewModel.onNewsShare(
+                                                imageUrl = imageUrl,
+                                                title = title,
+                                                context = context,
+                                                newsId = newsId
+                                            )
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                        }
+                                    },
+                                    // on Save
+                                    onSave = {
+                                        isNewsSaved = !isNewsSaved
+
+                                        newsById?.let {
+                                            val news = NewsModel(
+                                                newsId = it.newsId,
+                                                title = it.title,
+                                                description = it.description,
+                                                category = it.category,
+                                                timestamp = Timestamp.now(),
+                                                link = it.link,
+                                                linkTitle = it.linkTitle,
+                                                urlList = it.urlList,
+                                                shareCount = it.shareCount ?: 0,
+                                                likes = it.likes
+                                            )
+
+                                            if (isNewsSaved) {
+                                                newsDetailViewModel.onNewsSave(news, true)
+                                            } else {
+                                                newsDetailViewModel.onNewsRemoveFromSave(
+                                                    news,
+                                                    true
+                                                )
+                                            }
+                                        }
+                                    },
+                                    // on Like
+                                    onLike = {
+                                        isLiked = !isLiked
+
+                                        if (isLiked) {
+                                            newsDetailViewModel.onNewsLike(newsId)
+                                        } else {
+                                            newsDetailViewModel.onNewsUnLike(newsId)
+                                        }
+                                    },
+                                    // Save Icon
+                                    saveIconBtnContent = {
+                                        this@Column.AnimatedVisibility(isNewsSaved) {
+                                            Icon(
+                                                imageVector = Icons.Default.Bookmark,
+                                                contentDescription = "Icon of Liked News",
+                                            )
+                                        }
+
+                                        this@Column.AnimatedVisibility(!isNewsSaved) {
+                                            Icon(
+                                                imageVector = Icons.Default.BookmarkBorder,
+                                                contentDescription = "Icon of unliked News",
+                                            )
+                                        }
+                                    },
+                                    // Like Icon
+                                    likedIconBtnContent = {
+                                        this@Column.AnimatedVisibility(isLiked) {
+                                            Icon(
+                                                imageVector = Icons.Default.Favorite,
+                                                contentDescription = "Icon of Liked News",
+                                            )
+                                        }
+
+                                        this@Column.AnimatedVisibility(!isLiked) {
+                                            Icon(
+                                                imageVector = Icons.Default.FavoriteBorder,
+                                                contentDescription = "Icon of unliked News",
+                                            )
+                                        }
+                                    },
+                                    // Share Count
+                                    shareCountContent = {
+                                        if ((newsById?.shareCount ?: 0) > 0) {
+                                            Text(text = (newsById?.shareCount ?: 0).toString())
+                                        }
+                                    },
+                                    // Like Count
+                                    likeCountContent = {
+                                        // Like Count
+                                        if (
+                                            isLiked && (newsById?.likes?.size ?: 0) > 0
+                                        ) {
+                                            Text(text = (newsById?.likes?.size ?: 0).toString())
+                                        }
+                                    },
+                                    // Like Button Colors
+                                    likeBtnColors = IconButtonDefaults.iconButtonColors(
+                                        contentColor = if (isLiked) Red else {
+                                            if (isSystemInDarkTheme()) White else Black
+                                        }
+                                    ),
+                                )
+                            }
                         }
 
-                        val customLineBreak = LineBreak(
-                            strategy = LineBreak.Strategy.HighQuality,
-                            strictness = LineBreak.Strictness.Strict,
-                            wordBreak = LineBreak.WordBreak.Phrase
-                        )
-
-                        Text(
-                            text = newsById?.title ?: "",
-                            style = TextStyle(
-                                fontSize = FontSize.LARGE.sp,
-                                fontWeight = FontWeight.Bold,
-                                lineBreak = customLineBreak,
-                                hyphens = Hyphens.Auto,
-                            ),
+                        Column(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(
-                                    start = 20.dp,
-                                    end = 20.dp,
-                                    top = 20.dp,
-                                    bottom = 10.dp
-                                )
-                        )
+                                .fillMaxSize()
+                                .padding(bottom = 100.dp)
+                                .background(
+                                    color = ItemBackgroundColor,
+                                    shape = RoundedCornerShape(
+                                        topStart = 20.dp,
+                                        topEnd = 20.dp,
+                                        bottomStart = 0.dp,
+                                        bottomEnd = 0.dp,
+                                    )
+                                ),
+                        ) {
 
-                        SelectionContainer {
+                            // Category Container
+                            Box(
+                                modifier = Modifier
+                                    .padding(
+                                        start = 20.dp,
+                                        end = 20.dp,
+                                        top = 20.dp,
+                                        bottom = 5.dp
+                                    )
+                                    .background(
+                                        color = Black.copy(0.1f),
+                                        shape = RoundedCornerShape(5.dp)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = newsById?.category ?: "",
+                                    style = TextStyle(
+                                        fontSize = FontSize.MEDIUM.sp,
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                    modifier = Modifier
+                                        .padding(all = 5.dp)
+                                )
+                            }
+
+                            val customLineBreak = LineBreak(
+                                strategy = LineBreak.Strategy.HighQuality,
+                                strictness = LineBreak.Strictness.Strict,
+                                wordBreak = LineBreak.WordBreak.Phrase
+                            )
+
                             Text(
-                                text = newsById?.description ?: "",
+                                text = newsById?.title ?: "",
                                 style = TextStyle(
-                                    fontSize = FontSize.MEDIUM.sp,
+                                    fontSize = FontSize.LARGE.sp,
+                                    fontWeight = FontWeight.Bold,
                                     lineBreak = customLineBreak,
                                     hyphens = Hyphens.Auto,
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(all = 20.dp)
+                                    .padding(
+                                        start = 20.dp,
+                                        end = 20.dp,
+                                        top = 20.dp,
+                                        bottom = 10.dp
+                                    )
                             )
-                        }
 
-                        if (!newsById?.link.isNullOrEmpty()) {
+                            SelectionContainer {
+                                Text(
+                                    text = newsById?.description ?: "",
+                                    style = TextStyle(
+                                        fontSize = FontSize.MEDIUM.sp,
+                                        lineBreak = customLineBreak,
+                                        hyphens = Hyphens.Auto,
+                                    ),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(all = 20.dp)
+                                )
+                            }
+
                             if (!newsById?.link.isNullOrEmpty()) {
+                                if (!newsById?.link.isNullOrEmpty()) {
 
-                                Spacer(modifier = Modifier.height(10.dp))
+                                    Spacer(modifier = Modifier.height(10.dp))
 
-                                if (newsById?.link.toString().toUri().isAbsolute) {
-                                    FilledTonalButton(
-                                        onClick = {
-                                            navHostController.navigate(
-                                                NewsDestinations.NEWS_LINK_SCREEN(
-                                                    link = newsById?.link ?: ""
+                                    if (newsById?.link.toString().toUri().isAbsolute) {
+                                        FilledTonalButton(
+                                            onClick = {
+                                                navHostController.navigate(
+                                                    NewsDestinations.NEWS_LINK_SCREEN(
+                                                        link = newsById?.link ?: ""
+                                                    )
                                                 )
-                                            )
-                                        },
-                                        colors = ButtonColors(
-                                            containerColor = Green.copy(0.5f),
-                                            contentColor = White
-                                        ),
-                                        modifier = Modifier
-                                            .padding(all = 20.dp)
-                                    ) {
-                                        Text(text = newsById?.linkTitle ?: "")
+                                            },
+                                            colors = ButtonColors(
+                                                containerColor = Green.copy(0.5f),
+                                                contentColor = White
+                                            ),
+                                            modifier = Modifier
+                                                .padding(all = 20.dp)
+                                        ) {
+                                            Text(text = newsById?.linkTitle ?: "")
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        newsById?.timestamp?.let { timestamp ->
-                            Column(
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
                                 modifier = Modifier
                                     .padding(
                                         top = 10.dp,
@@ -710,23 +766,42 @@ fun NewsDetailScreen(
                                         bottom = 5.dp
                                     )
                             ) {
-                                val day = formatDateToDay(timestamp.toDate().time)
-                                val monthName = formatDateToMonthName(timestamp.toDate().time)
-                                val year = formatDateToYear(timestamp.toDate().time)
-
-                                Text(
-                                    text = "News added on $day $monthName $year",
-                                    style = TextStyle(
-                                        fontSize = FontSize.SMALL.sp,
-                                        color = Gray
+                                if (isNewsFailedToLoad) {
+                                    Icon(
+                                        imageVector = Icons.Default.Error,
+                                        contentDescription = "Icon for when News Failed to Load",
+                                        tint = Red
                                     )
+                                }
+                                Text(
+                                    text = buildAnnotatedString {
+                                        newsById?.timestamp?.let { timestamp ->
+                                            val day = formatDateToDay(timestamp.toDate().time)
+                                            val monthName =
+                                                formatDateToMonthName(timestamp.toDate().time)
+                                            val year = formatDateToYear(timestamp.toDate().time)
+
+                                            withStyle(
+                                                style = SpanStyle(
+                                                    fontSize = FontSize.SMALL.sp,
+                                                    color = Gray
+                                                )
+                                            ) {
+                                                append("News added on $day $monthName $year")
+                                            }
+                                        }
+
+                                        if (isNewsFailedToLoad) {
+                                            append(newsDetailViewModel.newsByIdErrorMsg)
+                                        }
+                                    },
                                 )
 
                             }
+
                         }
 
                     }
-
                 }
 
             }

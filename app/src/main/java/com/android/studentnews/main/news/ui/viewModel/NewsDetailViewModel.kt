@@ -3,17 +3,21 @@ package com.android.studentnews.main.news.ui.viewModel
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.drawable.Icon
+import android.os.Build
+import android.service.chooser.ChooserAction
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.android.studentnews.R
 import com.android.studentnews.core.data.snackbar_controller.SnackBarController
 import com.android.studentnews.core.data.snackbar_controller.SnackBarEvents
 import com.android.studentnews.core.domain.constants.Status
 import com.android.studentnews.main.MyBroadcastReceiver
+import com.android.studentnews.main.news.NEWS_DETAIL_DEEPLINK_URI
 import com.android.studentnews.main.news.NEWS_ID
 import com.android.studentnews.main.news.domain.repository.NewsDetailRepository
 import com.android.studentnews.news.domain.model.NewsModel
@@ -38,6 +42,8 @@ class NewsDetailViewModel(
 
     val newsByIdStatus = mutableStateOf("")
 
+    var newsByIdErrorMsg by mutableStateOf("")
+
 
     fun getNewsById(newsId: String) {
         viewModelScope.launch {
@@ -45,23 +51,20 @@ class NewsDetailViewModel(
                 .getNewsById(newsId)
                 .collectLatest { result ->
                     when (result) {
-                        is NewsState.Failed -> {
-                            newsByIdStatus.value = Status.FAILED
-                            SnackBarController.sendEvent(
-                                SnackBarEvents(
-                                    message = result.error.message.toString(),
-                                    duration = SnackbarDuration.Long
-                                )
-                            )
-                        }
-
                         NewsState.Loading -> {
                             newsByIdStatus.value = Status.Loading
                         }
 
                         is NewsState.Success -> {
+                            println("Success")
                             _newsById.value = result.data
                             newsByIdStatus.value = Status.SUCCESS
+                        }
+
+                        is NewsState.Failed -> {
+                            println("Error From Failed")
+                            newsByIdStatus.value = Status.FAILED
+                            newsByIdErrorMsg = result.error.localizedMessage ?: ""
                         }
 
                         else -> {}
@@ -107,14 +110,12 @@ class NewsDetailViewModel(
 
                         is NewsState.Success -> {
                             if (wantToShowSuccessMessage == true) {
-                                viewModelScope.launch {
-                                    SnackBarController
-                                        .sendEvent(
-                                            SnackBarEvents(
-                                                message = result.data
-                                            )
+                                SnackBarController
+                                    .sendEvent(
+                                        SnackBarEvents(
+                                            message = result.data
                                         )
-                                }
+                                    )
                             }
                         }
 
@@ -122,7 +123,7 @@ class NewsDetailViewModel(
                             SnackBarController
                                 .sendEvent(
                                     SnackBarEvents(
-                                        message = result.error.localizedMessage
+                                        message = result.error.message
                                             ?: "",
                                         duration = SnackbarDuration.Long,
                                     )
@@ -147,14 +148,12 @@ class NewsDetailViewModel(
 
                         is NewsState.Success -> {
                             if (wantToShowSuccessMessage) {
-                                viewModelScope.launch {
-                                    SnackBarController
-                                        .sendEvent(
-                                            SnackBarEvents(
-                                                message = result.data
-                                            )
+                                SnackBarController
+                                    .sendEvent(
+                                        SnackBarEvents(
+                                            message = result.data
                                         )
-                                }
+                                    )
                             }
                         }
 
@@ -185,40 +184,56 @@ class NewsDetailViewModel(
             context,
             onShare = { fileUri ->
                 try {
-                    Intent(
-                        Intent.ACTION_SEND,
+                    val shareClickedIntent = Intent(
+                        context,
+                        MyBroadcastReceiver::class.java,
                     ).apply {
-                        putExtra(Intent.EXTRA_TEXT, title)
-                        putExtra(Intent.EXTRA_STREAM, fileUri)
-                        setDataAndType(fileUri, "image/*")
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    }.let { intent ->
+                        action = SHARE_NEWS_ACTION
+                        putExtra(NEWS_ID, newsId)
+                        type = "text/plain"
+                    }
 
-                        val shareClickedIntent = Intent(
+                    val sharedPendingIntent = PendingIntent
+                        .getBroadcast(
                             context,
-                            MyBroadcastReceiver::class.java,
-                        ).apply {
-                            action = SHARE_NEWS_ACTION
-                            putExtra(NEWS_ID, newsId)
-                            type = "text/plain"
-                        }
-
-                        val sharedPendingIntent = PendingIntent
-                            .getBroadcast(
-                                context,
-                                SHARE_NEWS_REQUEST_CODE,
-                                shareClickedIntent,
-                                PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-                            )
-
-                        val sharedIntent = Intent.createChooser(
-                            intent,
-                            null,
-                            sharedPendingIntent.intentSender
+                            SHARE_NEWS_REQUEST_CODE,
+                            shareClickedIntent,
+                            PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                         )
 
-                        context.startActivity(sharedIntent)
+                    val sharedIntent = Intent.createChooser(
+                        Intent().apply {
+                            action = Intent.ACTION_SEND
+
+                            putExtra(Intent.EXTRA_STREAM, fileUri)
+
+                            putExtra(Intent.EXTRA_TEXT, "$title\n$NEWS_DETAIL_DEEPLINK_URI/$newsId")
+
+                            data = fileUri
+                            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+                        },
+                        null,
+                        sharedPendingIntent.intentSender
+                    )
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+
+                        val customActions = ChooserAction.Builder(
+                            Icon.createWithResource(context, R.drawable.ic_launcher_foreground),
+                            "Custom",
+                            PendingIntent.getBroadcast(
+                                context,
+                                1192,
+                                Intent(Intent.ACTION_VIEW),
+                                PendingIntent.FLAG_IMMUTABLE
+                            )
+                        ).build()
+
+                        sharedIntent.putExtra(Intent.EXTRA_CHOOSER_CUSTOM_ACTIONS, customActions)
                     }
+
+                    context.startActivity(sharedIntent)
+
                 } catch (e: Exception) {
                     e.printStackTrace()
                     viewModelScope.launch {
