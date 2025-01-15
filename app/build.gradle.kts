@@ -108,4 +108,6 @@ dependencies {
 
     // Google Accompanist Navigation Material
     implementation(libs.google.accompanist.navigation.material)
+    // Google Code Gson
+    implementation(libs.google.code.gson)
 }
