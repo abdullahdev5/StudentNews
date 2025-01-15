@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.BitmapDrawable
-import androidx.compose.ui.util.fastJoinToString
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -27,6 +26,8 @@ import com.android.studentnews.main.events.TITLE
 import com.android.studentnews.main.events.URL_LIST
 import com.android.studentnews.news.domain.model.NewsModel
 import com.android.studentnews.news.domain.repository.NewsRepository
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.apply
 import kotlin.jvm.java
 import kotlin.random.Random
@@ -96,9 +97,10 @@ class NewsWorker(
             flag
         )
 
-        val serializedUrlList = news?.urlList?.fastJoinToString(",") {
-            "${it.url};${it.contentType};${it.sizeBytes};${it.lastPathSegment}"
-        }
+//        val serializedUrlList = news?.urlList?.fastJoinToString(",") {
+//            "${it.url};${it.contentType};${it.sizeBytes};${it.lastPathSegment}"
+//        }
+
 
         val title = news?.title ?: ""
         val description = news?.description
@@ -109,6 +111,9 @@ class NewsWorker(
         val imageUrl = getUrlOfImageNotVideo(news?.urlList ?: emptyList())
         val shareCount = news?.shareCount ?: 0
         val likes = news?.likes?.map { it }?.toTypedArray() ?: emptyArray()
+        val urlListString = Json.encodeToString(news?.urlList)
+
+        println("UrlList String Worker: $urlListString")
 
 
         val request = ImageRequest.Builder(context)
@@ -128,7 +133,8 @@ class NewsWorker(
                     putExtra(CATEGORY, category)
                     putExtra(LINK, link)
                     putExtra(LINK_TITLE, linkTitle)
-                    putExtra(URL_LIST, serializedUrlList)
+//                    putExtra(URL_LIST, serializedUrlList)
+                    putExtra(URL_LIST, urlListString)
                     putExtra(SHARE_COUNT, shareCount)
                     putExtra(LIKES, likes)
                     putExtra(NOTIFICATION_ID, notificationId)

@@ -36,14 +36,17 @@ import com.android.studentnews.news.domain.resource.NewsState
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.Timestamp
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlin.collections.map
 import kotlin.text.split
 import kotlin.text.toLong
 
@@ -51,6 +54,7 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
 
     override fun onReceive(context: Context?, intent: Intent?) {
 
+        // News
         if (intent?.action == SAVE_NEWS_ACTION) {
 
             val notificationManager: NotificationManagerCompat by inject()
@@ -67,17 +71,23 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
             val category = intent.getStringExtra(CATEGORY) ?: ""
             val link = intent.getStringExtra(LINK) ?: ""
             val linkTitle = intent.getStringExtra(LINK_TITLE) ?: ""
-            val serializedUrlListInString = intent.getStringExtra(URL_LIST)
+//            val serializedUrlListInString = intent.getStringExtra(URL_LIST)
+            val urlListString = intent.getStringExtra(URL_LIST) ?: ""
             val shareCount = intent.getIntExtra(SHARE_COUNT, 0)
             val likesStringArray = intent.getStringArrayExtra(LIKES) ?: emptyArray()
 
 
-            val urlList = serializedUrlListInString
-                ?.split(",")
-                ?.map {
-                    val parts = it.split(";")
-                    UrlList(parts[0], parts[1], parts[2].toLong(), parts[3])
-                } ?: emptyList()
+//            val urlList = serializedUrlListInString
+//                ?.split(",")
+//                ?.map {
+//                    val parts = it.split(";")
+//                    UrlList(parts[0], parts[1], parts[2].toLong(), parts[3])
+//                } ?: emptyList()
+
+            val urlList = Json.decodeFromString<List<UrlList>>(urlListString)
+
+            println("UrlList String: $urlListString")
+            println("UrlList List of UrlList: $urlList")
 
             val likes = likesStringArray.mapNotNull { it }
 
@@ -119,6 +129,7 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
 
         }
 
+        // Event
         if (intent?.action == SAVED_EVENT_ACTION) {
 
             val notificationManager: NotificationManagerCompat by inject()

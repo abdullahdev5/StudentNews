@@ -2,6 +2,7 @@ package com.android.studentnews.news.domain.model
 
 import androidx.compose.runtime.Immutable
 import com.google.firebase.Timestamp
+import kotlinx.serialization.Serializable
 
 @Immutable
 data class NewsModel(
@@ -14,11 +15,12 @@ data class NewsModel(
     val linkTitle: String? = "",
     val urlList: List<UrlList>,
     val shareCount: Int? = 0,
-    val likes: List<String>? = emptyList()
+    val likes: List<String>? = emptyList(),
 ) {
     constructor() : this("", "", "", "", null, "", "", emptyList(), 0, emptyList())
 }
 
+@Serializable
 data class UrlList(
     val url: String,
     val contentType: String,
