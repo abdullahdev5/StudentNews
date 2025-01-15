@@ -36,19 +36,14 @@ import com.android.studentnews.news.domain.resource.NewsState
 import com.android.studentnewsadmin.core.domain.resource.EventsState
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
 import com.google.firebase.Timestamp
-import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import kotlin.text.split
-import kotlin.text.toLong
 
 class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
 
@@ -153,15 +148,18 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
             val endingTimeHour = intent.getIntExtra(ENDING_TIME_HOUR, 0)
             val endingTimeMinutes = intent.getIntExtra(ENDING_TIME_MINUTES, 0)
             val endingTimeStatus = intent.getStringExtra(ENDING_TIME_STATUS) ?: ""
-            val serializedUrlList = intent.getStringExtra(URL_LIST)
+            val urlListString = intent.getStringExtra(URL_LIST) ?: ""
             val isAvailable = intent.getBooleanExtra(IS_AVAILABLE, true)
 
-            val urlList = serializedUrlList
-                ?.split(",")
-                ?.mapNotNull {
-                    val parts = it.split(";")
-                    UrlList(parts[0], parts[1], parts[2].toLong(), parts[3])
-                } ?: emptyList()
+//            val urlList = serializedUrlList
+//                ?.split(",")
+//                ?.mapNotNull {
+//                    val parts = it.split(";")
+//                    UrlList(parts[0], parts[1], parts[2].toLong(), parts[3])
+//                } ?: emptyList()
+
+            val urlList = Json.decodeFromString<List<UrlList>>(urlListString)
+
 
             try {
 

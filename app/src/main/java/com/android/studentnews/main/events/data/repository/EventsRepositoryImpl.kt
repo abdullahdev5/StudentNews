@@ -152,6 +152,7 @@ class EventsRepositoryImpl(
                             registeredAt = Timestamp.now(),
                         )
 
+                        // Registered Events Collection From Current User Document
                         registeredEventsCol
                             ?.document(eventId)
                             ?.set(registeredEventsModelForUser)

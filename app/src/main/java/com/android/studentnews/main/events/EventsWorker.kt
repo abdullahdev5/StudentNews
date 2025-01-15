@@ -5,7 +5,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import androidx.compose.ui.util.fastJoinToString
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -29,6 +28,8 @@ import com.android.studentnews.main.MyBroadcastReceiver
 import com.android.studentnews.main.events.domain.repository.EventsRepository
 import com.android.studentnews.main.news.NOTIFICATION_ID
 import com.android.studentnewsadmin.main.events.domain.models.EventsModel
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlin.random.Random
 
 
@@ -94,9 +95,11 @@ class EventsWorker(
                 val savedFlag =
                     PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_CANCEL_CURRENT
 
-                val serializedUrlList = event?.urlList?.fastJoinToString(",") {
-                    "${it.url};${it.contentType};${it.sizeBytes};${it.lastPathSegment}"
-                } ?: ""
+//                val serializedUrlList = event?.urlList?.fastJoinToString(",") {
+//                    "${it.url};${it.contentType};${it.sizeBytes};${it.lastPathSegment}"
+//                } ?: ""
+
+                val urlListString = Json.encodeToString(event?.urlList)
 
 
                 val clickedIntent = Intent(
@@ -123,7 +126,7 @@ class EventsWorker(
                     putExtra(ENDING_TIME_HOUR, event?.endingTimeHour ?: 0)
                     putExtra(ENDING_TIME_MINUTES, event?.endingTimeMinutes ?: 0)
                     putExtra(ENDING_TIME_STATUS, event?.endingTimeStatus ?: "")
-                    putExtra(URL_LIST, serializedUrlList)
+                    putExtra(URL_LIST, urlListString)
                     putExtra(IS_AVAILABLE, event?.isAvailable ?: true)
                     putExtra(NOTIFICATION_ID, notificationId)
                 }
