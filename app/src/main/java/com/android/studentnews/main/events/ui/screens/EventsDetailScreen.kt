@@ -139,23 +139,21 @@ fun EventsDetailScreen(
 
     val pagerState = rememberPagerState(pageCount = { eventById?.urlList?.size ?: 0 })
 
+    val isEventFailedToLoad = remember(eventsDetailViewModel.eventByIdStatus) {
+        derivedStateOf {
+            eventsDetailViewModel.eventByIdStatus == Status.FAILED
+        }
+    }.value
+
     val isEventRegistered = remember {
         derivedStateOf {
             eventsDetailViewModel.isEventRegistered
         }
     }.value
 
-    var isEventSaved = remember(eventsDetailViewModel.isEventSaved) {
-        derivedStateOf {
-            eventsDetailViewModel.isEventSaved ?: false
-        }
-    }.value
-
-    val isEventFailedToLoad = remember(eventsDetailViewModel.eventByIdStatus) {
-        derivedStateOf {
-            eventsDetailViewModel.eventByIdStatus == Status.FAILED
-        }
-    }.value
+    var isEventSaved by remember {
+        mutableStateOf(eventsDetailViewModel.isEventSaved ?: false)
+    }
 
 
     var isStartingDateExpanded by rememberSaveable { mutableStateOf(true) }
@@ -267,6 +265,7 @@ fun EventsDetailScreen(
                                 } else {
                                     eventsDetailViewModel.onEventRemoveFromSave(event = event)
                                 }
+
                             }
 
                         }) {

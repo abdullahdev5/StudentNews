@@ -192,8 +192,10 @@ class EventsRepositoryImpl(
 
                         val eventIdFromRegisteredEvents = value?.getString(EVENT_ID)
 
-                        trySend(EventsState.Success(
-                            data = eventIdFromRegisteredEvents != null == true)
+                        trySend(
+                            EventsState.Success(
+                                data = eventIdFromRegisteredEvents != null == true
+                            )
                         )
                     }
 
@@ -209,20 +211,52 @@ class EventsRepositoryImpl(
     }
 
 
-    override fun onEventSave(event: EventsModel): Flow<EventsState<String>> {
+    override suspend fun onEventSave(event: EventsModel): Flow<EventsState<String>> {
         return callbackFlow {
 
             trySend(EventsState.Loading)
 
-            savedEventsColRef
-                ?.document(event.eventId.toString())
+            val eventId = event.eventId ?: ""
+
+            val savedEventsDocument = savedEventsColRef
+                ?.document(eventId)
+
+            savedEventsDocument
                 ?.set(event)
-                ?.addOnSuccessListener {
-                    trySend(EventsState.Success("Event Saved"))
-                }
                 ?.addOnFailureListener { error ->
                     trySend(EventsState.Failed(error))
                 }
+
+            val registrationsOfEventCol = eventsColRef
+                ?.document(eventId)
+                ?.collection(FirestoreNodes.REGISTRATIONS_OF_EVENT)
+
+            val registrationOfEventByIdData = registrationsOfEventCol
+                ?.get()
+                ?.addOnFailureListener { error ->
+                    trySend(EventsState.Failed(error))
+                }
+                ?.await()
+                ?.toObjects(RegistrationsOfEventsModel::class.java)
+
+            val registrationColInSavedEventById: CollectionReference? = savedEventsDocument
+                ?.collection(FirestoreNodes.REGISTRATIONS_OF_EVENT)
+
+            if (registrationOfEventByIdData != null) {
+
+                for (document in registrationOfEventByIdData) {
+
+                    registrationColInSavedEventById
+                        ?.document(document.userId)
+                        ?.set(document)
+                        ?.addOnFailureListener { error ->
+                            trySend(EventsState.Failed(error))
+                        }
+
+                }
+
+            }
+            trySend(EventsState.Success("Event Saved"))
 
             awaitClose {
                 close()
@@ -230,20 +264,39 @@ class EventsRepositoryImpl(
         }
     }
 
-    override fun onEventRemoveFromSave(event: EventsModel): Flow<EventsState<String>> {
+    override suspend fun onEventRemoveFromSave(event: EventsModel): Flow<EventsState<String>> {
         return callbackFlow {
 
             trySend(EventsState.Loading)
 
-            savedEventsColRef
-                ?.document(event.eventId.toString())
-                ?.delete()
-                ?.addOnSuccessListener {
-                    trySend(EventsState.Success("Event Removed From Saved List"))
-                }
+            val eventId = event.eventId ?: ""
+
+            val savedEventDoc = savedEventsColRef
+                ?.document(eventId)
+
+            val data = savedEventDoc
+                ?.collection(FirestoreNodes.REGISTRATIONS_OF_EVENT)
+                ?.get()
                 ?.addOnFailureListener { error ->
                     trySend(EventsState.Failed(error))
                 }
+                ?.await()
+
+            if (data != null) {
+                for (document in data) {
+                    document.reference.delete().addOnFailureListener { error ->
+                        trySend(EventsState.Failed(error))
+                    }
+                }
+            }
+            savedEventDoc
+                ?.delete()
+                ?.addOnFailureListener { error ->
+                    trySend(EventsState.Failed(error))
+                }
+
+            trySend(EventsState.Success("Event Removed From Saved List"))
+
 
             awaitClose {
                 close()

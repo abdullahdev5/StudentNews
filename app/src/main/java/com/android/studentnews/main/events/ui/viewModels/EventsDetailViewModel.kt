@@ -28,7 +28,6 @@ class EventsDetailViewModel(
     val eventById = _eventById.asStateFlow()
 
     var isEventSaved by mutableStateOf<Boolean?>(null)
-        private set
 
     var isEventRegistered by mutableStateOf<Boolean?>(null)
         private set
@@ -66,26 +65,33 @@ class EventsDetailViewModel(
 
     fun onEventSave(event: EventsModel) {
         viewModelScope.launch {
-            eventsRepository
-                .onEventSave(event)
-                .collectLatest { result ->
-                    when (result) {
-                        is EventsState.Failed -> {
-                            SnackBarController.sendEvent(
-                                SnackBarEvents(
-                                    message = result.error.localizedMessage ?: "",
-                                    duration = SnackbarDuration.Long,
+            try {
+                eventsRepository
+                    .onEventSave(event)
+                    .collectLatest { result ->
+                        when (result) {
+                            is EventsState.Failed -> {
+                                SnackBarController.sendEvent(
+                                    SnackBarEvents(
+                                        message = result.error.localizedMessage ?: "",
+                                        duration = SnackbarDuration.Long,
+                                    )
                                 )
-                            )
+                            }
+
+                            else -> {}
                         }
-
-                        is EventsState.Success -> {
-
-                        }
-
-                        else -> {}
                     }
-                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                println("In Snapshot Block, Error:- $e")
+                SnackBarController.sendEvent(
+                    SnackBarEvents(
+                        message = e.localizedMessage ?: "",
+                        duration = SnackbarDuration.Long,
+                    )
+                )
+            }
         }
     }
 
@@ -102,10 +108,6 @@ class EventsDetailViewModel(
                                     duration = SnackbarDuration.Long,
                                 )
                             )
-                        }
-
-                        is EventsState.Success -> {
-
                         }
 
                         else -> {}
