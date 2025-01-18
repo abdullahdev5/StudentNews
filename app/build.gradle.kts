@@ -113,4 +113,6 @@ dependencies {
     testImplementation(libs.io.mockk)
     // Kotlin Reflect
     testImplementation(libs.org.jetbrains.kotlin.reflect)
+    // Kotlin Coroutines Test
+    testImplementation(libs.org.jetbrains.kotlinx.coroutines.test)
 }

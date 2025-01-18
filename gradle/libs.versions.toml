@@ -89,6 +89,8 @@ google-accompanist-navigation-material = { group = "com.google.accompanist", nam
 io-mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 # Kotlin Reflect
 org-jetbrains-kotlin-reflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
+# Kotlin Coroutines
+org-jetbrains-kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlin" }
 
 
 [plugins]
