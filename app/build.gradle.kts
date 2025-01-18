@@ -108,4 +108,9 @@ dependencies {
 
     // Google Accompanist Navigation Material
     implementation(libs.google.accompanist.navigation.material)
+
+    // Mockk
+    testImplementation(libs.io.mockk)
+    // Kotlin Reflect
+    testImplementation(libs.org.jetbrains.kotlin.reflect)
 }
