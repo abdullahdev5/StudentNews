@@ -76,7 +76,7 @@
             </intent-filter>
 
             <!-- News Detail & Events Detail Deeplink Intent Filter !-->
-            <intent-filter>
+            <intent-filter android:autoVerify="true">
 
                 <action android:name="android.intent.action.VIEW" />
 
