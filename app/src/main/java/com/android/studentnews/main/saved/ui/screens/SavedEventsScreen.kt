@@ -7,7 +7,6 @@ import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -37,10 +36,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -71,14 +70,13 @@ import com.android.studentnews.core.data.paginator.LENGTH_ERROR
 import com.android.studentnews.core.domain.common.ErrorMessageContainer
 import com.android.studentnews.core.domain.common.formatDateToString
 import com.android.studentnews.core.domain.common.formatTimeToString
+import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.core.domain.constants.FontSize
 import com.android.studentnews.main.events.domain.destination.EventsDestination
 import com.android.studentnews.main.settings.saved.ui.viewModels.SavedEventsViewModel
-import com.android.studentnews.core.domain.common.getUrlOfImageNotVideo
 import com.android.studentnews.ui.theme.Black
 import com.android.studentnews.ui.theme.DarkColor
 import com.android.studentnews.ui.theme.DarkGray
-import com.android.studentnews.ui.theme.Gray
 import com.android.studentnews.ui.theme.LightGray
 import com.android.studentnews.ui.theme.Red
 import com.android.studentnews.ui.theme.White
@@ -201,13 +199,13 @@ fun SavedEventsScreen(
                             itemHeight = itemHeight,
                             maxWidth = { maxWidth },
                             isDragging = isDragging,
-                            onEventRemoveFromSaveListClick = { thisItem ->
+                            onEventRemoveFromSaveListClick = { thisEventId ->
                                 scope.launch {
                                     with(density) {
                                         offsetX.animateTo((configuration.screenWidthDp.dp.toPx()))
                                     }
                                 }
-                                savedEventsViewModel.onEventRemoveFromSaveList(thisItem)
+                                savedEventsViewModel.onEventRemoveFromSaveList(thisEventId)
                             },
                         )
                     }
@@ -291,7 +289,7 @@ fun SavedEventsItem(
     context: Context,
     density: Density,
     onItemClick: (String) -> Unit,
-    onEventRemoveFromSaveListClick: (EventsModel) -> Unit,
+    onEventRemoveFromSaveListClick: (String) -> Unit,
     animatedVisibilityScope: AnimatedVisibilityScope,
     sharedTransitionScope: SharedTransitionScope,
     offsetX: Float,
@@ -329,7 +327,7 @@ fun SavedEventsItem(
                         .background(color = if (isSystemInDarkTheme()) LightGray else Black)
                         .align(Alignment.CenterEnd)
                         .clickable {
-                            item?.let {
+                            item?.eventId?.let {
                                 onEventRemoveFromSaveListClick(it)
                             }
                         }

@@ -183,7 +183,7 @@ class MyBroadcastReceiver : BroadcastReceiver(), KoinComponent {
 
                 scope.launch {
                     eventsRepository
-                        .onEventSave(event = event)
+                        .onEventSave(eventId = eventId)
                         .collectLatest { result ->
                             when (result) {
                                 is EventsState.Success -> {

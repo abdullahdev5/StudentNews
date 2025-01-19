@@ -242,28 +242,29 @@ fun EventsDetailScreen(
                         IconButton(onClick = {
                             isEventSaved = !isEventSaved
 
-                            eventById?.let {
-                                val event = EventsModel(
-                                    title = it.title,
-                                    description = it.description,
-                                    eventId = it.eventId,
-                                    address = it.address,
-                                    startingDate = it.startingDate,
-                                    startingTimeHour = it.startingTimeHour,
-                                    startingTimeMinutes = it.startingTimeMinutes,
-                                    startingTimeStatus = it.startingTimeStatus,
-                                    endingDate = it.endingDate,
-                                    endingTimeHour = it.endingTimeHour,
-                                    endingTimeMinutes = it.endingTimeMinutes,
-                                    endingTimeStatus = it.endingTimeStatus,
-                                    timestamp = Timestamp.now(),
-                                    urlList = it.urlList,
-                                )
+                            eventById?.eventId?.let { thisEventId ->
+
+//                                val event = EventsModel(
+//                                    title = it.title,
+//                                    description = it.description,
+//                                    eventId = it.eventId,
+//                                    address = it.address,
+//                                    startingDate = it.startingDate,
+//                                    startingTimeHour = it.startingTimeHour,
+//                                    startingTimeMinutes = it.startingTimeMinutes,
+//                                    startingTimeStatus = it.startingTimeStatus,
+//                                    endingDate = it.endingDate,
+//                                    endingTimeHour = it.endingTimeHour,
+//                                    endingTimeMinutes = it.endingTimeMinutes,
+//                                    endingTimeStatus = it.endingTimeStatus,
+//                                    timestamp = Timestamp.now(),
+//                                    urlList = it.urlList,
+//                                )
 
                                 if (isEventSaved) {
-                                    eventsDetailViewModel.onEventSave(event = event)
+                                    eventsDetailViewModel.onEventSave(eventId = thisEventId)
                                 } else {
-                                    eventsDetailViewModel.onEventRemoveFromSave(event = event)
+                                    eventsDetailViewModel.onEventRemoveFromSave(eventId = thisEventId)
                                 }
 
                             }

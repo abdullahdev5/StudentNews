@@ -21,7 +21,7 @@ import kotlinx.coroutines.launch
 
 class EventsDetailViewModel(
     private val eventsRepository: EventsRepository,
-    private val notificationManager: NotificationManagerCompat
+    private val notificationManager: NotificationManagerCompat,
 ) : ViewModel() {
 
     private val _eventById = MutableStateFlow<EventsModel?>(null)
@@ -38,6 +38,9 @@ class EventsDetailViewModel(
         private set
 
     var eventRegisteringStatus by mutableStateOf("")
+        private set
+
+    var eventSavingStatus by mutableStateOf("")
         private set
 
 
@@ -63,20 +66,34 @@ class EventsDetailViewModel(
         }
     }
 
-    fun onEventSave(event: EventsModel) {
+    fun onEventSave(eventId: String): String {
+        var thisEventSavingStatus = "Saving Status"
         viewModelScope.launch {
             try {
                 eventsRepository
-                    .onEventSave(event)
-                    .collectLatest { result ->
+                    .onEventSave(eventId)
+                    .collect { result ->
                         when (result) {
+
+                            is EventsState.Loading -> {
+                                thisEventSavingStatus = Status.Loading
+                            }
+
                             is EventsState.Failed -> {
+                                println("Print Line: onEventSave(), VIewModel Failed")
+                                println("Print Line: onEventSave(), VIewModel Failed, Error: ${result.error.localizedMessage ?: ""}")
+                                thisEventSavingStatus = Status.FAILED
                                 SnackBarController.sendEvent(
                                     SnackBarEvents(
                                         message = result.error.localizedMessage ?: "",
                                         duration = SnackbarDuration.Long,
                                     )
                                 )
+                            }
+
+                            is EventsState.Success -> {
+                                println("Print Line: onEventSave(), VIewModel Success")
+                                thisEventSavingStatus = Status.SUCCESS
                             }
 
                             else -> {}
@@ -93,12 +110,13 @@ class EventsDetailViewModel(
                 )
             }
         }
+        return thisEventSavingStatus
     }
 
-    fun onEventRemoveFromSave(event: EventsModel) {
+    fun onEventRemoveFromSave(eventId: String) {
         viewModelScope.launch {
             eventsRepository
-                .onEventRemoveFromSave(event)
+                .onEventRemoveFromSave(eventId)
                 .collectLatest { result ->
                     when (result) {
                         is EventsState.Failed -> {
@@ -181,6 +199,7 @@ class EventsDetailViewModel(
                         is EventsState.Success -> {
                             isEventRegistered = result.data
                         }
+
                         else -> {}
                     }
                 }

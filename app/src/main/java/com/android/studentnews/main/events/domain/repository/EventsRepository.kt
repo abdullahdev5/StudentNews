@@ -30,9 +30,9 @@ interface EventsRepository {
 
     fun getIsEventRegistered(eventId: String): Flow<EventsState<Boolean>>
 
-    suspend fun onEventSave(event: EventsModel): Flow<EventsState<String>>
+    suspend fun onEventSave(eventId: String): Flow<EventsState<String>>
 
-    suspend fun onEventRemoveFromSave(event: EventsModel): Flow<EventsState<String>>
+    suspend fun onEventRemoveFromSave(eventId: String): Flow<EventsState<String>>
 
     fun getIsEventSaved(eventId: String): Flow<EventsState<Boolean>>
 

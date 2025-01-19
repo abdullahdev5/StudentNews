@@ -211,52 +211,78 @@ class EventsRepositoryImpl(
     }
 
 
-    override suspend fun onEventSave(event: EventsModel): Flow<EventsState<String>> {
+    override suspend fun onEventSave(eventId: String): Flow<EventsState<String>> {
         return callbackFlow {
 
-            trySend(EventsState.Loading)
+            try {
+                trySend(EventsState.Loading)
 
-            val eventId = event.eventId ?: ""
+                val eventId = eventId
 
-            val savedEventsDocument = savedEventsColRef
-                ?.document(eventId)
+                val savedEventDocRefFromId: DocumentReference? = savedEventsColRef
+                    ?.document(eventId)
 
-            savedEventsDocument
-                ?.set(event)
-                ?.addOnFailureListener { error ->
-                    trySend(EventsState.Failed(error))
-                }
+                println("Print Line: onEventSave()")
 
-            val registrationsOfEventCol = eventsColRef
-                ?.document(eventId)
-                ?.collection(FirestoreNodes.REGISTRATIONS_OF_EVENT)
+                val eventFromEventId = eventsColRef
+                    ?.document(eventId)
+                    ?.get()
+                    ?.await()
+                    ?.toObject(EventsModel::class.java)
 
-            val registrationOfEventByIdData = registrationsOfEventCol
-                ?.get()
-                ?.addOnFailureListener { error ->
-                    trySend(EventsState.Failed(error))
-                }
-                ?.await()
-                ?.toObjects(RegistrationsOfEventsModel::class.java)
-
-            val registrationColInSavedEventById: CollectionReference? = savedEventsDocument
-                ?.collection(FirestoreNodes.REGISTRATIONS_OF_EVENT)
-
-            if (registrationOfEventByIdData != null) {
-
-                for (document in registrationOfEventByIdData) {
-
-                    registrationColInSavedEventById
-                        ?.document(document.userId)
-                        ?.set(document)
-                        ?.addOnFailureListener { error ->
-                            trySend(EventsState.Failed(error))
-                        }
-
-                }
-
+//            eventFromEventId?.let {
+                savedEventDocRefFromId
+                    ?.set(eventFromEventId!!)
+                    ?.addOnSuccessListener {
+                        println("Print Line: onEventSave(), Success")
+                        trySend(EventsState.Success("Event Saved Successfully"))
+                    }
+                    ?.addOnFailureListener { error ->
+                        println("Print Line: onEventSave(), Failed")
+                        trySend(EventsState.Failed(error))
+                    }
+//            }
+            } catch (exception: Exception) {
+                trySend(EventsState.Failed(exception))
             }
-            trySend(EventsState.Success("Event Saved"))
+
+
+//            savedEventsDocument
+//                ?.set(event)
+//                ?.addOnFailureListener { error ->
+//                    trySend(EventsState.Failed(error))
+//                }
+//
+//            val registrationsOfEventCol = eventsColRef
+//                ?.document(eventId)
+//                ?.collection(FirestoreNodes.REGISTRATIONS_OF_EVENT)
+//
+//            val registrationOfEventByIdData = registrationsOfEventCol
+//                ?.get()
+//                ?.addOnFailureListener { error ->
+//                    trySend(EventsState.Failed(error))
+//                }
+//                ?.await()
+//                ?.toObjects(RegistrationsOfEventsModel::class.java)
+//
+//            val registrationColInSavedEventById: CollectionReference? = savedEventsDocument
+//                ?.collection(FirestoreNodes.REGISTRATIONS_OF_EVENT)
+//
+//            if (registrationOfEventByIdData != null) {
+//
+//                for (document in registrationOfEventByIdData) {
+//
+//                    registrationColInSavedEventById
+//                        ?.document(document.userId)
+//                        ?.set(document)
+//                        ?.addOnFailureListener { error ->
+//                            trySend(EventsState.Failed(error))
+//                        }
+//
+//                }
+//
+//            }
+//            trySend(EventsState.Success("Event Saved"))
 
             awaitClose {
                 close()
@@ -264,38 +290,47 @@ class EventsRepositoryImpl(
         }
     }
 
-    override suspend fun onEventRemoveFromSave(event: EventsModel): Flow<EventsState<String>> {
+    override suspend fun onEventRemoveFromSave(eventId: String): Flow<EventsState<String>> {
         return callbackFlow {
 
             trySend(EventsState.Loading)
 
-            val eventId = event.eventId ?: ""
+            val eventId = eventId
 
             val savedEventDoc = savedEventsColRef
                 ?.document(eventId)
 
-            val data = savedEventDoc
-                ?.collection(FirestoreNodes.REGISTRATIONS_OF_EVENT)
-                ?.get()
-                ?.addOnFailureListener { error ->
-                    trySend(EventsState.Failed(error))
-                }
-                ?.await()
-
-            if (data != null) {
-                for (document in data) {
-                    document.reference.delete().addOnFailureListener { error ->
-                        trySend(EventsState.Failed(error))
-                    }
-                }
-            }
             savedEventDoc
                 ?.delete()
+                ?.addOnSuccessListener {
+                    trySend(EventsState.Success("Event Removed from saved list Successfully"))
+                }
                 ?.addOnFailureListener { error ->
                     trySend(EventsState.Failed(error))
                 }
 
-            trySend(EventsState.Success("Event Removed From Saved List"))
+//            val data = savedEventDoc
+//                ?.collection(FirestoreNodes.REGISTRATIONS_OF_EVENT)
+//                ?.get()
+//                ?.addOnFailureListener { error ->
+//                    trySend(EventsState.Failed(error))
+//                }
+//                ?.await()
+//
+//            if (data != null) {
+//                for (document in data) {
+//                    document.reference.delete().addOnFailureListener { error ->
+//                        trySend(EventsState.Failed(error))
+//                    }
+//                }
+//            }
+//            savedEventDoc
+//                ?.delete()
+//                ?.addOnFailureListener { error ->
+//                    trySend(EventsState.Failed(error))
+//                }
+//
+//            trySend(EventsState.Success("Event Removed From Saved List"))
 
 
             awaitClose {
