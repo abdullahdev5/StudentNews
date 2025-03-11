@@ -375,8 +375,10 @@ fun NewsScreen(
 
                                 MainNavigationDrawerList.Log_out.name -> {
                                     newsViewModel.cancelPeriodicNewsWorkRequest()
+                                    eventsViewModel.cancelEventsWorker()
                                     context.cacheDir.delete()
                                     context.imageLoader.memoryCache?.clear()
+                                    @OptIn(coil.annotation.ExperimentalCoilApi::class)
                                     context.imageLoader.diskCache?.clear()
                                     newsViewModel.signOut()
                                     navHostController.navigate(SubGraph.AUTH) {
